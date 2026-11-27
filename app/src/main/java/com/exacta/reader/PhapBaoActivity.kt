@@ -29,7 +29,7 @@ class PhapBaoActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)
             addView(Widgets.header(a, "Pháp Bảo", "${Store.beasts.size} món"))
-            addView(Widgets.rule(a), LinearLayout.LayoutParams(-1, Widgets.dp(a, 1)))
+            addView(Widgets.rule(a), LinearLayout.LayoutParams(-1, Widgets.dp(a, 1).coerceAtLeast(1)))
             addView(ScrollView(a).apply { addView(PageView(a) { v, c, k -> page(v, c, k) }) }, LinearLayout.LayoutParams(-1, 0, 1f))
         })
     }
@@ -41,7 +41,7 @@ class PhapBaoActivity : AppCompatActivity() {
 
     private fun page(v: PageView, c: Canvas?, k: Ink): Float {
         val u = k.u
-        val w = 480 * u
+        val w = k.W * u
         val m = Ink.MARGIN * u
         val small = k.small
         val smallBold = k.smallBold
@@ -51,7 +51,7 @@ class PhapBaoActivity : AppCompatActivity() {
         // The forge.
         y = section(c, k, y, "LÒ LUYỆN")
         val slotW = (w - 2 * m - 2 * 10 * u) / 3
-        val slotH = 150 * u
+        val slotH = 160 * u
         for (i in 0 until Store.FORGE_SLOTS) {
             val r = RectF(m + i * (slotW + 10 * u), y, m + i * (slotW + 10 * u) + slotW, y + slotH)
             if (c == null) continue
@@ -61,7 +61,7 @@ class PhapBaoActivity : AppCompatActivity() {
                 k.centered(c, "Trống", r.left, r.width(), r.centerY() - sl / 2, small)
                 continue
             }
-            val size = 64 * u
+            val size = 72 * u
             k.ore(c, ore.tier, ore.percent, r.centerX() - size / 2, r.top + 10 * u, size)
             var ty = r.top + 14 * u + size
             k.centered(c, Treasure.TIER_NAMES[ore.tier], r.left, r.width(), ty, smallBold); ty += sl
@@ -76,6 +76,8 @@ class PhapBaoActivity : AppCompatActivity() {
             if (bag > 0) "Túi: $bag khoáng thạch chờ vào lò" else "Túi khoáng thạch trống",
             "Quà 10 vạn từ: còn ${(nextGift.coerceAtLeast(0) + 999) / 1000} nghìn từ",
             "Đọc hết một cuốn: luyện thành một pháp bảo theo độ dày sách",
+            "Bí cảnh tuần (5 ngày × 30 phút): một khoáng thạch Huyền phẩm trở lên",
+            "Bảo khố: ${Store.beasts.size} món · ${Store.beasts.map { it.species }.toSet().size}/36 loại",
         )
         for (n in notes) {
             if (c != null) k.text(c, k.fit(n, w - 2 * m, small), m + 4 * u, y, small)
@@ -90,9 +92,9 @@ class PhapBaoActivity : AppCompatActivity() {
             if (c != null) k.text(c, "Chưa có pháp bảo. Đọc sách để lò luyện thành.", m + 4 * u, y, small)
             return y + sl + 24 * u
         }
-        val cols = 3
+        val cols = ((k.W - 2 * Ink.MARGIN + 10) / 160).toInt().coerceIn(3, 6)
         val cellW = (w - 2 * m - (cols - 1) * 10 * u) / cols
-        val art = minOf(cellW - 24 * u, 120 * u)
+        val art = minOf(cellW - 24 * u, 132 * u)
         val cellH = art + 2 * sl + 22 * u
         for ((i, b) in beasts.withIndex()) {
             val r = RectF(m + (i % cols) * (cellW + 10 * u), y + (i / cols) * (cellH + 10 * u), 0f, 0f)
@@ -130,7 +132,7 @@ class PhapBaoActivity : AppCompatActivity() {
         val p = k.smallBold
         if (c != null) {
             k.text(c, title, m, y, p)
-            c.drawRect(m, y + k.lineH(p), 480 * u - m, y + k.lineH(p) + u, k.fill)
+            c.drawRect(m, y + k.lineH(p), k.W * u - m, y + k.lineH(p) + u, k.fill)
         }
         return y + k.lineH(p) + 10 * u
     }

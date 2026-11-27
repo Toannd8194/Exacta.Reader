@@ -28,11 +28,12 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        view = HomeView(this) { action ->
+        view = HomeView(this) { action, path ->
             when (action) {
-                HomeView.Action.READ -> Store.current()?.let {
-                    startActivity(Intent(this, ReaderActivity::class.java).putExtra(ReaderActivity.EXTRA_PATH, it.path))
+                HomeView.Action.READ -> (path ?: Store.current()?.path)?.let {
+                    startActivity(Intent(this, ReaderActivity::class.java).putExtra(ReaderActivity.EXTRA_PATH, it))
                 }
+                HomeView.Action.DAO_HIEU -> startActivity(Intent(this, DaoHieuActivity::class.java))
                 HomeView.Action.LIBRARY -> startActivity(Intent(this, LibraryActivity::class.java))
                 HomeView.Action.PHAP_BAO -> startActivity(Intent(this, PhapBaoActivity::class.java))
                 HomeView.Action.TU_VI -> startActivity(Intent(this, TuViActivity::class.java))
@@ -48,8 +49,10 @@ class HomeActivity : AppCompatActivity() {
         view.needsPermission = !canReadAll()
         val book = Store.current()
         view.book = book
+        Store.checkRealm()
+        Store.checkTitles()
         view.shuffle()
-        view.invalidate()
+        view.rescale()
         clock.postDelayed(minute, 60_000)
         if (book != null && (book.words < 0 || book.cover.isEmpty())) {
             lifecycleScope.launch {

@@ -13,6 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import com.exacta.reader.data.Book
 import com.exacta.reader.data.Store
+import com.exacta.reader.game.DaoHieu
 import com.exacta.reader.game.Lunar
 import com.exacta.reader.game.Realm
 import com.exacta.reader.game.Texts
@@ -30,15 +31,14 @@ import kotlin.random.Random
  * status line. Every block is a touch target.
  */
 @SuppressLint("ViewConstructor")
-class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION }
+class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU }
 
     var book: Book? = null
     var needsPermission = false
     private var ink: Ink? = null
-    private val targets = ArrayList<Pair<RectF, Action>>()
-    private var cover: Bitmap? = null
-    private var coverPath = ""
+    private val targets = ArrayList<Pair<RectF, () -> Unit>>()
+    private val covers = HashMap<String, Bitmap?>()
 
     // Picked again on every visit, like the firmware.
     private var scripture = 0
@@ -62,10 +62,18 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
         ink = Ink(context, w)
     }
 
+    /** After a change of the UI size. */
+    fun rescale() {
+        if (width > 0) ink = Ink(context, width)
+        invalidate()
+    }
+
+    private fun on(r: RectF, action: Action, path: String? = null) = targets.add(r to { onAction(action, path) })
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_UP) {
-            targets.firstOrNull { it.first.contains(event.x, event.y) }?.let { onAction(it.second) }
+            targets.firstOrNull { it.first.contains(event.x, event.y) }?.second?.invoke()
         }
         return true
     }
@@ -75,25 +83,53 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
         val u = k.u
         val w = width.toFloat()
         val h = height.toFloat()
+        val hu = h / u
         targets.clear()
         val today = LocalDate.now()
         val lunar = Lunar.fromSolar(today.dayOfMonth, today.monthValue, today.year)
         k.status(c, w, Lunar.ancientMonthDay(lunar))
 
         val m = Ink.MARGIN * u
-        val top = (Ink.STATUS_H + 12) * u
-        val bookH = (h * 0.37f).coerceIn(220 * u, 330 * u)
+        val g = Ink.GAP * u
+        var top = (Ink.STATUS_H + 12) * u
+        val bookH = (hu * 0.27f).coerceIn(210f, 320f) * u
         val bookRect = RectF(m, top, w - m, top + bookH)
         drawBook(c, k, bookRect)
-        targets.add(bookRect to if (needsPermission) Action.PERMISSION else if (book != null) Action.READ else Action.LIBRARY)
+        val b = book
+        if (needsPermission) on(bookRect, Action.PERMISSION) else if (b != null) on(bookRect, Action.READ, b.path) else on(bookRect, Action.LIBRARY)
+        top = bookRect.bottom + g
 
-        val lowerTop = bookRect.bottom + Ink.GAP * u
-        val lowerBottom = h - 8 * u
-        val railW = 100 * u
-        drawRail(c, k, RectF(m, lowerTop, m + railW, lowerBottom))
-        val card = RectF(m + railW + Ink.GAP * u, lowerTop, w - m, lowerBottom)
+        // Other books read lately, when there is room.
+        val others = if (needsPermission) emptyList() else Store.recent(6).filter { it.path != b?.path }
+        if (others.isNotEmpty() && hu >= 900) {
+            val stripH = 128 * u
+            drawRecent(c, k, RectF(m, top, w - m, top + stripH), others)
+            top += stripH + g
+        }
+
+        // The three Omega cards along the bottom, the rail and the cultivation card above them.
+        val miniH = 148 * u
+        val miniTop = h - 10 * u - miniH
+        val miniW = (w - 2 * m - 2 * g) / 3
+        val cards = listOf(
+            RectF(m, miniTop, m + miniW, miniTop + miniH),
+            RectF(m + miniW + g, miniTop, m + 2 * miniW + g, miniTop + miniH),
+            RectF(m + 2 * (miniW + g), miniTop, w - m, miniTop + miniH),
+        )
+        drawTrial(c, k, cards[0]); on(cards[0], Action.TU_VI)
+        drawBiCanh(c, k, cards[1], today); on(cards[1], Action.TU_VI)
+        drawTitle(c, k, cards[2]); on(cards[2], Action.DAO_HIEU)
+
+        val lowerBottom = miniTop - g
+        val railW = 108 * u
+        drawRail(c, k, RectF(m, top, m + railW, lowerBottom))
+        val card = RectF(m + railW + g, top, w - m, lowerBottom)
         drawCultivation(c, k, card, today, lunar)
-        targets.add(card to Action.TU_VI)
+        on(card, Action.TU_VI)
+    }
+
+    private fun coverOf(b: Book): Bitmap? = covers.getOrPut(b.cover) {
+        if (b.cover.isNotEmpty() && File(b.cover).exists()) runCatching { BitmapFactory.decodeFile(b.cover) }.getOrNull() else null
     }
 
     // --- The book ---------------------------------------------------------------------------
@@ -163,22 +199,24 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
             k.centered(c, line, tx, tw, y, tp)
             y += k.lineH(tp)
         }
-        if (b.author.isNotEmpty() && y + 6 * u + k.lineH(k.ui10) <= bottom) {
+        val info = bookInfo(b)
+        val infoH = if (info.isNotEmpty()) 8 * u + small.fontSpacing else 0f
+        if (b.author.isNotEmpty() && y + 6 * u + k.lineH(k.ui10) + infoH <= bottom) {
             y += 6 * u
-            for (line in k.wrap(b.author, tw, k.ui10, ((bottom - y) / k.lineH(k.ui10)).toInt().coerceIn(1, 2))) {
+            for (line in k.wrap(b.author, tw, k.ui10, ((bottom - infoH - y) / k.lineH(k.ui10)).toInt().coerceIn(1, 2))) {
                 k.centered(c, line, tx, tw, y, k.ui10)
                 y += k.lineH(k.ui10)
             }
+        }
+        if (info.isNotEmpty() && y + infoH <= bottom) {
+            y += 8 * u
+            k.centered(c, info, tx, tw, y, k.paint(Ink.SMALL, color = Ink.DARK))
         }
     }
 
     private fun drawCover(c: Canvas, k: Ink, b: Book, r: RectF) {
         val u = k.u
-        if (coverPath != b.cover) {
-            coverPath = b.cover
-            cover = if (b.cover.isNotEmpty() && File(b.cover).exists()) BitmapFactory.decodeFile(b.cover) else null
-        }
-        val bmp = cover
+        val bmp = coverOf(b)
         c.drawRoundRect(r, 8 * u, 8 * u, k.white)
         if (bmp != null) {
             // Fill the slot, cropping the overflow.
@@ -193,9 +231,9 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
             c.restore()
         } else {
             c.drawRoundRect(r, 8 * u, 8 * u, k.gray)
-            val p = k.ui10Bold
-            var y = r.top + 24 * u
-            for (line in k.wrap(b.title, r.width() - 20 * u, p, 5)) {
+            val p = if (r.width() < 90 * u) k.smallBold else k.ui10Bold
+            var y = r.top + 12 * u
+            for (line in k.wrap(b.title, r.width() - 12 * u, p, 5)) {
                 k.centered(c, line, r.left, r.width(), y, p)
                 y += k.lineH(p)
             }
@@ -212,7 +250,7 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
         val pbH = col.height() - 3 * (iconCell + gap)
         val pb = RectF(col.left, col.top, col.right, col.top + pbH)
         k.card(c, pb)
-        targets.add(pb to Action.PHAP_BAO)
+        on(pb, Action.PHAP_BAO)
         val smallBold = k.smallBold
         val small = k.small
         val line = k.lineH(small)
@@ -248,7 +286,7 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
         for ((action, text) in items) {
             val cell = RectF(col.left, cy, col.right, cy + iconCell)
             k.card(c, cell)
-            targets.add(cell to action)
+            on(cell, action)
             val icon = 28 * u
             val total = icon + 3 * u + line
             val iy = cell.top + (iconCell - total) / 2
@@ -287,8 +325,8 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
 
     private fun drawCultivation(c: Canvas, k: Ink, r: RectF, today: LocalDate, lunar: Lunar.Date) {
         val u = k.u
-        val words = Store.totalWords
-        val level = Realm.level(words)
+        val words = Store.tuVi()
+        val level = Store.level()
         k.card(c, r)
         drawRealmFrame(c, k, r, Realm.realmOf(level))
         val x = r.left + 16 * u
@@ -346,12 +384,13 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
         c.drawRect(x, y, x + w, y + u, k.fill)
         y += 10 * u
         val d = Store.today()
-        val cols = listOf(
+        val cols = mutableListOf(
             duration(Store.daySeconds[d] ?: 0) to "hôm nay",
             hours(Store.secondsBetween(d - 6, d)) to "7 ngày",
             "${Store.streak()} ngày" to "chuỗi",
         )
-        val colW = w / 3
+        if (w >= 380 * u) cols.add((if (Store.pace() > 0) "${Store.pace()}" else "–") to "từ/phút")
+        val colW = w / cols.size
         for ((i, pair) in cols.withIndex()) {
             val cx = x + i * colW
             if (i > 0) c.drawRect(cx, y + 2 * u, cx + u, y + 2 * sl - 2 * u, k.fill)
@@ -372,6 +411,135 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
             }
         }
         k.centered(c, "Tu vi & thành tích ›", x, w, hintY, smallBold)
+    }
+
+    // --- Recent books --------------------------------------------------------------------------
+
+    private fun drawRecent(c: Canvas, k: Ink, r: RectF, books: List<Book>) {
+        val u = k.u
+        val g = 10 * u
+        val n = ((r.width() + g) / (230 * u + g)).toInt().coerceIn(1, 4).coerceAtMost(books.size)
+        val cw = (r.width() - (n - 1) * g) / n
+        val small = k.small
+        val sb = k.smallBold
+        for (i in 0 until n) {
+            val b = books[i]
+            val cell = RectF(r.left + i * (cw + g), r.top, r.left + i * (cw + g) + cw, r.bottom)
+            k.card(c, cell)
+            on(cell, Action.READ, b.path)
+            val pad = 10 * u
+            val ch = cell.height() - 2 * pad
+            val cr = RectF(cell.left + pad, cell.top + pad, cell.left + pad + ch * 0.67f, cell.bottom - pad)
+            drawCover(c, k, b, cr)
+            val tx = cr.right + pad
+            val tw = cell.right - pad - tx
+            var y = cell.top + pad + 2 * u
+            for (line in k.wrap(b.title, tw, sb, 3)) {
+                k.text(c, line, tx, y, sb)
+                y += k.lineH(sb)
+            }
+            val pct = b.percent
+            val bottomY = cell.bottom - pad - k.lineH(small)
+            k.text(c, k.fit(if (b.finishDay >= 0) "Đại viên mãn" else "${Realm.tangName(Realm.tangOf(pct))} · $pct%", tw, small), tx, bottomY, small)
+            val barY = bottomY - 8 * u
+            c.drawRect(tx, barY, tx + tw, barY + 2 * u, k.gray)
+            c.drawRect(tx, barY - u, tx + tw * pct / 100f, barY + 3 * u, k.fill)
+        }
+    }
+
+    /** "Đã đọc 2 giờ 05 phút · còn ~3 giờ 10" for the book card. */
+    private fun bookInfo(b: Book): String {
+        val parts = mutableListOf<String>()
+        if (b.seconds >= 60) parts.add("Đã đọc ${duration(b.seconds)}")
+        timeLeft(b)?.let { parts.add("còn $it") }
+        if (parts.isEmpty() && b.words > 0) parts.add("${Realm.van(b.words)} vạn từ")
+        return parts.joinToString(" · ")
+    }
+
+    // --- Omega cards: thiên kiếp, bí cảnh, đạo hiệu ----------------------------------------------
+
+    /** The card's head: an icon and a title; returns the y below it. */
+    private fun miniHead(c: Canvas, k: Ink, r: RectF, title: String, icon: (Float, Float, Float) -> Unit): Float {
+        val u = k.u
+        k.card(c, r)
+        val pad = 12 * u
+        val s = 26 * u
+        icon(r.left + pad, r.top + pad, s)
+        val p = k.smallBold
+        k.text(c, k.fit(title, r.width() - 3 * pad - s, p), r.left + pad + s + 8 * u, r.top + pad + (s - k.lineH(p)) / 2, p)
+        return r.top + pad + s + 10 * u
+    }
+
+    private fun lines(c: Canvas, k: Ink, r: RectF, y0: Float, items: List<Pair<String, Boolean>>) {
+        val u = k.u
+        var y = y0
+        val pad = 12 * u
+        for ((text, bold) in items) {
+            val p = if (bold) k.smallBold else k.small
+            if (y + k.lineH(p) > r.bottom - 8 * u) break
+            k.text(c, k.fit(text, r.width() - 2 * pad, p), r.left + pad, y, p)
+            y += k.lineH(p)
+        }
+    }
+
+    private fun drawTrial(c: Canvas, k: Ink, r: RectF) {
+        val u = k.u
+        var y = miniHead(c, k, r, "Thiên kiếp") { x, yy, s -> k.bolt(c, x, yy, s) }
+        val pad = 12 * u
+        val gate = Realm.baseName(Store.nextGate())
+        when {
+            Store.realmCap >= 9 -> lines(c, k, r, y, listOf("Đã phi thăng" to true, "Tiên lộ thênh thang" to false))
+            Store.inTrial() -> {
+                val days = Store.trialDays().first
+                val need = Store.trialNeed()
+                // One cell per day of the trial.
+                val cw = minOf(22 * u, (r.width() - 2 * pad - (need - 1) * 4 * u) / need)
+                for (i in 0 until need) {
+                    val cell = RectF(r.left + pad + i * (cw + 4 * u), y, r.left + pad + i * (cw + 4 * u) + cw, y + 12 * u)
+                    if (i < days) c.drawRoundRect(cell, 3 * u, 3 * u, k.fill) else c.drawRoundRect(k.inset(cell, 0.6f * u), 3 * u, 3 * u, k.stroke(1.2f))
+                }
+                y += 20 * u
+                lines(c, k, r, y, listOf(
+                    "Độ kiếp vào $gate" to true,
+                    "Hôm nay ${Store.minutes(Store.today())}/${Store.trialMinutes()} phút" to false,
+                ))
+            }
+            Store.failDay == Store.today() -> lines(c, k, r, y, listOf("Độ kiếp thất bại" to true, "Tu vi đã lui, đọc tiếp" to false))
+            else -> lines(c, k, r, y, listOf(
+                "Kiếp tới: $gate" to true,
+                "Còn ${Realm.van(Store.wordsToGate())} vạn từ" to false,
+                "${Store.trialNeed()} ngày × ${Store.trialMinutes()} phút" to false,
+            ))
+        }
+    }
+
+    private fun drawBiCanh(c: Canvas, k: Ink, r: RectF, today: LocalDate) {
+        val u = k.u
+        var y = miniHead(c, k, r, "Bí cảnh tuần") { x, yy, s -> k.gate(c, x, yy, s) }
+        val pad = 12 * u
+        val monday = Store.weekStart(Store.today())
+        val met = (0 until 7).map { Store.minutes(monday + it) >= Store.BI_CANH_MINUTES }
+        k.week(c, r.left + pad, y, r.width() - 2 * pad, 14 * u, met, today.dayOfWeek.value - 1)
+        y += 22 * u
+        val days = Store.biCanhDays()
+        val status = if (Store.biCanhDone()) "Đã qua tuần này" else "$days/${Store.BI_CANH_DAYS} ngày · ${Store.BI_CANH_MINUTES} phút"
+        lines(c, k, r, y, listOf(status to true, "Đã qua ${Store.biCanhCount} lần" to false))
+    }
+
+    private fun drawTitle(c: Canvas, k: Ink, r: RectF) {
+        val u = k.u
+        val head = "Đạo hiệu" + if (Store.titleUnseen > 0) " •${Store.titleUnseen}" else ""
+        var y = miniHead(c, k, r, head) { x, yy, s -> k.seal(c, x, yy, s) }
+        val pad = 12 * u
+        val t = Store.shownTitle()
+        val p = k.ui10Bold
+        val name = if (t >= 0) DaoHieu.NAMES[t] else "Chưa đắc đạo hiệu"
+        for (line in k.wrap(name, r.width() - 2 * pad, p, 2)) {
+            if (y + k.lineH(p) > r.bottom - 8 * u - k.lineH(k.small)) break
+            k.text(c, line, r.left + pad, y, p)
+            y += k.lineH(p)
+        }
+        k.text(c, "${Store.titleCount()}/${DaoHieu.COUNT} đạo hiệu ›", r.left + pad, r.bottom - 10 * u - k.lineH(k.small), k.small)
     }
 
     /** Corner marks of the card that grow with the realm. */
@@ -439,9 +607,17 @@ class HomeView(context: Context, private val onAction: (Action) -> Unit) : View(
             }
         }
 
+        /** Time to the end at this reader's pace in this book (needs a few minutes of reading). */
+        fun timeLeft(b: Book): String? {
+            if (b.words <= 0 || b.wordsRead < 2000 || b.seconds < 300 || b.finishDay >= 0) return null
+            val perSecond = b.wordsRead.toDouble() / b.seconds
+            val minutes = ((1 - b.progress) * b.words / perSecond / 60).toLong()
+            return if (minutes < 60) "~$minutes phút" else "~${minutes / 60} giờ " + (minutes % 60).toString().padStart(2, '0')
+        }
+
         fun duration(seconds: Long): String {
             val m = seconds / 60
-            return if (m < 60) "$m phút" else "${m / 60} giờ %02d phút".format(m % 60)
+            return if (m < 60) "$m phút" else "${m / 60} giờ " + (m % 60).toString().padStart(2, '0') + " phút"
         }
 
         fun hours(seconds: Long): String {

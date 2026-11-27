@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.text.TextUtils
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
@@ -23,6 +22,7 @@ import com.exacta.reader.data.Book
 import com.exacta.reader.data.Library
 import com.exacta.reader.data.Store
 import com.exacta.reader.game.Realm
+import com.exacta.reader.ui.HomeView
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
@@ -73,6 +73,7 @@ class ReaderActivity : AppCompatActivity() {
     private val ticker = Handler(Looper.getMainLooper())
     private var lastInput = 0L
     private var lastTick = 0L
+    private var sessionStart = 0L
     private val tick = object : Runnable {
         override fun run() {
             account()
@@ -112,14 +113,23 @@ class ReaderActivity : AppCompatActivity() {
             addView(page, LinearLayout.LayoutParams(-1, 0, 1f))
             addView(footer, LinearLayout.LayoutParams(-1, -2))
         })
+        footerTitle = book.title
         footerLeft.text = book.title
-        lifecycleScope.launch { open(File(path)) }
+        lifecycleScope.launch {
+            try {
+                open(File(path))
+            } catch (e: Exception) {
+                ExactaApp.log("open ${book.title}: ${e.stackTraceToString()}")
+                footerLeft.text = "Không mở được sách: ${e.javaClass.simpleName}"
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
         lastInput = SystemClock.uptimeMillis()
         lastTick = lastInput
+        sessionStart = lastInput
         ticker.postDelayed(tick, 20_000)
     }
 
@@ -136,14 +146,28 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private fun account() {
+        if (!::book.isInitialized) return
         val now = SystemClock.uptimeMillis()
-        if (now - lastInput < IDLE_MS) Store.addSeconds(book, (now - lastTick) / 1000)
-        lastTick = now
+        if (now - lastInput < IDLE_MS) {
+            val seconds = (now - lastTick) / 1000
+            try {
+                Store.addSeconds(book, seconds, (now - sessionStart) / 1000)
+            } catch (e: Exception) {
+                ExactaApp.log("account: ${e.stackTraceToString()}")
+            }
+            lastTick += seconds * 1000
+        } else {
+            lastTick = now
+        }
     }
 
     private fun input() {
         val now = SystemClock.uptimeMillis()
-        if (now - lastInput >= IDLE_MS) lastTick = now  // back from a pause: the idle time does not count
+        if (now - lastInput >= IDLE_MS) {
+            // Back from a pause: the idle time does not count, and a new sitting begins.
+            lastTick = now
+            sessionStart = now
+        }
         lastInput = now
     }
 
@@ -217,7 +241,13 @@ class ReaderActivity : AppCompatActivity() {
             }
         })
         lifecycleScope.launch {
-            nav.currentLocator.collect { onMoved(it) }
+            nav.currentLocator.collect {
+                try {
+                    onMoved(it)
+                } catch (e: Exception) {
+                    ExactaApp.log("onMoved: ${e.stackTraceToString()}")
+                }
+            }
         }
     }
 
@@ -235,16 +265,25 @@ class ReaderActivity : AppCompatActivity() {
         val tang = Realm.tangOf(book.percent)
         if (tang == lastTang + 1) showNotice("Công pháp đột phá ${Realm.tangName(tang)}")
         lastTang = maxOf(lastTang, tang)
+        footerTitle = locator.title ?: footerTitle
         Store.takeNote().takeIf { it.isNotEmpty() }?.let { showNotice(it) }
         if (noticePages > 0) {
             footerLeft.text = notice
             noticePages--
         } else {
-            footerLeft.text = locator.title ?: book.title
+            footerLeft.text = footerTitle
         }
-        val now = LocalTime.now()
-        footerRight.text = "  ${book.percent}% · %02d:%02d".format(now.hour, now.minute)
+        updateFooterRight()
         if (panel.visibility == View.VISIBLE) updateProgress()
+    }
+
+    private var footerTitle = ""
+
+    private fun updateFooterRight() {
+        val now = LocalTime.now()
+        val clock = now.hour.toString().padStart(2, '0') + ":" + now.minute.toString().padStart(2, '0')
+        val left = HomeView.timeLeft(book)?.let { " · còn $it" } ?: ""
+        footerRight.text = "  ${book.percent}%$left · $clock"
     }
 
     private fun showNotice(text: String) {
@@ -276,7 +315,7 @@ class ReaderActivity : AppCompatActivity() {
         addView(TextView(context).apply {
             text = book.title
             setTextColor(Color.BLACK)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            Widgets.textSize(context, this, 15f)
             typeface = ResourcesCompat.getFont(context, R.font.bitter_ui_bold)
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
@@ -378,16 +417,8 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun updateProgress() {
         seek.progress = (book.progress * 1000).toInt()
-        val left = timeLeft()
+        val left = HomeView.timeLeft(book)
         progressLabel.text = "${book.percent}% · ${Realm.tangName(Realm.tangOf(book.percent))}" + (left?.let { " · còn $it" } ?: "")
-    }
-
-    /** Time to the end at this reader's pace in this book (needs a few minutes of reading). */
-    private fun timeLeft(): String? {
-        if (book.words <= 0 || book.wordsRead < 2000 || book.seconds < 300) return null
-        val perSecond = book.wordsRead.toDouble() / book.seconds
-        val minutes = ((1 - book.progress) * book.words / perSecond / 60).toLong()
-        return if (minutes < 60) "~$minutes phút" else "~${minutes / 60} giờ %02d".format(minutes % 60)
     }
 
     private fun jumpTo(progression: Double) {
@@ -431,7 +462,7 @@ class ReaderActivity : AppCompatActivity() {
         this.text = text
         gravity = Gravity.CENTER
         setTextColor(Color.BLACK)
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+        Widgets.textSize(context, this, 14f)
         typeface = ResourcesCompat.getFont(context, if (selected) R.font.bitter_ui_bold else R.font.bitter_ui)
         setPadding(dp(8), dp(9), dp(8), dp(9))
         maxLines = 1
@@ -446,18 +477,18 @@ class ReaderActivity : AppCompatActivity() {
     private fun label(text: String) = TextView(this).apply {
         this.text = text
         setTextColor(Color.BLACK)
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+        Widgets.textSize(context, this, 14f)
         typeface = ResourcesCompat.getFont(context, R.font.bitter_ui_bold)
     }
 
     private fun footerText(ui: android.graphics.Typeface?) = TextView(this).apply {
         setTextColor(Color.BLACK)
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        Widgets.textSize(context, this, 12f)
         typeface = ui
         maxLines = 1
     }
 
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+    private fun dp(v: Int) = Widgets.dp(this, v)
 
     companion object {
         const val EXTRA_PATH = "path"

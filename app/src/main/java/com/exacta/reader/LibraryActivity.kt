@@ -134,6 +134,7 @@ class LibraryActivity : AppCompatActivity() {
             }
         )
         if (b.words > 0) parts.add("${Realm.van(b.words)} vạn từ")
+        if (b.lastDay >= 0) java.time.LocalDate.ofEpochDay(b.lastDay).let { parts.add("đọc ${it.dayOfMonth}/${it.monthValue}") }
         return parts.joinToString(" · ")
     }
 

@@ -34,15 +34,21 @@ class ExactaApp : Application() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
             log("CRASH " + error.stackTraceToString())
+            try {
+                File(filesDir, LAST_CRASH).writeText(stamp.format(Date()) + "\n" + error.stackTraceToString().take(4000))
+            } catch (_: Exception) {
+            }
             previous?.uncaughtException(thread, error)
         }
-        log("start ${BuildConfigInfo.VERSION}")
+        val dm = resources.displayMetrics
+        log("start ${BuildConfigInfo.VERSION} · ${dm.widthPixels}x${dm.heightPixels} xdpi ${dm.xdpi} density ${dm.densityDpi}")
     }
 
     companion object {
         lateinit var instance: ExactaApp
             private set
 
+        const val LAST_CRASH = "last-crash.txt"
         private val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
         /** One line to the log files (app folder always; ExactaReader/ on the storage when allowed). */
@@ -66,5 +72,5 @@ class ExactaApp : Application() {
 }
 
 object BuildConfigInfo {
-    const val VERSION = "0.2"
+    const val VERSION = "0.3"
 }

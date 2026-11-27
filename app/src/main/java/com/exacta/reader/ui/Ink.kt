@@ -18,10 +18,13 @@ import java.time.LocalTime
 
 /**
  * The Exacta.OS look on a canvas: Bitter type, black ink on white, rounded cards, a light-gray
- * selection, the nine-cell bar. Sizes follow the firmware's 480-px-wide layout, scaled by `u`.
+ * selection, the nine-cell bar. Sizes are the firmware's pixels (the X4's ~215 ppi) turned into the
+ * same physical size on this screen by `u`, times the reader's "Cỡ giao diện"; `W` is the width in
+ * those units, so a 300-ppi screen holds more than the firmware's 480.
  */
 class Ink(private val context: Context, width: Int) {
-    val u = width / 480f
+    val u = unit(context, width)
+    val W = width / u
     private val ui = ResourcesCompat.getFont(context, R.font.bitter_ui) ?: Typeface.SERIF
     private val uiBold = ResourcesCompat.getFont(context, R.font.bitter_ui_bold) ?: Typeface.DEFAULT_BOLD
     private val title = ResourcesCompat.getFont(context, R.font.bitter_title) ?: Typeface.DEFAULT_BOLD
@@ -43,7 +46,7 @@ class Ink(private val context: Context, width: Int) {
     val gray = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = LIGHT; style = Paint.Style.FILL }
     val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
     fun stroke(w: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = w * u }
-    private val pixels = Paint().apply { isFilterBitmap = false; isAntiAlias = false }
+    private val pixels = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
 
     fun lineH(p: Paint) = p.fontSpacing
 
@@ -188,6 +191,60 @@ class Ink(private val context: Context, width: Int) {
         return ly + lineH(p)
     }
 
+    // --- Small vector marks for the Omega systems --------------------------------------------
+
+    /** Thiên kiếp: a cloud and a bolt. */
+    fun bolt(c: Canvas, x: Float, y: Float, s: Float) {
+        c.drawCircle(x + s * 0.32f, y + s * 0.34f, s * 0.2f, fill)
+        c.drawCircle(x + s * 0.56f, y + s * 0.26f, s * 0.24f, fill)
+        c.drawCircle(x + s * 0.76f, y + s * 0.38f, s * 0.17f, fill)
+        c.drawRect(x + s * 0.18f, y + s * 0.36f, x + s * 0.9f, y + s * 0.52f, fill)
+        val p = Path().apply {
+            moveTo(x + s * 0.52f, y + s * 0.5f); lineTo(x + s * 0.34f, y + s * 0.78f); lineTo(x + s * 0.5f, y + s * 0.76f)
+            lineTo(x + s * 0.4f, y + s * 1.0f); lineTo(x + s * 0.7f, y + s * 0.66f); lineTo(x + s * 0.54f, y + s * 0.68f)
+            lineTo(x + s * 0.66f, y + s * 0.5f); close()
+        }
+        c.drawPath(p, fill)
+    }
+
+    /** Bí cảnh: a moon gate in a wall. */
+    fun gate(c: Canvas, x: Float, y: Float, s: Float) {
+        c.drawRect(x, y + s * 0.18f, x + s, y + s, fill)
+        c.drawCircle(x + s * 0.5f, y + s * 0.6f, s * 0.3f, white)
+        c.drawRect(x + s * 0.2f, y + s * 0.6f, x + s * 0.8f, y + s, white)
+        val roof = Path().apply { moveTo(x - s * 0.06f, y + s * 0.2f); lineTo(x + s * 0.5f, y); lineTo(x + s * 1.06f, y + s * 0.2f); close() }
+        c.drawPath(roof, fill)
+        c.drawRect(x + s * 0.47f, y + s * 0.62f, x + s * 0.53f, y + s, fill)
+    }
+
+    /** Đạo hiệu: a square seal with a carved frame. */
+    fun seal(c: Canvas, x: Float, y: Float, s: Float, on: Boolean = true) {
+        val r = RectF(x, y, x + s, y + s)
+        if (on) {
+            c.drawRoundRect(r, s * 0.14f, s * 0.14f, fill)
+            c.drawRoundRect(inset(r, s * 0.14f), s * 0.06f, s * 0.06f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = s * 0.07f })
+            c.drawRect(x + s * 0.3f, y + s * 0.34f, x + s * 0.7f, y + s * 0.42f, white)
+            c.drawRect(x + s * 0.3f, y + s * 0.58f, x + s * 0.7f, y + s * 0.66f, white)
+            c.drawRect(x + s * 0.46f, y + s * 0.3f, x + s * 0.54f, y + s * 0.7f, white)
+        } else {
+            c.drawRoundRect(inset(r, s * 0.04f), s * 0.14f, s * 0.14f, stroke(1.4f))
+        }
+    }
+
+    /** Seven day cells (Monday first): filled when the day counts, outlined today. */
+    fun week(c: Canvas, x: Float, y: Float, w: Float, h: Float, met: List<Boolean>, todayIndex: Int) {
+        val gap = 4 * u
+        val cw = (w - 6 * gap) / 7
+        for (i in 0 until 7) {
+            val r = RectF(x + i * (cw + gap), y, x + i * (cw + gap) + cw, y + h)
+            when {
+                met.getOrElse(i) { false } -> c.drawRoundRect(r, 3 * u, 3 * u, fill)
+                i < todayIndex -> c.drawRoundRect(r, 3 * u, 3 * u, gray)
+                else -> c.drawRoundRect(inset(r, 0.6f * u), 3 * u, 3 * u, stroke(if (i == todayIndex) 2.2f else 1.1f))
+            }
+        }
+    }
+
     // --- Chrome ----------------------------------------------------------------------------
 
     /** Clock, a centre text, battery; a rule under. Returns the y below the rule. */
@@ -223,6 +280,19 @@ class Ink(private val context: Context, width: Int) {
     }
 
     companion object {
+        /** Pixels per firmware pixel: the screen's real density against the X4's, times the UI size. */
+        fun unit(context: Context, width: Int = 0): Float {
+            val dm = context.resources.displayMetrics
+            val dpi = when {
+                dm.xdpi in 180f..480f -> dm.xdpi
+                dm.densityDpi in 180..480 -> dm.densityDpi.toFloat()
+                else -> 300f
+            }
+            var u = dpi / 215f * com.exacta.reader.data.Store.uiScale.toFloat()
+            if (width > 0) u = u.coerceAtMost(width / 400f)  // keep at least the firmware's room
+            return u.coerceAtLeast(0.6f)
+        }
+
         const val SMALL = 16.7f
         const val UI10 = 20.8f
         const val UI12 = 25f
