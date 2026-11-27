@@ -93,7 +93,8 @@ class ScreensTest {
             Store.beasts.add(Beast(i * 977L, sp / Treasure.KINDS, today - i * 3, titles[i % titles.size].first, sp % Treasure.KINDS,
                 if (i % 5 == 1) Treasure.SPIRITS[i % Treasure.SPIRITS.size] else if (i == 3) Treasure.TRIAL_MARK else ""))
         }
-        Store.items[0] = 2; Store.items[1] = 1; Store.items[2] = 0; Store.items[3] = 1
+        Store.items.fill(0)
+        listOf(0, 1, 3, 4, 4, 7, 11, 13, 13, 16).forEach { Store.items[it]++ }
         Store.kyNgoCount = 7
         Store.kyNgoLog.clear()
         Store.kyNgoLog.addAll(listOf("27/11 · nhặt được Thiên Hỏa Phù", "25/11 · khí linh của Long Song kiếm thức tỉnh: «Ẩn Long»", "22/11 · nhặt được khoáng thạch Địa phẩm"))

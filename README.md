@@ -4,7 +4,19 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.8.apk`](dist/Exacta-Reader-0.8.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Exacta-Reader-0.9.apk`](dist/Exacta-Reader-0.9.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 0.9
+
+- **18 loại đan dược và phù chú** (9 đan, 9 phù), nhặt được qua kỳ ngộ theo độ hiếm; chạm một món ở Pháp bảo › Túi đồ
+  để xem và dùng. Xem [`docs/tui-do.png`](docs/tui-do.png).
+  - Đan: Tụ Linh Đan, Phá Cảnh Đan, Bồi Nguyên Đan (+10% lò bất kỳ), Ngưng Thần Đan (+1 vạn tu vi), Hộ Mạch Đan (thiên kiếp
+    tha thêm một ngày), Tẩy Tủy Đan (khoáng thạch lên một phẩm), Cửu Chuyển Kim Đan (luyện xong ngay một lò dưới Thiên
+    phẩm), Khai Linh Đan (đánh thức khí linh tự chọn), Thọ Nguyên Đan (lấy lại nửa tu vi mất vì độ kiếp).
+  - Phù: Thiên Hỏa Phù, Hộ Lô Phù, Tầm Bảo Phù (kỳ ngộ ×3 trong 3 vạn từ), Bí Cảnh Phù (thêm một ngày bí cảnh), Định Thần
+    Phù (hôm nay tính thêm 15 phút), Dẫn Lôi Phù (kiếp phá lô bớt một ngày), Phong Ấn Phù (vá một ngày lỡ của chuỗi),
+    Tụ Bảo Phù (quà 10 vạn từ gieo ba lần), Luyện Hóa Phù (nung pháp bảo trùng loại thành khoáng thạch).
+- Túi đồ trang 2: các đan phù đang có hiệu lực và nhật ký kỳ ngộ.
 
 ## Bản 0.8
 

@@ -79,5 +79,5 @@ class ExactaApp : Application() {
 }
 
 object BuildConfigInfo {
-    const val VERSION = "0.8"
+    const val VERSION = "0.9"
 }

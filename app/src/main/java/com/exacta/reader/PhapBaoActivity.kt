@@ -31,7 +31,7 @@ class PhapBaoActivity : TabActivity() {
 
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int = when (tab) {
         0 -> forge(c, k, area, hits)
-        1 -> bag(c, k, area, hits)
+        1 -> bag(c, k, area, page, hits)
         2 -> treasury(c, k, area, page, hits)
         else -> sets(c, k, area, page, hits)
     }
@@ -118,99 +118,150 @@ class PhapBaoActivity : TabActivity() {
         return 1
     }
 
-    /** Túi đồ: the ores by grade, the pills and talismans (tap to use), the last kỳ ngộ. */
-    private fun bag(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+    /** Túi đồ: page 1 the ores and the eighteen pills and talismans; page 2 what is at work, and the kỳ ngộ. */
+    private fun bag(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
         val u = k.u
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
+        if (page == 1) {
+            var y = k.section(c, a.left, a.top, a.width(), "ĐANG CÓ HIỆU LỰC")
+            val active = listOfNotNull(
+                if (Store.fireWords > 0) "Thiên Hỏa Phù: lò ×2 thêm ${(Store.fireWords + 999) / 1000} nghìn từ" else null,
+                if (Store.seekWords > 0) "Tầm Bảo Phù: kỳ ngộ ×3 thêm ${(Store.seekWords + 999) / 1000} nghìn từ" else null,
+                if (Store.giftLuck > 0) "Tụ Bảo Phù: ${Store.giftLuck} lần quà 10 vạn từ gieo ba lần" else null,
+                if (Store.trialSpare > 0) "Hộ Mạch Đan: thiên kiếp đang độ được lỡ thêm ${Store.trialSpare} ngày" else null,
+                if (Store.trialBonus > 0) "Phá Cảnh Đan: thiên kiếp đang độ được tính thêm ${Store.trialBonus} ngày" else null,
+                if (Store.bonusTuVi > 0) "Ngưng Thần Đan: tu vi thêm ${com.exacta.reader.game.Realm.van(Store.bonusTuVi)} vạn từ" else null,
+                (Store.bonusMinutes[Store.today()] ?: 0).takeIf { it > 0 }?.let { "Định Thần Phù: hôm nay tính thêm $it phút" },
+            )
+            if (active.isEmpty()) {
+                k.text(c, "Chưa có đan phù nào đang có hiệu lực.", a.left, y, small)
+                y += sl
+            }
+            for (l in active) {
+                k.diamond(c, a.left + 6 * u, y + sl / 2, 4 * u)
+                k.text(c, k.fit(l, a.width() - 24 * u, small), a.left + 20 * u, y, small)
+                y += sl + 4 * u
+            }
+            y += 18 * u
+            y = k.section(c, a.left, y, a.width(), "KỲ NGỘ · ${Store.kyNgoCount} lần")
+            if (Store.kyNgoLog.isEmpty()) {
+                for (l in k.wrap("Mỗi vạn từ đọc được là một lần cơ duyên: có khi nhặt được khoáng thạch, đan dược, phù chú, hay đánh thức khí linh của pháp bảo.", a.width(), small, 3)) {
+                    k.text(c, l, a.left, y, small)
+                    y += sl
+                }
+            }
+            for (line in Store.kyNgoLog) {
+                if (y + sl > a.bottom) break
+                k.diamond(c, a.left + 6 * u, y + sl / 2, 4 * u)
+                k.text(c, k.fit(line, a.width() - 24 * u, small), a.left + 20 * u, y, small)
+                y += sl + 4 * u
+            }
+            return 2
+        }
+
         var y = k.section(c, a.left, a.top, a.width(), "KHOÁNG THẠCH · ${Store.bag.sum()} viên")
         val cw = (a.width() - 5 * 10 * u) / 6
-        val ic = minOf(cw - 20 * u, 64 * u)
+        val ic = minOf(cw - 24 * u, 52 * u)
         for (t in 0 until Treasure.TIERS) {
             val x = a.left + t * (cw + 10 * u)
             k.ore(c, t, 0, x + (cw - ic) / 2, y, ic, alpha = if (Store.bag[t] > 0) 255 else 60)
-            k.centered(c, Treasure.TIER_NAMES[t].removeSuffix(" phẩm"), x, cw, y + ic + 4 * u, small)
-            k.centered(c, "× ${Store.bag[t]}", x, cw, y + ic + 4 * u + sl, sb)
+            k.centered(c, Treasure.TIER_NAMES[t].removeSuffix(" phẩm") + " ×${Store.bag[t]}", x - 4 * u, cw + 8 * u, y + ic + 2 * u, small)
         }
-        y += ic + 2 * sl + 22 * u
+        y += ic + sl + 18 * u
 
-        y = k.section(c, a.left, y, a.width(), "ĐAN DƯỢC · PHÙ")
-        val gap = 12 * u
-        val iw = (a.width() - gap) / 2
-        val ih = 122 * u
+        y = k.section(c, a.left, y, a.width(), "ĐAN DƯỢC · PHÙ CHÚ · ${Store.items.sum()} món")
+        val gap = 8 * u
+        val cols = 3
+        val rows = (Treasure.ITEMS + cols - 1) / cols
+        val iw = (a.width() - (cols - 1) * gap) / cols
+        val ih = ((a.bottom - y - (rows - 1) * gap) / rows).coerceAtMost(96 * u)
         for (i in 0 until Treasure.ITEMS) {
-            val r = RectF(a.left + (i % 2) * (iw + gap), y + (i / 2) * (ih + gap), a.left + (i % 2) * (iw + gap) + iw, y + (i / 2) * (ih + gap) + ih)
-            k.card(c, r)
-            val pad = 12 * u
-            val pic = 64 * u
-            k.art(c, "art_item_$i", r.left + pad, r.top + pad, pic, if (Store.items[i] > 0) 255 else 80)
-            val tx = r.left + pad + pic + 12 * u
-            val tw = r.right - pad - tx
-            k.text(c, k.fit(Treasure.ITEM_NAMES[i], tw - 50 * u, k.ui10Bold), tx, r.top + pad, k.ui10Bold)
-            k.right(c, "× ${Store.items[i]}", r.right - pad, r.top + pad, sb)
-            var ty = r.top + pad + k.lineH(k.ui10Bold) + 2 * u
-            for (l in k.wrap(Treasure.ITEM_TEXTS[i], tw, small, 3)) {
-                if (ty + sl > r.bottom - 6 * u) break
-                k.text(c, l, tx, ty, small)
-                ty += sl
+            val r = RectF(a.left + (i % cols) * (iw + gap), y + (i / cols) * (ih + gap), a.left + (i % cols) * (iw + gap) + iw, y + (i / cols) * (ih + gap) + ih)
+            val have = Store.items[i] > 0
+            k.card(c, r, selected = have)
+            val pic = minOf(ih - 14 * u, 64 * u)
+            k.art(c, "art_item_$i", r.left + 6 * u, r.centerY() - pic / 2, pic, if (have) 255 else 70)
+            val tx = r.left + 10 * u + pic
+            val tw = r.right - 6 * u - tx
+            val name = k.wrap(Treasure.ITEM_NAMES[i], tw, sb, 2)
+            var ty = r.centerY() - (name.size * k.lineH(sb) + sl) / 2
+            for (l in name) {
+                k.text(c, l, tx, ty, sb)
+                ty += k.lineH(sb)
             }
-            hits.add(r) { useItem(i) }
+            k.text(c, "× ${Store.items[i]}", tx, ty, small)
+            hits.add(r) { itemDialog(i) }
         }
-        y += 2 * ih + gap + 20 * u
-        if (Store.fireWords > 0) {
-            k.text(c, "Thiên Hỏa Phù đang cháy: còn ${(Store.fireWords + 999) / 1000} nghìn từ lò ×2", a.left, y - 8 * u, sb)
-            y += sl
-        }
+        return 2
+    }
 
-        y = k.section(c, a.left, y, a.width(), "KỲ NGỘ · ${Store.kyNgoCount} lần")
-        if (Store.kyNgoLog.isEmpty()) {
-            for (l in k.wrap("Mỗi vạn từ đọc được là một lần cơ duyên: có khi nhặt được khoáng thạch, đan dược, phù chú, hay đánh thức khí linh của pháp bảo.", a.width(), small, 3)) {
-                k.text(c, l, a.left, y, small)
-                y += sl
-            }
-        }
-        for (line in Store.kyNgoLog) {
-            if (y + sl > a.bottom) break
-            k.diamond(c, a.left + 6 * u, y + sl / 2, 4 * u)
-            k.text(c, k.fit(line, a.width() - 24 * u, small), a.left + 20 * u, y, small)
-            y += sl + 4 * u
-        }
-        return 1
+    private fun toast(t: String) = android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_SHORT).show()
+
+    /** One item: what it does, and Dùng when there is one. */
+    private fun itemDialog(i: Int) {
+        val b = AlertDialog.Builder(this)
+            .setTitle("${Treasure.ITEM_NAMES[i]} · × ${Store.items[i]}")
+            .setMessage(Treasure.ITEM_TEXTS[i] + if (Store.items[i] <= 0) "\n\nChưa có. Đọc sách để gặp kỳ ngộ." else "")
+            .setNegativeButton("Đóng", null)
+        if (Store.items[i] > 0 && i != Treasure.HO_LO_PHU) b.setPositiveButton("Dùng") { _, _ -> useItem(i) }
+        b.show()
+    }
+
+    private fun choose(title: String, labels: List<String>, onPick: (Int) -> Unit) {
+        AlertDialog.Builder(this).setTitle(title)
+            .setItems(labels.toTypedArray()) { _, w -> onPick(w); refresh() }
+            .setNegativeButton("Thôi", null).show()
+    }
+
+    private fun slotLabel(o: com.exacta.reader.data.Ore): String {
+        val what = if (o.isBook) "«${Store.books[o.book]?.title ?: "sách"}» chặng" else "Khoáng thạch"
+        return if (o.inKiep) "$what ${Treasure.TIER_NAMES[o.tier]} · kiếp phá lô ${Store.kiepMet(o)}/${Store.kiepDays(o.tier)}" else "$what ${Treasure.TIER_NAMES[o.tier]} · ${o.percent}%"
     }
 
     private fun useItem(i: Int) {
-        val toast = { t: String -> android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_SHORT).show() }
-        if (Store.items[i] <= 0) {
-            toast("Chưa có ${Treasure.ITEM_NAMES[i]}. Đọc sách để gặp kỳ ngộ.")
-            return
-        }
         when (i) {
-            Treasure.TU_LINH_DAN -> {
-                val slots = Store.forge.filter { it.tier >= 3 && !it.inKiep && !it.isFinish }
+            Treasure.TU_LINH_DAN, Treasure.BOI_NGUYEN_DAN, Treasure.CUU_CHUYEN_DAN, Treasure.DAN_LOI_PHU -> {
+                val slots = Store.slotsFor(i)
                 if (slots.isEmpty()) {
-                    toast("Tụ Linh Đan chỉ dùng cho lò Thiên phẩm trở lên đang luyện")
+                    toast(when (i) {
+                        Treasure.TU_LINH_DAN -> "Chỉ dùng cho lò Thiên phẩm trở lên đang luyện"
+                        Treasure.CUU_CHUYEN_DAN -> "Chỉ dùng cho lò dưới Thiên phẩm đang luyện"
+                        Treasure.DAN_LOI_PHU -> "Chưa có lò nào đang qua kiếp phá lô"
+                        else -> "Chưa có lò nào đang luyện"
+                    })
                     return
                 }
-                val labels = slots.map { o ->
-                    val what = if (o.isBook) "«${Store.books[o.book]?.title ?: "sách"}» chặng" else "Khoáng thạch"
-                    "$what ${Treasure.TIER_NAMES[o.tier]} · ${o.percent}%"
-                }
-                AlertDialog.Builder(this).setTitle("Rót Tụ Linh Đan vào lò nào?")
-                    .setItems(labels.toTypedArray()) { _, k -> Store.useTuLinhDan(slots[k]); refresh() }
-                    .setNegativeButton("Thôi", null).show()
+                choose("Dùng ${Treasure.ITEM_NAMES[i]} cho lò nào?", slots.map { slotLabel(it) }) { Store.useOnSlot(i, slots[it]) }
             }
-            Treasure.THIEN_HOA_PHU -> {
-                Store.useThienHoaPhu()
-                toast("Thiên hỏa bừng lên: lò luyện cháy gấp đôi")
+            Treasure.TAY_TUY_DAN -> {
+                val tiers = Store.liftableOres()
+                if (tiers.isEmpty()) { toast("Túi chưa có khoáng thạch dưới Hỗn Độn phẩm"); return }
+                choose("Tẩy tủy khoáng thạch nào?", tiers.map { "${Treasure.TIER_NAMES[it]} (còn ${Store.bag[it]}) → ${Treasure.TIER_NAMES[it + 1]}" }) { Store.liftOre(tiers[it]) }
+            }
+            Treasure.KHAI_LINH_DAN -> {
+                val sleeping = Store.beasts.filter { it.spirit.isEmpty() }.sortedByDescending { it.tier }
+                if (sleeping.isEmpty()) { toast("Mọi pháp bảo đều đã có khí linh"); return }
+                choose("Khai linh cho pháp bảo nào?", sleeping.map { "${it.name} · ${Treasure.TIER_NAMES[it.tier]}" }) { Store.awaken(sleeping[it]) }
+            }
+            Treasure.LUYEN_HOA_PHU -> {
+                val dup = Store.duplicates().sortedBy { it.tier }
+                if (dup.isEmpty()) { toast("Chưa có pháp bảo nào trùng loại"); return }
+                choose("Luyện hóa pháp bảo nào?", dup.map { "${it.name} · ${Treasure.TIER_NAMES[it.tier]} → khoáng thạch" }) { Store.melt(dup[it]) }
+            }
+            else -> {
+                val line = Store.useSimple(i)
+                toast(line ?: when (i) {
+                    Treasure.PHA_CANH_DAN -> "Chỉ dùng khi đang độ kiếp từ Phá Đan Thành Anh trở lên"
+                    Treasure.HO_MACH_DAN -> "Chỉ dùng khi đang độ thiên kiếp"
+                    Treasure.THO_NGUYEN_DAN -> "Tu vi chưa mất gì vì độ kiếp"
+                    Treasure.BI_CANH_PHU -> "Tuần này đã qua bí cảnh"
+                    Treasure.PHONG_AN_PHU -> "Tuần qua không có ngày nào lỡ"
+                    else -> "Chưa dùng được lúc này"
+                })
                 refresh()
             }
-            Treasure.PHA_CANH_DAN -> {
-                if (Store.useBreakPill()) toast("Bình cảnh lung lay: thêm một ngày độ kiếp") else
-                    toast("Phá Cảnh Đan chỉ dùng khi đang độ kiếp từ Phá Đan Thành Anh trở lên")
-                refresh()
-            }
-            else -> toast("Hộ Lô Phù tự cháy khi kiếp phá lô lỡ một ngày")
         }
     }
 
