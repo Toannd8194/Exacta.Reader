@@ -169,7 +169,7 @@ class NienKyActivity : TabActivity() {
         val sb = k.smallBold
         val sl = k.lineH(small)
         val met = KyNgo.EVENTS.indices.count { Store.kyNgoMet[it] > 0 }
-        var y = k.section(c, a.left, a.top, a.width(), "KỲ NGỘ LỤC · ĐÃ GẶP $met/${KyNgo.EVENTS.size} LOẠI · ${Store.kyNgoCount} LẦN")
+        var y = k.section(c, a.left, a.top, a.width(), "KỲ NGỘ LỤC · ĐÃ GẶP $met/${KyNgo.EVENTS.size} · ${Store.kyNgoCount} LẦN")
         if (page == 0) {
             val recent = Store.kyNgoLog.take(3)
             for (l in recent.ifEmpty { listOf("Chưa gặp kỳ ngộ nào. Đọc đều, đọc lâu, đọc vào giờ lành ngày lễ.") }) {
@@ -184,14 +184,15 @@ class NienKyActivity : TabActivity() {
         val perRest = ((a.bottom - a.top - k.lineH(sb) - 14 * u) / rowH).toInt().coerceAtLeast(1)
         val from = if (page == 0) 0 else per + (page - 1) * perRest
         val count = if (page == 0) per else perRest
-        for (i in (from until minOf(KyNgo.EVENTS.size, from + count))) {
+        // From the easiest to meet to the rarest.
+        for (i in KyNgo.ORDER.drop(from).take(count)) {
             val e = KyNgo.EVENTS[i]
             val n = Store.kyNgoMet[i]
             val p = if (n > 0) k.ui10Bold else k.ui10
-            val right = (if (n > 0) "gặp $n lần · " else "chưa gặp · ") + "${(Store.luck(e.permille) + 5) / 10}% · ${KyNgo.TIERS[e.tier]}"
+            val right = KyNgo.RARITY[e.rarity] + if (n > 0) " · gặp $n lần" else " · chưa gặp"
             k.text(c, k.fit(e.name, a.width() - sb.measureText(right) - 16 * u, p), a.left, y, p)
             k.right(c, right, a.right, y + (k.lineH(p) - k.lineH(sb)) / 2, if (n > 0) sb else small)
-            k.text(c, k.fit(e.text, a.width(), small), a.left, y + k.lineH(p) + 2 * u, small)
+            k.text(c, k.fit("${e.text} · mỗi lần ${(Store.luck(e.permille) + 5) / 10}%", a.width(), small), a.left, y + k.lineH(p) + 2 * u, small)
             c.drawRect(a.left, y + rowH - 6 * u, a.right, y + rowH - 5 * u, k.gray)
             y += rowH
         }

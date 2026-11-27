@@ -222,10 +222,10 @@ class SettingsActivity : TabActivity() {
         AlertDialog.Builder(this)
             .setTitle("Luật tu tiên")
             .setMessage(
-                "• Cảnh giới: chữ đọc tuần tự (lật trang) quy ra tu vi. Luyện Khí 9 tầng; từ Trúc Cơ mỗi cảnh giới có sơ, trung, hậu kỳ, viên mãn (cần căn cơ 30, 45, 60). Tới đỉnh là bình cảnh: chữ đọc dồn thành áp chế.\n\n" +
+                "• Cảnh giới: chữ đọc tuần tự (lật trang) quy ra tu vi. Mỗi cảnh giới có sơ kỳ, trung kỳ, hậu kỳ, đại viên mãn (tầng chỉ là vạch trên thanh tiến độ); từ Trúc Cơ vào trung kỳ, hậu kỳ, đại viên mãn cần căn cơ 30, 45, 60, từ Kim Đan còn phải phá tiểu cảnh. Tới đỉnh là bình cảnh: chữ đọc dồn thành áp chế.\n\n" +
                     "• Đột phá: tự bấm ở Tu vi › Đột phá, tỉ lệ hiện từng phần. Cửa ải Nhân giới đòi căn cơ, ngưng đan, lôi kiếp kèm tâm ma kiếp, ngộ đạo; từ Kim Đan đòi công pháp đủ phẩm. Hỏng thì bị thương, không rớt cảnh giới.\n\n" +
                     "• Năm thước đo (Tu vi › Thân): linh lực, căn cơ, tâm cảnh, thần thức, thể phách; tâm ma tăng khi đứt chuỗi, nhảy chương, thất bại.\n\n" +
-                    "• Linh căn (Công pháp): thức tỉnh ở Luyện Khí tầng 3 theo giờ hay đọc. Công pháp chín tầng luyện bằng chữ, tầng 4, 7, 9 mở bằng ngộ tính (từ tầng sách, sách đọc trọn). Tâm pháp luyện bằng buổi đọc 30 phút; thuật pháp tự ra tay khi có biến cố.\n\n" +
+                    "• Linh căn (Công pháp): thức tỉnh ở Luyện Khí trung kỳ theo giờ hay đọc. Công pháp chín tầng luyện bằng chữ, tầng 4, 7, 9 mở bằng ngộ tính (từ tầng sách, sách đọc trọn). Tâm pháp luyện bằng buổi đọc 30 phút; thuật pháp tự ra tay khi có biến cố.\n\n" +
                     "• Bí cảnh tuần: 5 ngày đọc từ 30 phút trong tuần được khoáng thạch Huyền phẩm trở lên.\n\n" +
                     "• Lò luyện 6 ô: khoáng thạch cháy bằng chữ đọc; một cuốn sách luyện tối đa 3 chặng; Thiên phẩm trở lên phải qua kiếp phá lô.\n\n" +
                     "• Pháp bảo: 72 loại, 18 bộ bốn món, đủ bộ có hiệu quả mãi mãi. Hợp luyện: 3 món dư cùng phẩm thành 1 khoáng thạch phẩm trên.\n\n" +

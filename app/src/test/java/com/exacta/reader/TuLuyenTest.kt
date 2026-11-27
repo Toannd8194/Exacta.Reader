@@ -42,6 +42,8 @@ class TuLuyenTest {
         TuLuyen.reset()
         DaoPhap.reset()
         com.exacta.reader.data.DongPhu.reset()
+        com.exacta.reader.data.TongMon.reset()
+        com.exacta.reader.data.BiCanh.reset()
         TuLuyen.started = true
         TuLuyen.lastTick = today - 1
         TuLuyen.rng = roll(0)
@@ -68,7 +70,7 @@ class TuLuyenTest {
     fun fullWordsBelowTheCeiling() {
         read(4_000)
         assertEquals(4_000, Store.tuVi())
-        assertEquals("Luyện Khí tầng 1", TuLuyen.name())
+        assertEquals("Luyện Khí sơ kỳ", TuLuyen.name())
     }
 
     @Test
@@ -78,7 +80,7 @@ class TuLuyenTest {
         assertEquals(102_000, Store.tuVi())
         assertEquals(8_000, TuLuyen.apChe)
         assertTrue(TuLuyen.atCeiling())
-        assertEquals("Luyện Khí tầng 9 viên mãn", TuLuyen.name())
+        assertEquals("Luyện Khí đại viên mãn", TuLuyen.name())
         // 8 000 of a span of 100 000: 8%, below the first 10%.
         assertEquals(0, TuLuyen.apCheBonus())
         read(10_000)
@@ -226,7 +228,7 @@ class TuLuyenTest {
         assertEquals(100_000, TuLuyen.apChe)
         assertEquals(3, TuLuyen.subCap)
         assertTrue(Store.inTrial())
-        assertEquals("Kim Đan viên mãn", TuLuyen.name())
+        assertEquals("Kim Đan đại viên mãn", TuLuyen.name())
 
         Store.realmCap = 0
         Store.totalWords = 120_000

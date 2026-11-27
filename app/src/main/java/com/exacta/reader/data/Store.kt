@@ -239,6 +239,8 @@ object Store {
         if (!TuLuyen.started) TuLuyen.migrate()
         if (!DaoPhap.started) DaoPhap.migrate()
         if (!DongPhu.started) DongPhu.migrate()
+        if (!TongMon.started) TongMon.migrate()
+        if (!BiCanh.started) BiCanh.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -298,10 +300,19 @@ object Store {
         o.optJSONObject("daoPhap")?.let { DaoPhap.read(it) }
         o.optJSONObject("kyNgo")?.let {
             kyNgoTarget = it.optLong("target")
-            it.optJSONArray("met")?.let { a -> for (i in 0 until minOf(a.length(), kyNgoMet.size)) kyNgoMet[i] = a.getInt(i) }
-            it.optJSONArray("days")?.let { a -> for (i in 0 until minOf(a.length(), kyNgoDays.size)) kyNgoDays[i] = a.getLong(i) }
+            if (it.has("metBy")) {
+                it.optJSONObject("metBy")?.let { m -> for (k in m.keys()) KyNgo.index(k).takeIf { i -> i >= 0 }?.let { i -> kyNgoMet[i] = m.getInt(k) } }
+                it.optJSONArray("days")?.let { a -> for (i in 0 until minOf(a.length(), kyNgoDays.size)) kyNgoDays[i] = a.getLong(i) }
+            } else {
+                // 2.2 kept 36 by position.
+                it.optJSONArray("met")?.let { a ->
+                    for (i in 0 until minOf(a.length(), KyNgo.OLD_NAMES.size)) KyNgo.index(KyNgo.OLD_NAMES[i]).takeIf { j -> j >= 0 }?.let { j -> kyNgoMet[j] = a.getInt(i) }
+                }
+            }
         }
         o.optJSONObject("dongPhu")?.let { DongPhu.read(it) }
+        o.optJSONObject("tongMon")?.let { TongMon.read(it) }
+        o.optJSONObject("biCanh2")?.let { BiCanh.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -372,9 +383,11 @@ object Store {
                 .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes).put("merge", mergeCount))
             put("tuLuyen", TuLuyen.toJson())
             put("daoPhap", DaoPhap.toJson())
-            put("kyNgo", JSONObject().put("target", kyNgoTarget).put("met", JSONArray().apply { kyNgoMet.forEach { put(it) } })
+            put("kyNgo", JSONObject().put("target", kyNgoTarget).put("metBy", JSONObject().apply { kyNgoMet.forEachIndexed { i, n -> if (n > 0) put(KyNgo.EVENTS[i].name, n) } })
                 .put("days", JSONArray().apply { kyNgoDays.forEach { put(it) } }))
             put("dongPhu", DongPhu.toJson())
+            put("tongMon", TongMon.toJson())
+            put("biCanh2", BiCanh.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -426,6 +439,8 @@ object Store {
         TuLuyen.reset()
         DaoPhap.reset()
         DongPhu.reset()
+        TongMon.reset()
+        BiCanh.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -434,6 +449,8 @@ object Store {
         if (!TuLuyen.started) TuLuyen.migrate()
         if (!DaoPhap.started) DaoPhap.migrate()
         if (!DongPhu.started) DongPhu.migrate()
+        if (!TongMon.started) TongMon.migrate()
+        if (!BiCanh.started) BiCanh.migrate()
         dirty = true
         save()
         return true
@@ -498,12 +515,20 @@ object Store {
     /** The kỳ ngộ of a sitting: its length, the day's minutes, the hour, the lunar day, the streak, a new book. */
     private fun moments(d: Long, dayBefore: Long, dayAfter: Long, before: Long, session: Long, hour: Int, newBook: Boolean) {
         for (m in intArrayOf(30, 45, 60, 90, 120)) if (before < m * 60L && session >= m * 60L) fortune(KyNgo.T_SITTING, m)
-        for (m in intArrayOf(60, 120, 180)) if (dayBefore < m * 60L && dayAfter >= m * 60L) fortune(KyNgo.T_DAY, m)
+        for (m in intArrayOf(30, 60, 90, 180)) if (dayBefore < m * 60L && dayAfter >= m * 60L) fortune(KyNgo.T_DAY, m)
         if (session >= 600) fortune(KyNgo.T_HOUR, hour)
+        if (before < 3600 && session >= 3600 && (hour == 23 || hour == 0)) fortune(KyNgo.T_NIGHT)
+        if (before < 1800 && session >= 1800 && (hour == 5 || hour == 6)) fortune(KyNgo.T_DAWN)
+        if (dayBefore < 1800 && dayAfter >= 1800) {
+            val wd = LocalDate.ofEpochDay(d).dayOfWeek.value
+            fortune(KyNgo.T_WEEKDAY, wd)
+            if (wd == 7 && minutes(d - 1) >= 30) fortune(KyNgo.T_WEEKEND)
+        }
         if (dayBefore < 600 && dayAfter >= 600) {
             val t = LocalDate.ofEpochDay(d)
             val l = Lunar.fromSolar(t.dayOfMonth, t.monthValue, t.year)
             fortune(KyNgo.T_LUNAR, l.day + if (l.leap) 0 else 100 * l.month)
+            if (!l.leap && l.month == 1 && l.day <= 3) fortune(KyNgo.T_TET)
             val y = t.minusDays(1)
             if (Lunar.solarTerm(t.dayOfMonth, t.monthValue, t.year) != Lunar.solarTerm(y.dayOfMonth, y.monthValue, y.year)) fortune(KyNgo.T_TERM)
         }
@@ -541,10 +566,12 @@ object Store {
             TuLuyen.onFinish()
             DaoPhap.onFinish(book)
             fortune(KyNgo.T_FINISH, 0)
+            TongMon.onFinish()
             if (book.firstDay >= 0 && book.finishDay - book.firstDay < 3) fortune(KyNgo.T_FINISH, 1)
             val author = book.author.trim().lowercase()
             if (author.isNotEmpty() && books.values.none { it !== book && it.finishDay >= 0 && it.author.trim().lowercase() == author }) fortune(KyNgo.T_FINISH, 2)
             if (book.words >= 1_000_000) fortune(KyNgo.T_FINISH, 3)
+            if (books.values.count { it.finishDay >= 0 } % 100 == 0) fortune(KyNgo.T_FINISH, 4)
             if (!book.forged && book.words > 0) {
                 book.forged = true
                 val tier = Treasure.tierForBook(book.words)
@@ -575,7 +602,9 @@ object Store {
         book.wordsRead += words
         val before = tuViRaw()
         val state = TuLuyen.state()
+        val vanBefore = totalWords / 10_000
         totalWords += words
+        if (totalWords / 10_000 > vanBefore) fortune(KyNgo.T_VAN)
         TuLuyen.convert(tuViRaw() - before, state)
         DaoPhap.onWords(words)
         // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
@@ -722,6 +751,7 @@ object Store {
     private fun finishBeQuan() {
         val m = beQuanTarget
         beQuanDone++
+        fortune(KyNgo.T_BEQUAN)
         beQuanMinutes += m
         beQuanTarget = 0
         beQuanSeconds = 0
@@ -786,6 +816,7 @@ object Store {
                 }
                 kiepMet(slot) >= kiepDays(slot.tier) -> {
                     phaLoPassed++
+                    fortune(KyNgo.T_KIEP)
                     gainLinhThach(30L * (slot.tier - 1))
                     release(slot, title, Treasure.TRIAL_MARK)
                     touch()
@@ -858,7 +889,8 @@ object Store {
     }
 
     private fun matches(e: KyNgo.Event, arg: Int): Boolean = when (e.trigger) {
-        KyNgo.T_SITTING, KyNgo.T_DAY, KyNgo.T_FINISH -> arg == e.arg
+        KyNgo.T_SITTING, KyNgo.T_DAY, KyNgo.T_FINISH, KyNgo.T_WEEKDAY -> arg == e.arg
+        KyNgo.T_PILL, KyNgo.T_BREAK -> arg >= e.arg
         KyNgo.T_HOUR -> KyNgo.hourIn(arg, e.arg, e.arg2)
         KyNgo.T_LUNAR -> arg % 100 == e.arg && (e.arg2 == 0 || arg / 100 == e.arg2)
         KyNgo.T_STREAK -> arg > 0 && arg % e.arg == 0
@@ -867,6 +899,19 @@ object Store {
 
     /** A moment of reading: each kỳ ngộ waiting for it rolls once a day (the words' one each time). */
     fun fortune(trigger: Int, arg: Int = 0) {
+        // A kỳ ngộ's reward may itself be a moment (a treasure born): not a second roll inside the first.
+        if (inFortune) return
+        inFortune = true
+        try {
+            roll(trigger, arg)
+        } finally {
+            inFortune = false
+        }
+    }
+
+    private var inFortune = false
+
+    private fun roll(trigger: Int, arg: Int) {
         val today = today()
         for ((i, e) in KyNgo.EVENTS.withIndex()) {
             if (e.trigger != trigger || !matches(e, arg)) continue
@@ -881,27 +926,28 @@ object Store {
     /** A kỳ ngộ met: its reward, rolled in its tier (the tier itself one time in five). */
     fun meet(i: Int) {
         val e = KyNgo.EVENTS[i]
+        // The reward of its rarity, now and then a step better or worse; thiên cổ gives twice.
         val r = Random.nextInt(100)
-        val tier = (e.tier - when {
-            r < 20 -> 0
-            r < 55 -> 1
-            else -> 2
-        }).coerceAtLeast(0)
-        val text = reward(tier)
+        val tier = if (e.rarity >= 4) 4 else (e.rarity + when {
+            r < 10 -> 1
+            r < 25 -> -1
+            else -> 0
+        }).coerceIn(0, 4)
+        val text = reward(tier) + if (e.rarity >= 4) ", " + reward(3) else ""
         kyNgoCount++
         kyNgoMet[i]++
         val d = LocalDate.now()
         kyNgoLog.add(0, "${d.dayOfMonth}/${d.monthValue} · ${e.name}: $text")
         while (kyNgoLog.size > 40) kyNgoLog.removeAt(kyNgoLog.size - 1)
         note("Kỳ ngộ ${e.name}: $text")
-        popups.addLast(e.name to "${e.text}.\n\nNhận được: $text\nPhẩm cơ duyên: ${KyNgo.TIERS[tier]}")
+        popups.addLast(e.name to "${e.tale}\n\nThu được: $text.\n${KyNgo.RARITY[e.rarity]} · cơ duyên phẩm «${KyNgo.TIERS[tier]}» · duyên khởi: ${e.text.replaceFirstChar { it.lowercase() }}.")
         while (popups.size > 3) popups.removeFirst()
         checkTitles()
         touch()
     }
 
     /** What a kỳ ngộ gives, from thường (0) to tuyệt thế (4). */
-    private fun reward(tier: Int): String {
+    internal fun reward(tier: Int): String {
         val f = feastMultiplier()
         fun lt(n: Long): String {
             gainLinhThach(n * f)
@@ -1173,6 +1219,7 @@ object Store {
         val beast = Beast(Random.nextLong(0, Long.MAX_VALUE / 2), tier, today(), bookTitle, Random.nextInt(Treasure.KINDS), spirit)
         beasts.add(beast)
         unseen++
+        fortune(KyNgo.T_FORGE)
         note("Pháp bảo xuất thế: ${beast.name} (${Treasure.TIER_NAMES[tier]})")
         checkSets()
     }
@@ -1332,6 +1379,8 @@ object Store {
         TuLuyen.advance()
         DaoPhap.check()
         DongPhu.tick()
+        TongMon.check()
+        BiCanh.check()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level
@@ -1356,8 +1405,19 @@ object Store {
     fun biCanhDone() = biCanhWeek == weekStart(today())
 
     private fun checkBiCanh() {
+        // 2.3: the bí cảnh is a map walked node by node; before it, the days alone cleared it.
+        if (BiCanh.started) {
+            BiCanh.check()
+            return
+        }
         val week = weekStart(today())
         if (biCanhWeek == week || biCanhDays() < biCanhNeed()) return
+        biCanhComplete(week)
+    }
+
+    /** The bí cảnh of week `week` is cleared: an ore (Huyền phẩm or better), linh thạch, a kỳ ngộ. */
+    fun biCanhComplete(week: Long = weekStart(today())) {
+        if (biCanhWeek == week) return
         biCanhWeek = week
         biCanhCount++
         val lift = if (setActive(14)) 1 else 0

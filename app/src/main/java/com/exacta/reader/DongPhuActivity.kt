@@ -134,7 +134,7 @@ class DongPhuActivity : TabActivity() {
         val bw = (a.width() - 2 * 10 * u) / 3
         val rooms = listOf(
             "Luyện khí thất ›" to { startActivity(Intent(this, PhapBaoActivity::class.java)) },
-            "Tàng thư ›" to { startActivity(Intent(this, TuViActivity::class.java).putExtra(EXTRA_TAB, 4)) },
+            "Tàng thư ›" to { startActivity(Intent(this, TuViActivity::class.java).putExtra(EXTRA_TAB, 3)) },
             "Tàng Kinh Các ›" to { startActivity(Intent(this, CongPhapActivity::class.java).putExtra(EXTRA_TAB, 4)) },
         )
         for ((i, room) in rooms.withIndex()) {

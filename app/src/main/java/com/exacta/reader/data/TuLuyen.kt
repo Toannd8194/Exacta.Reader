@@ -29,7 +29,11 @@ object TuLuyen {
     val THAN_THUC_AT = intArrayOf(0, 2, 5, 9, 13, 18, 24, 31, 40)
     val THE_TIERS = arrayOf("Phàm Thể", "Đồng Bì", "Thiết Cốt", "Ngọc Tủy", "Kim Thân", "Lưu Ly Thân", "Bất Diệt Thể")
     val THE_AT = intArrayOf(0, 20, 60, 150, 300, 600, 1000)
-    val TIEU = arrayOf("sơ kỳ", "trung kỳ", "hậu kỳ", "viên mãn")
+    val TIEU = arrayOf("sơ kỳ", "trung kỳ", "hậu kỳ", "đại viên mãn")
+    /** Luyện Khí's nine tầng (on the bar only) make three kỳ. */
+    val LK_KY = arrayOf("sơ kỳ", "trung kỳ", "hậu kỳ")
+    /** From this realm on, each tiểu cảnh asks a small breakthrough besides the căn cơ. */
+    const val MINOR_FROM = 2
     /** Căn cơ to enter each tiểu cảnh. */
     val SUB_NEED = intArrayOf(0, 30, 45, 60)
     val TRUC_CO_PHAM = arrayOf("Hạ phẩm", "Trung phẩm", "Thượng phẩm", "Hoàn mỹ")
@@ -70,6 +74,9 @@ object TuLuyen {
     var stageSeen = -1
     var ceilingSeen = -1
     var stuckSeen = -1
+    var minorSeen = -1
+    var minorRest = -1L
+    var minorFails = 0
     val dayBest = HashMap<Long, Long>()      // the longest sitting of a day (s)
     val dayLong = HashMap<Long, Int>()       // sittings of 45 minutes or more
     val dayVeryLong = HashMap<Long, Int>()   // sittings of 60 minutes or more
@@ -82,7 +89,7 @@ object TuLuyen {
         started = false; adj = 0; apChe = 0; subCap = 0; tamMa = 0; lastTick = -1; injuryUntil = -1; restUntil = -1
         tauHoaDay = -1; tamMaKiep = false; fails = 0; pill = false; trialDone = -1; trialBook = ""; attacks = 0
         coPham = -1; danPham = -1; breaks = 0; breakFails = 0; lastResult = ""; capDays.fill(-1); failDays.clear()
-        stageSeen = -1; ceilingSeen = -1; stuckSeen = -1
+        stageSeen = -1; ceilingSeen = -1; stuckSeen = -1; minorSeen = -1; minorRest = -1; minorFails = 0
         dayBest.clear(); dayLong.clear(); dayVeryLong.clear(); dayJumps.clear()
     }
 
@@ -127,7 +134,7 @@ object TuLuyen {
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
-    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }
+    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }
     fun theTier(v: Int = thePhach()) = THE_AT.indexOfLast { v >= it }
 
     // --- Realms and tiểu cảnh ----------------------------------------------------------------------
@@ -152,12 +159,12 @@ object TuLuyen {
 
     fun shortName(r: Int) = if (r == 8) "Độ Kiếp" else Realm.baseName(r)
 
-    /** "Luyện Khí tầng 5", "Kim Đan hậu kỳ", "Tiên nhân tam phẩm". */
+    /** "Luyện Khí trung kỳ", "Kim Đan hậu kỳ", "Nguyên Anh đại viên mãn", "Tiên nhân tam phẩm". */
     fun name(): String {
         val r = realm()
         if (r >= 9) return Realm.name(Store.level())
         val s = shownSub()
-        return if (r == 0) "Luyện Khí tầng ${s + 1}" + if (atCeiling()) " viên mãn" else "" else "${shortName(r)} ${TIEU[s]}"
+        return if (r == 0) "Luyện Khí " + (if (atCeiling()) TIEU[3] else LK_KY[s / 3]) else "${shortName(r)} ${TIEU[s]}"
     }
 
     class Bar(val cells: Double, val groups: Int, val labels: List<String>, val here: Int)
@@ -168,7 +175,7 @@ object TuLuyen {
         val t = Store.tuVi()
         return when {
             r >= 9 -> Bar(Realm.ninths(t, Store.level()), 3, Realm.stageLabels(Store.level()), Realm.stageIndex(Store.level()))
-            r == 0 -> Bar((t * 9.0 / floor(1)).coerceIn(0.0, 9.0), 3, listOf("tầng 1 – 3", "tầng 4 – 6", "tầng 7 – 9"), shownSub() / 3)
+            r == 0 -> Bar((t * 9.0 / floor(1)).coerceIn(0.0, 9.0), 3, LK_KY.toList(), shownSub() / 3)
             else -> {
                 val limit = if (r == Store.realmCap) subCap + 1 else 4
                 val cells = ((t - floor(r)) * 12.0 / (floor(r + 1) - floor(r))).coerceIn(0.0, limit * 3.0)
@@ -184,11 +191,48 @@ object TuLuyen {
         return Store.tuVi() >= quarter(cap, subCap + 1) && canCo() < SUB_NEED[subCap + 1]
     }
 
+    // --- Tiểu đột phá ---------------------------------------------------------------------------
+
+    /** From Kim Đan: the words and the căn cơ of the next tiểu cảnh are there, the small breakthrough waits. */
+    fun minorReady(): Boolean {
+        val cap = Store.realmCap
+        if (cap !in MINOR_FROM..8 || subCap >= 3 || realm() != cap) return false
+        return Store.tuVi() >= quarter(cap, subCap + 1) && canCo() >= SUB_NEED[subCap + 1]
+    }
+
+    fun minorResting() = today() < minorRest
+
+    /** Light: 60% and a third of căn cơ, the tâm cảnh, less a third of tâm ma; 30 – 98%. */
+    fun minorChance() = (60 + canCo() / 3 + 5 * tamCanhTier() - tamMa / 3 + 10 * minorFails).coerceIn(30, 98)
+
+    /** Tries the small breakthrough: true held, false failed (tâm ma +3, again tomorrow), null not now. */
+    fun minorBreak(): Boolean? {
+        if (!minorReady() || minorResting()) return null
+        val ok = rng.nextInt(100) < minorChance()
+        if (ok) {
+            subCap++
+            minorFails = 0
+            lastResult = "Phá tiểu cảnh vào ${TIEU[subCap]} ngày ${dayText(today())}"
+            Store.note("Phá tiểu cảnh: ${name()}")
+            Store.fortune(com.exacta.reader.game.KyNgo.T_MINOR)
+            advance()
+        } else {
+            minorFails++
+            stir(3)
+            minorRest = today() + 1
+            lastResult = "Phá tiểu cảnh hỏng ngày ${dayText(today())}: tâm ma +3, mai thử lại (+10%)"
+            Store.note(lastResult)
+        }
+        Store.touch()
+        return ok
+    }
+
     fun injured() = today() < injuryUntil
     fun resting() = today() < restUntil
 
     /** Percent of the words read that become linh lực now. */
-    fun rate(): Int = (if (atCeiling()) ceilingRate() else if (stuck()) knotRate() else 100) * (if (injured()) 70 else 100) / 100
+    fun rate(): Int = (if (atCeiling()) ceilingRate() else if (stuck()) knotRate() else 100) * (if (injured()) 70 else 100) / 100 *
+        (if (BiCanh.hurt()) 85 else 100) / 100
     fun ceilingRate() = if (DaoPhap.effect(PhapMon.E_BINH_CANH)) 30 else 20
     fun knotRate() = if (DaoPhap.effect(PhapMon.E_NUT_THAT)) 70 else 50
 
@@ -254,7 +298,7 @@ object TuLuyen {
         val t = Store.tuVi()
         val list = ArrayList<Need>()
         val top = floor(g)
-        val where = if (Store.realmCap == 0) "Luyện Khí tầng 9 viên mãn" else "${shortName(Store.realmCap)} viên mãn"
+        val where = "${shortName(Store.realmCap)} đại viên mãn"
         list.add(Need("$where: ${Realm.van(minOf(t, top))}/${top / 10_000} vạn", t >= top))
         when (g) {
             1 -> list.add(Need("Căn cơ từ 30, đang ${canCo()}", canCo() >= 30))
@@ -264,7 +308,7 @@ object TuLuyen {
                 list.add(Need("Ngộ đạo ${minOf(n, 3)}/3: cuốn từ 20 vạn chữ đọc trọn trong 30 ngày", n >= 3))
             }
         }
-        if (Store.realmCap >= 1) list.add(Need("Đã vào viên mãn (căn cơ từ 60 khi tới)", subCap >= 3))
+        if (Store.realmCap >= 1) list.add(Need("Đã vào đại viên mãn (căn cơ từ 60 khi tới)", subCap >= 3))
         if (g >= 2) {
             val p = PhapMon.phamFor(g)
             val now = DaoPhap.activeDef()?.let { "${it.name}, ${PhapMon.PHAM[it.pham]} phẩm" } ?: "chưa vận"
@@ -307,6 +351,7 @@ object TuLuyen {
         }
         if (DaoPhap.phapTuong() > 0) list.add("Pháp Tướng Thiên Địa" to DaoPhap.phapTuong())
         if (DongPhu.breakBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.breakBonus())
+        if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
         if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])
         if (DongPhu.danDoc >= 4) list.add("Đan độc ${DongPhu.danDoc}, chia bốn" to -(DongPhu.danDoc / 4))
         if (pill) list.add("Phá Cảnh Đan" to 15)
@@ -406,7 +451,7 @@ object TuLuyen {
             Store.gainLinhThach(50L * g)
             lastResult = "Đột phá ${Realm.baseName(g)} ngày ${dayText(t)}$extra"
             Store.note("Đột phá thành công: ${Realm.baseName(g)}$extra · ${50 * g} linh thạch")
-            Store.fortune(com.exacta.reader.game.KyNgo.T_BREAK)
+            Store.fortune(com.exacta.reader.game.KyNgo.T_BREAK, g)
             advance()
         } else {
             // The độn thuật and the công pháp soften the fall.
@@ -533,10 +578,15 @@ object TuLuyen {
     /** Opens the tiểu cảnh that căn cơ allows, and says when a new one, the ceiling or a knot is reached. */
     fun advance() {
         val cap = Store.realmCap
-        if (cap in 1..8 && realm() == cap) {
+        if (cap in 1 until MINOR_FROM && realm() == cap) {
             val t = Store.tuVi()
             val cc = canCo()
             while (subCap < 3 && t >= quarter(cap, subCap + 1) && cc >= SUB_NEED[subCap + 1]) subCap++
+        }
+        if (minorReady() && minorSeen != cap * 10 + subCap) {
+            minorSeen = cap * 10 + subCap
+            Store.note("Tiểu bình cảnh: phá vào ${TIEU[subCap + 1]} ở Tu vi › Đột phá")
+            Store.touch()
         }
         val r = realm()
         val key = if (r >= 9) 100 + Store.level() else r * 10 + shownSub()
@@ -600,7 +650,9 @@ object TuLuyen {
             canStartTrial() -> listOf("Bình cảnh $gateName" to true, "Sẵn sàng ${trialName(g).lowercase()}" to false)
             atCeiling() -> listOf("Bình cảnh $gateName" to true, (needs().firstOrNull { !it.met }?.text ?: "Vào Tu vi › Đột phá") to false)
             stuck() -> listOf("Nút thắt ${TIEU[subCap + 1]}" to true, "Căn cơ cần ${SUB_NEED[subCap + 1]}, đang ${canCo()}" to false)
-            else -> listOf("Cửa ải: $gateName" to true, "Còn ${Realm.van(floor(g) - Store.tuVi())} vạn từ tới viên mãn" to false)
+            minorReady() -> listOf("Tiểu bình cảnh ${TIEU[subCap + 1]}" to true,
+                (if (minorResting()) "Hồi khí tới mai" else "Phá tiểu cảnh được · ${minorChance()}%") to false)
+            else -> listOf("Cửa ải: $gateName" to true, "Còn ${Realm.van(floor(g) - Store.tuVi())} vạn từ tới đại viên mãn" to false)
         }
     }
 
@@ -614,6 +666,7 @@ object TuLuyen {
         put("capDays", JSONArray().apply { capDays.forEach { put(it) } })
         put("failDays", JSONArray().apply { failDays.forEach { put(it) } })
         put("stageSeen", stageSeen); put("ceilingSeen", ceilingSeen); put("stuckSeen", stuckSeen)
+        put("minorSeen", minorSeen); put("minorRest", minorRest); put("minorFails", minorFails)
         put("days", JSONObject().apply {
             for (d in dayBest.keys + dayLong.keys + dayVeryLong.keys + dayJumps.keys) {
                 put(d.toString(), JSONArray().put(dayBest[d] ?: 0).put(dayLong[d] ?: 0).put(dayVeryLong[d] ?: 0).put(dayJumps[d] ?: 0))
@@ -633,6 +686,7 @@ object TuLuyen {
         o.optJSONArray("capDays")?.let { a -> for (i in 0 until minOf(a.length(), capDays.size)) capDays[i] = a.getLong(i) }
         o.optJSONArray("failDays")?.let { a -> for (i in 0 until a.length()) failDays.add(a.getLong(i)) }
         stageSeen = o.optInt("stageSeen", -1); ceilingSeen = o.optInt("ceilingSeen", -1); stuckSeen = o.optInt("stuckSeen", -1)
+        minorSeen = o.optInt("minorSeen", -1); minorRest = o.optLong("minorRest", -1); minorFails = o.optInt("minorFails")
         o.optJSONObject("days")?.let { m ->
             for (k in m.keys()) {
                 val v = m.getJSONArray(k)

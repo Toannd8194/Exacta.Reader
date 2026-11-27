@@ -433,6 +433,100 @@ def realm9():
 REALMS = [realm0, realm1, realm2, realm3, realm4, realm5, realm6, realm7, realm8, realm9]
 
 
+
+# --- Icons of the screens (128 × 128, black) --------------------------------------------------------
+
+def icon_congphap():
+    """Công pháp: a scroll unrolled on two rods, lines of writing and a seal."""
+    p = Pen(128)
+    p.poly([(26, 26), (102, 26), (102, 104), (26, 104)], BLACK)
+    p.cut(pts=[(32, 32), (96, 32), (96, 98), (32, 98)])
+    for x in (18, 110):
+        p.poly([(x - 7, 18), (x + 7, 18), (x + 7, 112), (x - 7, 112)], BLACK)
+        p.circle(x, 16, 7, BLACK)
+        p.circle(x, 114, 7, BLACK)
+    for i, y in enumerate((42, 56, 70, 84)):
+        p.poly([(40, y), (40 + (44 if i % 2 == 0 else 34), y), (40 + (44 if i % 2 == 0 else 34), y + 6), (40, y + 6)], BLACK)
+    p.poly([(78, 74), (92, 74), (92, 92), (78, 92)], BLACK)
+    p.cut(pts=[(82, 78), (88, 78), (88, 88), (82, 88)])
+    return p.image(128)
+
+
+def icon_dongphu():
+    """Động phủ: a mountain, an arched door in it, steps up to the door."""
+    p = Pen(128)
+    p.poly([(4, 112), (38, 44), (52, 60), (78, 14), (124, 112)], BLACK)
+    p.cut(pts=arcpts(64, 78, 20, 180, 360, 24) + [(84, 108), (44, 108)])
+    p.poly([(52, 98), (76, 98), (76, 102), (52, 102)], BLACK)
+    p.poly([(40, 112), (88, 112), (88, 118), (40, 118)], BLACK)
+    p.cut(pts=[(70, 30), (78, 18), (86, 30), (78, 26)])
+    p.circle(64, 72, 3.5, BLACK)
+    return p.image(128)
+
+
+def icon_phapbao():
+    """Pháp bảo: a flying sword pointing up in a ring of light."""
+    p = Pen(128)
+    p.ring(64, 64, 48, 5, BLACK)
+    for a in range(0, 360, 45):
+        t = math.radians(a + 22.5)
+        p.line([(64 + 54 * math.cos(t), 64 + 54 * math.sin(t)), (64 + 61 * math.cos(t), 64 + 61 * math.sin(t))], BLACK, 4)
+    p.poly([(64, 10), (73, 26), (71, 80), (57, 80), (55, 26)], BLACK)
+    p.cut(pts=[(64, 20), (66, 28), (65, 74), (63, 74), (62, 28)])
+    p.poly([(40, 80), (88, 80), (88, 88), (40, 88)], BLACK)
+    p.poly([(59, 88), (69, 88), (69, 108), (59, 108)], BLACK)
+    p.circle(64, 113, 6, BLACK)
+    return p.image(128)
+
+
+def icon_daohieu():
+    """Đạo hiệu: a lệnh bài on a cord, a mark carved in it, a tassel below."""
+    p = Pen(128)
+    p.line([(64, 4), (64, 18)], BLACK, 4)
+    p.circle(64, 18, 6, BLACK)
+    body = [(36, 26), (92, 26), (100, 36), (100, 86), (64, 104), (28, 86), (28, 36)]
+    p.poly(body, BLACK)
+    p.cut(pts=[(38, 36), (90, 36), (90, 82), (64, 94), (38, 82)])
+    p.poly(star(64, 60, 20, 8, 4), BLACK)
+    p.circle(64, 60, 5, WHITE)
+    for x in (58, 64, 70):
+        p.line([(64, 104), (x, 124)], BLACK, 3)
+    return p.image(128)
+
+
+def icon_nienky():
+    """Niên kỷ: a calendar of the year, two rings on top, a crescent moon and the days."""
+    p = Pen(128)
+    p.poly([(16, 22), (112, 22), (112, 114), (16, 114)], BLACK)
+    p.cut(pts=[(22, 42), (106, 42), (106, 108), (22, 108)])
+    for x in (40, 88):
+        p.poly([(x - 5, 10), (x + 5, 10), (x + 5, 32), (x - 5, 32)], BLACK)
+    p.circle(48, 72, 18, BLACK)
+    p.cut(circle=(56, 66, 16))
+    for i in range(3):
+        for j in range(2):
+            p.poly([(70 + i * 11, 56 + j * 18), (78 + i * 11, 56 + j * 18), (78 + i * 11, 64 + j * 18), (70 + i * 11, 64 + j * 18)], BLACK)
+    return p.image(128)
+
+
+def icon_tongmon():
+    """Tông môn: the sơn môn, a gate of two pillars under two curved roofs."""
+    p = Pen(128)
+    roof = [(6, 30), (20, 22), (108, 22), (122, 30), (110, 34), (18, 34)]
+    p.poly(roof, BLACK)
+    p.poly([(14, 22), (64, 6), (114, 22)], BLACK)
+    p.poly([(22, 50), (106, 50), (112, 58), (16, 58)], BLACK)
+    for x in (30, 98):
+        p.poly([(x - 7, 34), (x + 7, 34), (x + 7, 118), (x - 7, 118)], BLACK)
+        p.poly([(x - 12, 114), (x + 12, 114), (x + 12, 122), (x - 12, 122)], BLACK)
+    p.poly([(52, 36), (76, 36), (76, 48), (52, 48)], BLACK)
+    p.cut(pts=[(56, 39), (72, 39), (72, 45), (56, 45)])
+    return p.image(128)
+
+
+ICONS = {'congphap': icon_congphap, 'dongphu': icon_dongphu, 'phapbao': icon_phapbao, 'daohieu': icon_daohieu,
+         'nienky': icon_nienky, 'tongmon': icon_tongmon}
+
 # --- Âm Dương phẩm frames (pixel art, 128 logical × 2) ---------------------------------------------
 
 def yin_yang_frame(src):
@@ -530,6 +624,11 @@ def yin_yang_frame(src):
 
 def main():
     preview = "--preview" in sys.argv
+    if "--icons" in sys.argv:
+        for name, f in ICONS.items():
+            f().save(os.path.join(RES, f"ic_{name}.png"))
+        print("icons")
+        return
     ores = [f() for f in ORES]
     realms = [f() for f in REALMS]
     badges = {i: yin_yang_frame(Image.open(os.path.join(RES, f"badge_{i:02d}.png"))) for i in range(48, 60)}
@@ -557,6 +656,8 @@ def main():
         im.save(os.path.join(RES, f"realm_{i}.png"))
     for i, im in badges.items():
         im.save(os.path.join(RES, f"badge_{i:02d}.png"))
+    for name, f in ICONS.items():
+        f().save(os.path.join(RES, f"ic_{name}.png"))
     print("ok")
 
 

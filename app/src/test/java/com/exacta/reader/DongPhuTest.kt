@@ -42,6 +42,8 @@ class DongPhuTest {
         TuLuyen.lastTick = today - 1
         TuLuyen.rng = roll(0)
         DaoPhap.reset()
+        com.exacta.reader.data.TongMon.reset()
+        com.exacta.reader.data.BiCanh.reset()
         DongPhu.migrate()
         DongPhu.rng = roll(0)
     }

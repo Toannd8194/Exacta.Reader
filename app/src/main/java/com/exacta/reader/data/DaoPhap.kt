@@ -13,7 +13,7 @@ import kotlin.random.Random
 /**
  * 2.1 Vạn Pháp Quy Nguyên: what the cultivator is born with and what they learn.
  *
- *  - Linh căn awakens at Luyện Khí tầng 3 from the hours the reader reads at: each hành has its
+ *  - Linh căn awakens at Luyện Khí trung kỳ from the hours the reader reads at: each hành has its
  *    hours, and every hành with 15% of the reading time is a root. One root tu fastest, five
  *    slowest but learn everything. Rare habits give a dị linh căn (Lôi, Băng, Phong).
  *  - Công pháp: one runs at a time. Its phẩm says how far it carries (a gate asks for a phẩm), its
@@ -88,8 +88,8 @@ object DaoPhap {
         return list.ifEmpty { listOf((0 until 5).maxBy { sec[it] }) }
     }
 
-    /** Luyện Khí tầng 3 reached and an hour read, so the hours say something. */
-    fun awakenReady() = (Store.realmCap >= 1 || TuLuyen.sub(0, Store.tuVi()) >= 2) && Store.hourSeconds.sum() >= AWAKEN_SECONDS
+    /** Luyện Khí trung kỳ reached and an hour read, so the hours say something. */
+    fun awakenReady() = (Store.realmCap >= 1 || TuLuyen.sub(0, Store.tuVi()) >= 3) && Store.hourSeconds.sum() >= AWAKEN_SECONDS
 
     /** Lôi: a tenth of the reading after midnight (0 – 3 giờ) and two days of rằm read. */
     fun loiNight(): Int {
@@ -165,6 +165,7 @@ object DaoPhap {
 
     /** +20 when an attribute is one of the roots, −20 when it and the chủ hành khắc each other. */
     fun affinity(attr: Int): Int {
+        if (attr == PhapMon.KIEM && TongMon.perk(TongMon.KIEM_LU)) return 20
         if (!awakened() || attr < 0) return 0
         if (attr in roots || attr == di) return 20
         if (roots.size == 5) return 0
@@ -344,11 +345,14 @@ object DaoPhap {
 
     /** A sitting reached 30 minutes: one vận chuyển of every tâm pháp in a slot. */
     fun onSitting30() {
+        // Minh Tâm Tự: each sitting counts twice.
+        val step = if (TongMon.perk(TongMon.MINH_TAM)) 2 else 1
         for (id in tamOn) {
-            val n = (tam[id] ?: 0) + 1
+            val before = tam[id] ?: 0
+            val n = before + step
             tam[id] = n
-            if (n == PhapMon.TAM_NHAP_MON) Store.note("${TAM_PHAP[id].name} nhập môn: ${TAM_PHAP[id].text.replaceFirstChar { it.lowercase() }}")
-            if (n == PhapMon.TAM_DAI_THANH) Store.note("${TAM_PHAP[id].name} đại thành: tâm cảnh +5")
+            if (before < PhapMon.TAM_NHAP_MON && n >= PhapMon.TAM_NHAP_MON) Store.note("${TAM_PHAP[id].name} nhập môn: ${TAM_PHAP[id].text.replaceFirstChar { it.lowercase() }}")
+            if (before < PhapMon.TAM_DAI_THANH && n >= PhapMon.TAM_DAI_THANH) Store.note("${TAM_PHAP[id].name} đại thành: tâm cảnh +5")
         }
         if (tamOn.isNotEmpty()) Store.touch()
     }
@@ -357,7 +361,8 @@ object DaoPhap {
     fun canCoBonus() = (if (effect(PhapMon.E_CAN_CO)) 5 else 0) + if (tamWorks(PhapMon.TP_DUONG_KHI)) 5 else 0
 
     /** Percent of a rise of tâm ma that comes through. */
-    fun stirPercent() = (if (tamWorks(PhapMon.TP_THANH_TAM)) 50 else 100) * (if (effect(PhapMon.E_TINH_TAM)) 70 else 100) / 100
+    fun stirPercent() = (if (tamWorks(PhapMon.TP_THANH_TAM)) 50 else 100) * (if (effect(PhapMon.E_TINH_TAM)) 70 else 100) / 100 *
+        (if (TongMon.perk(TongMon.MINH_TAM)) 80 else 100) / 100
 
     /** Băng Tâm Quyết: the first broken streak of a month stirs nothing. */
     fun calmBreak(day: Long): Boolean {
@@ -538,7 +543,7 @@ object DaoPhap {
         PhapMon.TAM -> PhapMon.TAM_PRICE
         PhapMon.DAN -> com.exacta.reader.game.DanDao.recipePrice(id)
         else -> PhapMon.thuatPrice(id)
-    }
+    }.let { if (TongMon.perk(TongMon.VAN_QUYEN)) it * 85 / 100 else it }
 
     /** The phẩm of công pháp the reader looks for now: what the next gate asks, or the one running. */
     fun targetPham() = maxOf(PhapMon.phamFor(TuLuyen.gate()), activeDef()?.pham ?: 0).coerceIn(0, 5)

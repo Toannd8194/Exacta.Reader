@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.2.1.apk`](dist/Van-Quyen-Tien-Do-2.2.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.3.apk`](dist/Van-Quyen-Tien-Do-2.3.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.2.1): [`dist/Van-Quyen-Tien-Do-2.2.1-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.2.1-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -16,6 +16,22 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, Đ
 Bản 2.0, 2.1, 2.2 là ba bước đầu của lộ trình; các bước 2.3 – 2.7 còn đó. Từ 2.1, bản thiết kế có thêm chương Độ Kiếp
 (giai đoạn đặc biệt chín tầng kiếp) và chương Phi Thăng kỳ: cảnh giới cuối của Linh giới, nơi Lục Giới Môn mở và người
 tu chọn một trong sáu đại thiên thế giới (Tiên, Ma, Phật, Yêu, Minh, Thần). Phần sau cửa để ngỏ cho các bản 3.x.
+
+## Bản 2.3 · Bái Nhập Sơn Môn
+
+- **Tông môn** (màn mới): năm tông (Vạn Quyển Tông, Thiết Cốt Môn, Minh Tâm Tự, Kiếm Lư, Bách Thảo Cốc), mỗi tông một ưu
+  đãi; bái nhập khi linh căn thức tỉnh, chuyển tông một lần. Thân phận Ngoại môn tới Thái thượng trưởng lão theo cống hiến
+  và cảnh giới. Ba nhiệm vụ đọc mỗi tuần, bổng lộc tuần, Bảo khố đổi cống hiến, sư huynh/sư tỷ đối thủ tu theo nhịp đọc
+  30 ngày của bạn nhân 1,1, tông môn đại bỉ mỗi quý.
+- **Bí cảnh** (màn mới): bản đồ tuần, mỗi ngày đọc 30 phút mở một nút, rẽ trái hay phải, biến cố (yêu thú, cấm chế, dược
+  viên hoang, động phủ cổ, tàn hồn, đồng đạo gặp nạn, điện chủ) với các cách giải mở bằng thuật pháp, pháp bảo, căn cơ;
+  hai lần bị thương là trọng thương, tuần sau tu luyện 85%. Thượng cổ di tích: 20 ngày đọc trong tháng.
+- **72 kỳ ngộ** theo độ hiếm: 36 thường gặp, 18 ít gặp, 9 hiếm gặp, 6 cực kỳ hiếm, 3 thiên cổ kỳ ngộ; càng hiếm thưởng
+  càng quý; lời kể tiên hiệp; Niên kỷ › Kỳ ngộ xếp từ dễ tới khó gặp.
+- **Cảnh giới gọi theo kỳ**: sơ kỳ, trung kỳ, hậu kỳ, đại viên mãn (tầng chỉ trên thanh tiến độ); linh căn thức tỉnh ở
+  Luyện Khí trung kỳ. Từ Kim Đan, vào kỳ mới phải **phá tiểu cảnh** (nhẹ: hỏng chỉ tâm ma +3, mai thử lại).
+- Hộp về Home khi đang đọc có **12 giọng tiên hiệp**; khung Home bỏ nhãn %; vẽ lại icon Công pháp, Động phủ, Pháp bảo,
+  Đạo hiệu, Niên kỷ, thêm Tông môn. versionCode 230.
 
 ## Bản 2.2.1 · Kim Khung Ngọc Khuyết
 

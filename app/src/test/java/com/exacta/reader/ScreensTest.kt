@@ -161,6 +161,22 @@ class ScreensTest {
         DongPhu.made = 9
         DongPhu.danDoc = 34
         DongPhu.lastResult = "Thành đan: 2 viên Tụ Khí Đan thượng phẩm"
+        // 2.3: in Kiếm Lư, a contest held; a map with one node walked and one waiting.
+        com.exacta.reader.data.TongMon.migrate()
+        com.exacta.reader.data.TongMon.join(com.exacta.reader.data.TongMon.KIEM_LU)
+        com.exacta.reader.data.TongMon.gain(1_300, "thử")
+        com.exacta.reader.data.TongMon.joinDay = today - 120
+        com.exacta.reader.data.TongMon.quarter = com.exacta.reader.data.TongMon.quarterOf(today) - 1
+        com.exacta.reader.data.TongMon.check()
+        com.exacta.reader.data.BiCanh.migrate()
+        com.exacta.reader.data.BiCanh.rng = kotlin.random.Random(7)
+        com.exacta.reader.data.BiCanh.check()
+        Store.biCanhWeek = -1
+        Store.biCanhBonusWeek = com.exacta.reader.data.BiCanh.week
+        Store.biCanhBonusDays = 3
+        com.exacta.reader.data.BiCanh.choose(false)
+        com.exacta.reader.data.BiCanh.resolve(com.exacta.reader.data.BiCanh.choices().indexOfLast { it.ok })
+        com.exacta.reader.data.BiCanh.choose(true)
     }
 
     private fun cover(f: File, title: String, i: Int) {
@@ -275,6 +291,8 @@ class ScreensTest {
     }
 
     private fun <T : TabActivity> tabs(cls: Class<T>, name: String) {
+        com.exacta.reader.ui.Ink.recordCuts = true
+        com.exacta.reader.ui.Ink.cuts.clear()
         val a = Robolectric.buildActivity(cls).setup().get()
         a.resources.displayMetrics.xdpi = 300f
         idle()
@@ -293,6 +311,8 @@ class ScreensTest {
             }
             a.page = 0
         }
+        com.exacta.reader.ui.Ink.recordCuts = false
+        File(out, "${name}_cuts.txt").writeText(com.exacta.reader.ui.Ink.cuts.joinToString(System.lineSeparator()))
         assertTrue("Empty pages: $empty", empty.isEmpty())
     }
 
@@ -331,6 +351,22 @@ class ScreensTest {
         val (name, text) = Store.takePopup()!!
         val ky = androidx.appcompat.app.AlertDialog.Builder(a).setTitle("✦ Kỳ ngộ · $name").setMessage(text).setPositiveButton("Nhận", null).show()
         snap(ky, "dialog_kyngo")
+    }
+
+    @Test fun tongMon() = tabs(TongMonActivity::class.java, "tongmon")
+
+    @Test fun biCanh() {
+        tabs(BiCanhActivity::class.java, "bicanh")
+        // The fork, and a sect not chosen yet.
+        com.exacta.reader.data.BiCanh.resolve(com.exacta.reader.data.BiCanh.choices().indexOfLast { it.ok })
+        val a = Robolectric.buildActivity(BiCanhActivity::class.java).setup().get()
+        idle()
+        shoot(root(a), "bicanh_fork")
+        com.exacta.reader.data.TongMon.reset()
+        com.exacta.reader.data.TongMon.started = true
+        val t = Robolectric.buildActivity(TongMonActivity::class.java).setup().get()
+        idle()
+        shoot(root(t), "tongmon_choose")
     }
 
     @Test fun dongPhu() {

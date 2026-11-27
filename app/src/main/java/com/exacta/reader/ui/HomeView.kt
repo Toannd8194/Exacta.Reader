@@ -30,7 +30,7 @@ import kotlin.random.Random
  */
 @SuppressLint("ViewConstructor")
 class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU }
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU, TONG_MON, BI_CANH }
 
     var book: Book? = null
     var needsPermission = false
@@ -109,7 +109,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val mw = (r.width() - 2 * g) / 3
         val cards = (0 until 3).map { RectF(r.left + it * (mw + g), r.top, r.left + it * (mw + g) + mw, r.bottom) }
         drawTrial(c, k, cards[0]); on(cards[0], Action.TU_VI)
-        drawBiCanh(c, k, cards[1], today); on(cards[1], Action.TU_VI)
+        drawBiCanh(c, k, cards[1], today); on(cards[1], Action.BI_CANH)
         drawTitle(c, k, cards[2]); on(cards[2], Action.DAO_HIEU)
     }
 
@@ -217,7 +217,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val met = (0 until 7).map { Store.minutes(monday + it) >= Store.BI_CANH_MINUTES }
         val ww = minOf(tw * 0.42f, 7 * 22 * u)
         k.week(c, x + w - ww, y + 3 * u, ww, 14 * u, met, today.dayOfWeek.value - 1)
-        on(biRow, Action.TU_VI, "3")
+        on(biRow, Action.BI_CANH)
         y += biH
 
         if (blocks.size == 6) {
@@ -236,7 +236,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
     private fun drawBottomRow(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
         val g = Ink.GAP * u
-        val half = (r.width() - g) / 3
+        val half = (r.width() - g) / 4
         val dao = RectF(r.left, r.top, r.left + half, r.bottom)
         k.card(c, dao)
         val s = 34 * u
@@ -257,7 +257,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.text(c, k.fit(sub, tw, k.small), tx, ty, k.small)
         on(dao, Action.DAO_HIEU)
         val cells = listOf(Triple(Action.CONG_PHAP, "congphap", "Công pháp"), Triple(Action.DONG_PHU, "dongphu", "Động phủ"),
-            Triple(Action.NIEN_KY, "nienky", "Niên kỷ"), Triple(Action.SETTINGS, "settings", "Cài đặt"))
+            Triple(Action.TONG_MON, "tongmon", "Tông môn"), Triple(Action.NIEN_KY, "nienky", "Niên kỷ"), Triple(Action.SETTINGS, "settings", "Cài đặt"))
         val q = (r.width() - half - cells.size * g) / cells.size
         val due = NienKy.due()
         for ((i, item) in cells.withIndex()) {
@@ -279,7 +279,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
         val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
         drawStrip(c, k, strip); on(strip, Action.TU_VI)
         val hero = RectF(a.left, a.top, a.right, strip.top - g)
@@ -321,7 +321,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
         val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
         drawStrip(c, k, strip); on(strip, Action.TU_VI)
         val bookRect = RectF(a.left, a.top, a.right, a.top + (a.height() * 0.3f).coerceIn(220 * u, 320 * u))
@@ -366,7 +366,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
         val bookRect = RectF(a.left, dock.top - g - 170 * u, a.right, dock.top - g)
         drawBookRow(c, k, bookRect); bookTarget(bookRect)
         libraryButton(c, k, bookRect)
@@ -499,12 +499,11 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
     /** The realm reached and the way through it (0..1), for the frames. */
     private fun realmProgress(): Float = TuLuyen.bar().let { (it.cells / (it.groups * 3)).toFloat() }
 
-    private fun realmFrame(c: Canvas, k: Ink, r: RectF) =
-        k.frame(c, r, k.grade, realmProgress(), "${Realm.baseName(Realm.realmOf(Store.level()))} · ${(realmProgress() * 100).toInt()}%")
+    private fun realmFrame(c: Canvas, k: Ink, r: RectF) = k.frame(c, r, k.grade, realmProgress())
 
     private fun bookFrame(c: Canvas, k: Ink, r: RectF) {
         val b = book
-        if (b == null || needsPermission) k.card(c, r) else k.frame(c, r, k.grade, b.progress.toFloat(), "${Realm.tangName(Realm.tangOf(b.percent))} · ${b.percent}%")
+        if (b == null || needsPermission) k.card(c, r) else k.frame(c, r, k.grade, b.progress.toFloat())
     }
 
     private fun drawBook(c: Canvas, k: Ink, r: RectF) {
@@ -747,6 +746,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             Action.LIBRARY to ("library" to "Thư viện"),
             Action.CONG_PHAP to ("congphap" to "Công pháp"),
             Action.DONG_PHU to ("dongphu" to "Động phủ"),
+            Action.TONG_MON to ("tongmon" to "Tông môn"),
+            Action.BI_CANH to ("bicanh" to "Bí cảnh"),
         )
         val g = Ink.GAP * u
         val cw = (r.width() - (actions.size - 1) * g) / actions.size

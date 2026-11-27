@@ -43,6 +43,8 @@ class HomeActivity : AppCompatActivity() {
                 HomeView.Action.SETTINGS -> startActivity(Intent(this, SettingsActivity::class.java))
                 HomeView.Action.CONG_PHAP -> startActivity(Intent(this, CongPhapActivity::class.java))
                 HomeView.Action.DONG_PHU -> startActivity(Intent(this, DongPhuActivity::class.java))
+                HomeView.Action.TONG_MON -> startActivity(Intent(this, TongMonActivity::class.java))
+                HomeView.Action.BI_CANH -> startActivity(Intent(this, BiCanhActivity::class.java))
                 HomeView.Action.PERMISSION -> askAllFiles()
             }
         }

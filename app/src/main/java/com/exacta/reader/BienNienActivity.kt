@@ -124,6 +124,8 @@ class BienNienActivity : TabActivity() {
                 "Động phủ và linh mạch; dược viên trồng linh thảo theo ngày đọc; đan phòng luyện đan bằng hỏa hầu là một buổi đọc liền, đan độc; 36 kỳ ngộ theo lúc đọc, báo bằng khung nổi; Thống kê vào Niên kỷ; chữ đậm hơn."),
             Era("2.2.1", "Kim Khung Ngọc Khuyết",
                 "Thẻ sách và thẻ tu vi có khung riêng: đai mực chạy theo % đọc và % cảnh giới, hoa văn góc lớn dần theo cảnh giới; thẻ trong game đẹp dần theo cấp; hết chữ bị cắt trên Home; nút Thư viện vuông; còn bốn kiểu Home."),
+            Era("2.3", "Bái Nhập Sơn Môn",
+                "Năm tông môn, nhiệm vụ tuần, cống hiến, bảo khố, sư huynh đối thủ, đại bỉ mỗi quý; bí cảnh thành bản đồ có ngã rẽ và biến cố, trọng thương; thượng cổ di tích; 72 kỳ ngộ theo độ hiếm; tiểu đột phá từ Kim Đan; cảnh giới gọi theo kỳ; 12 giọng tiên hiệp; icon mới."),
         )
     }
 }

@@ -25,7 +25,7 @@ import java.time.LocalDate
 class TuViActivity : TabActivity() {
     override fun title() = "Tu Vi"
     override fun right() = TuLuyen.name()
-    override fun tabs() = listOf("Cảnh giới", "Thân", "Đột phá", "Bí cảnh", "Kinh Các")
+    override fun tabs() = listOf("Cảnh giới", "Thân", "Đột phá", "Kinh Các")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Store.checkRealm()
@@ -45,10 +45,6 @@ class TuViActivity : TabActivity() {
         0 -> realm(c, k, area, hits)
         1 -> than(c, k, area, page)
         2 -> if (page == 0) dotPha(c, k, area, hits) else gates(c, k, area)
-        3 -> {
-            biCanhPage(c, k, area)
-            1
-        }
         else -> kinhCac(c, k, area, page)
     }.let { if (tab == 2) 2 else it }
 
@@ -180,7 +176,7 @@ class TuViActivity : TabActivity() {
             val days = TuLuyen.daysMet(today - 29, today, 30)
             val books = minOf(4, TuLuyen.finishedSince(today - 89))
             val root = if (TuLuyen.coPham >= 0) " · gốc Trúc Cơ ${TuLuyen.TRUC_CO_PHAM[TuLuyen.coPham].lowercase()} +${TuLuyen.baseCanCo()}" else ""
-            val ccTier = TuLuyen.SUB_NEED.indexOfLast { cc >= it }.let { listOf("nền lỏng", "vào được trung kỳ", "vào được hậu kỳ", "vào được viên mãn")[it] }
+            val ccTier = TuLuyen.SUB_NEED.indexOfLast { cc >= it }.let { listOf("nền lỏng", "vào được trung kỳ", "vào được hậu kỳ", "vào được đại viên mãn")[it] }
             measure(c, k, row(1), "Căn cơ", ccTier, "$cc / 100", cc / 100f,
                 "$days/30 ngày đọc từ 30 phút (×2) · $books cuốn đọc trọn trong 90 ngày (×10)$root" +
                     (if (TuLuyen.jumps30() > 5) " · nhảy chương ${TuLuyen.jumps30()} lần" else "") +
@@ -354,6 +350,29 @@ class TuViActivity : TabActivity() {
         val pillW = if (Store.canBreakPill()) 250 * u else 0f
         val main = RectF(a.left, by, a.right - (if (pillW > 0) pillW + 12 * u else 0f), a.bottom)
         when {
+            // Tiểu đột phá, from Kim Đan: into the next tiểu cảnh, two taps too.
+            TuLuyen.minorReady() && !TuLuyen.atCeiling() -> {
+                val into = TuLuyen.TIEU[TuLuyen.subCap + 1]
+                if (TuLuyen.minorResting()) {
+                    k.button(c, main, "Tiểu cảnh $into: hồi khí, mai thử lại", sb, enabled = false)
+                } else {
+                    k.button(c, main, if (armed) "Chạm lần nữa để phá tiểu cảnh · ${TuLuyen.minorChance()}%" else "Phá tiểu cảnh vào $into · ${TuLuyen.minorChance()}%",
+                        k.ui10Bold, selected = armed)
+                    hits.add(main) {
+                        if (!armed) {
+                            armed = true
+                        } else {
+                            armed = false
+                            result = when (TuLuyen.minorBreak()) {
+                                true -> "Phá tiểu cảnh thành công: ${TuLuyen.name()}"
+                                false -> TuLuyen.lastResult
+                                null -> null
+                            }
+                        }
+                        refresh()
+                    }
+                }
+            }
             TuLuyen.canStartTrial() -> {
                 k.button(c, main, "Bắt đầu ${TuLuyen.trialName().lowercase()} · ${TuLuyen.trialRule()}", sb)
                 hits.add(main) {
@@ -444,75 +463,6 @@ class TuViActivity : TabActivity() {
             y += 6 * u
         }
         return 2
-    }
-
-    private fun biCanhPage(c: Canvas, k: Ink, a: RectF) {
-        val u = k.u
-        val small = k.small
-        val sb = k.smallBold
-        val sl = k.lineH(small)
-        val pad = 18 * u
-        val iconS = 52 * u
-        val tx = a.left + pad + iconS + 18 * u
-        val tw = a.right - pad - tx
-        var y: Float
-        // Bí cảnh tuần.
-        val today = Store.today()
-        val need = Store.biCanhNeed()
-        val status = if (Store.biCanhDone()) "Tuần này đã qua bí cảnh, nhận khoáng thạch." else
-            "Thứ Hai đến Chủ nhật, đủ $need ngày đọc từ ${Store.BI_CANH_MINUTES} phút thì nhận một khoáng thạch Huyền phẩm trở lên."
-        val statusLines = k.wrap(status, tw, small, 3)
-        val cellH = 66 * u
-        val botH = pad + k.lineH(k.ui12Bold) + 4 * u + statusLines.size * sl + 14 * u + cellH + 12 * u + sl + pad
-        val bot = RectF(a.left, a.top, a.right, a.top + botH)
-        k.card(c, bot)
-        k.icon(c, "bicanh", bot.left + pad, bot.top + pad, iconS)
-        k.text(c, "Bí cảnh tuần", tx, bot.top + pad, k.ui12Bold)
-        y = bot.top + pad + k.lineH(k.ui12Bold) + 4 * u
-        for (l in statusLines) {
-            k.text(c, l, tx, y, small)
-            y += sl
-        }
-        y += 14 * u
-        val monday = Store.weekStart(today)
-        val names = listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")
-        val dw = (bot.width() - 2 * pad - 6 * 8 * u) / 7
-        for (i in 0 until 7) {
-            val d = monday + i
-            val x = bot.left + pad + i * (dw + 8 * u)
-            val mins = Store.minutes(d)
-            val cell = RectF(x, y, x + dw, y + cellH)
-            val met = mins >= Store.BI_CANH_MINUTES
-            when {
-                met -> c.drawRoundRect(cell, 8 * u, 8 * u, k.fill)
-                d < today -> c.drawRoundRect(cell, 8 * u, 8 * u, k.gray)
-                else -> c.drawRoundRect(k.inset(cell, 0.6f * u), 8 * u, 8 * u, k.stroke(if (d == today) 2.6f else 1.3f))
-            }
-            val p = if (met) k.paint(Ink.SMALL, bold = true, color = Color.WHITE) else sb
-            k.centered(c, names[i], x, dw, cell.top + 8 * u, p)
-            if (d <= today) k.centered(c, "$mins phút", x, dw, cell.bottom - 8 * u - sl, if (met) k.paint(Ink.SMALL, color = Color.WHITE) else small)
-        }
-        k.text(c, "Tuần này ${Store.biCanhDays()}/$need ngày · đã qua ${Store.biCanhCount} lần", bot.left + pad, bot.bottom - pad - sl, sb)
-
-
-        // How it works, and what the sets add.
-        y = k.section(c, a.left, bot.bottom + 24 * u, a.width(), "LUẬT BÍ CẢNH")
-        val rules = listOf(
-            "Mỗi tuần tính từ thứ Hai đến Chủ nhật; ngày nào đọc đủ ${Store.BI_CANH_MINUTES} phút là một ngày bí cảnh.",
-            "Đủ ${Store.biCanhNeed()} ngày trong tuần: nhận ngay một khoáng thạch Huyền phẩm trở lên vào lò luyện.",
-            "Thương Kích Liệt Trận: chỉ cần 4 ngày" + if (Store.setActive(2)) " (đang có)." else ".",
-            "Phong Thần Bảo Lục: thêm một khoáng thạch" + if (Store.setActive(5)) " (đang có)." else ".",
-            "Qua bí cảnh 10 lần đắc đạo hiệu Bí Cảnh Thám Hiểm.",
-        )
-        for (r in rules) {
-            for (l in k.wrap(r, a.width() - 24 * u, small, 3)) {
-                if (y + sl > a.bottom) break
-                k.text(c, l, a.left + 20 * u, y, small)
-                y += sl
-            }
-            k.diamond(c, a.left + 6 * u, y - sl * 0.5f - (sl * (k.wrap(r, a.width() - 24 * u, small, 3).size - 1)), 4 * u)
-            y += 10 * u
-        }
     }
 
     private fun kinhCac(c: Canvas, k: Ink, a: RectF, page: Int): Int {

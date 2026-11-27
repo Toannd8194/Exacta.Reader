@@ -98,7 +98,7 @@ class CongPhapActivity : TabActivity() {
                 if (DaoPhap.roots.size == 5) "; không hệ nào bị khắc" else "")
         } else {
             val hours = Store.hourSeconds.sum() / 3600
-            headLines.add("Linh căn thức tỉnh ở Luyện Khí tầng 3, theo khung giờ bạn hay đọc" + if (hours < 1) " (cần đọc ít nhất một giờ)." else ".")
+            headLines.add("Linh căn thức tỉnh ở Luyện Khí trung kỳ, theo khung giờ bạn hay đọc" + if (hours < 1) " (cần đọc ít nhất một giờ)." else ".")
             headLines.add("Mỗi hành chiếm từ ${DaoPhap.ROOT_SHARE}% giờ đọc là một linh căn. Đọc vào giờ nào, thành người tu thế ấy.")
         }
         val tw = a.width() - 2 * pad
@@ -158,7 +158,7 @@ class CongPhapActivity : TabActivity() {
         val bh = 56 * u
         val btn = RectF(a.left, a.bottom - bh, a.right, a.bottom)
         when {
-            !DaoPhap.awakened() -> k.button(c, btn, if (Store.realmCap >= 1 || TuLuyen.sub(0, Store.tuVi()) >= 2) "Chưa thức tỉnh: cần đọc đủ một giờ" else "Chưa thức tỉnh: tới Luyện Khí tầng 3", sb, enabled = false)
+            !DaoPhap.awakened() -> k.button(c, btn, if (Store.realmCap >= 1 || TuLuyen.sub(0, Store.tuVi()) >= 3) "Chưa thức tỉnh: cần đọc đủ một giờ" else "Chưa thức tỉnh: tới Luyện Khí trung kỳ", sb, enabled = false)
             DaoPhap.washed -> k.button(c, btn, "Đã tẩy linh một lần", sb, enabled = false)
             DaoPhap.washHours() < DaoPhap.WASH_HOURS -> k.button(c, btn, "Tẩy linh: cần ${DaoPhap.WASH_HOURS} giờ đọc từ lúc thức tỉnh (đang ${DaoPhap.washHours()})", sb, enabled = false)
             else -> {
@@ -205,7 +205,7 @@ class CongPhapActivity : TabActivity() {
             aff < 0 -> " · khắc linh căn −20%"
             else -> ""
         }
-        val reach = PhapMon.REACH[d.pham].let { if (it >= 9) "chạm Tiên cảnh" else "${TuLuyen.shortName(it)} viên mãn" }
+        val reach = PhapMon.REACH[d.pham].let { if (it >= 9) "chạm Tiên cảnh" else "${TuLuyen.shortName(it)} đại viên mãn" }
         val status = when {
             DaoPhap.complete() -> "Tầng 9 viên mãn: công pháp đã luyện tới cùng."
             DaoPhap.waiting() -> "Đủ chữ: lĩnh ngộ tầng ${DaoPhap.nextLock()} cần ${DaoPhap.openCost()} ngộ tính (đang có ${DaoPhap.ngo})."

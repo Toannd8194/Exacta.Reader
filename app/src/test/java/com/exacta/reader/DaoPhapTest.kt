@@ -38,6 +38,8 @@ class DaoPhapTest {
         Store.hourSeconds.fill(0)
         Store.luckRng = object : Random() { override fun nextBits(bitCount: Int) = 0; override fun nextInt(until: Int) = until - 1 }
         com.exacta.reader.data.DongPhu.reset()
+        com.exacta.reader.data.TongMon.reset()
+        com.exacta.reader.data.BiCanh.reset()
         TuLuyen.reset()
         TuLuyen.started = true
         TuLuyen.lastTick = today - 1
@@ -76,10 +78,10 @@ class DaoPhapTest {
     @Test
     fun linhCănAwakensAtTầng3FromTheHours() {
         evenings()
-        Store.totalWords = 20_000            // tầng 2
+        Store.totalWords = 25_000            // sơ kỳ
         Store.checkRealm()
         assertFalse(DaoPhap.awakened())
-        Store.totalWords = 25_000            // tầng 3
+        Store.totalWords = 35_000            // trung kỳ
         Store.checkRealm()
         assertTrue(DaoPhap.awakened())
         assertEquals(listOf(PhapMon.THO, PhapMon.KIM), DaoPhap.roots)
@@ -90,13 +92,13 @@ class DaoPhapTest {
         // 100 + 15 (song linh căn) + 0 (Hoàng, tầng 1) + 20 (hợp).
         assertEquals(135, DaoPhap.speed())
         read(4_000)
-        assertEquals(25_000 + 5_400, Store.tuVi())
+        assertEquals(35_000 + 5_400, Store.tuVi())
     }
 
     @Test
     fun khắcAndTheCostOfLearning() {
         Store.hourSeconds[6] = 4 * 3600L     // all at dawn: Thiên linh căn Kim
-        Store.totalWords = 25_000
+        Store.totalWords = 35_000
         Store.checkRealm()
         assertEquals("Thiên linh căn Kim", DaoPhap.rootName())
         assertEquals(30, DaoPhap.rootBonus())
@@ -246,7 +248,7 @@ class DaoPhapTest {
     @Test
     fun savedAndRead() {
         evenings()
-        Store.totalWords = 25_000
+        Store.totalWords = 35_000
         Store.checkRealm()
         DaoPhap.ngo = 7
         DaoPhap.onWords(20_000)

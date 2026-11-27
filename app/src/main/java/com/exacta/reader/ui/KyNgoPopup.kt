@@ -15,7 +15,7 @@ object KyNgoPopup {
         AlertDialog.Builder(a)
             .setTitle("✦ Kỳ ngộ · $name")
             .setMessage(text)
-            .setPositiveButton("Nhận") { _, _ -> }
+            .setPositiveButton("Thu nhận cơ duyên") { _, _ -> }
             .setOnDismissListener {
                 open = false
                 show(a)

@@ -531,17 +531,24 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
 
     /** Home asks first: the sitting ends there, and so does a bế quan or a furnace waiting for it. */
     private fun homeDialog() {
-        val warn = ArrayList<String>()
-        if (Store.beQuanTarget > 0) warn.add("Đang bế quan ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút: về Home là dừng bế quan, chưa đủ phút thì mất thưởng ${Store.beQuanReward(Store.beQuanTarget)} linh thạch.")
-        if (com.exacta.reader.data.DongPhu.brew >= 0) warn.add("Lò đan đang đỏ (${com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.data.DongPhu.brew].name}): dừng buổi đọc giữa chừng là nổ lò.")
+        // One of the twelve voices of the cave, a different one each time.
+        val voices = com.exacta.reader.game.LoiNoi.VOICES
+        val v = voices[(System.currentTimeMillis() / 1000 % voices.size).toInt()]
+        val fill = { t: String ->
+            com.exacta.reader.game.LoiNoi.fill(t, Store.beQuanSeconds / 60, Store.beQuanTarget, Store.beQuanReward(Store.beQuanTarget),
+                com.exacta.reader.data.DongPhu.brew.takeIf { it >= 0 }?.let { com.exacta.reader.game.DanDao.RECIPES[it].name } ?: "")
+        }
+        val parts = arrayListOf(v.open)
+        if (Store.beQuanTarget > 0) parts.add(fill(v.beQuan))
+        if (com.exacta.reader.data.DongPhu.brew >= 0) parts.add(fill(v.lo))
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Về Home?")
-            .setMessage((listOf("Buổi đọc dừng ở trang này; lần sau mở lại đúng chỗ.") + warn).joinToString("\n\n"))
-            .setPositiveButton("Về Home") { _, _ ->
+            .setTitle(v.title)
+            .setMessage(parts.joinToString("\n\n"))
+            .setPositiveButton(v.yes) { _, _ ->
                 if (Store.beQuanTarget > 0) Store.cancelBeQuan()
                 finish()
             }
-            .setNegativeButton("Đọc tiếp", null)
+            .setNegativeButton(v.no, null)
             .show()
     }
 

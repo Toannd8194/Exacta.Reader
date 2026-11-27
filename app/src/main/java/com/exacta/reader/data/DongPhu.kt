@@ -76,7 +76,7 @@ object DongPhu {
     // --- Dược viên ------------------------------------------------------------------------------------
 
     fun open() = DanDao.plots(giai)
-    fun yearsADay() = DanDao.YEARS_A_DAY + giai - 1
+    fun yearsADay() = DanDao.YEARS_A_DAY + giai - 1 + if (TongMon.perk(TongMon.BACH_THAO)) 5 else 0
 
     fun years(i: Int): Int {
         val p = plots[i]
@@ -102,6 +102,7 @@ object DongPhu {
         herbs.add(p.herb to y)
         seeds[p.herb]++
         Store.note("Thu hoạch ${HERBS[p.herb]} $y năm")
+        Store.fortune(com.exacta.reader.game.KyNgo.T_HARVEST)
         p.herb = -1
         p.day = -1
         Store.touch()
@@ -142,7 +143,7 @@ object DongPhu {
     fun chance(r: Int): Int {
         val rec = RECIPES[r]
         val age = picks(r)?.sumOf { i -> (herbs[i].second - rec.herbs.first { it.first == herbs[i].first }.second) / 100 * 3 } ?: 0
-        return (60 + 8 * (cap() - rec.cap) + minOf(15, age)).coerceIn(20, 98)
+        return (60 + 8 * (cap() - rec.cap) + minOf(15, age) + (if (TongMon.perk(TongMon.BACH_THAO)) 10 else 0)).coerceIn(20, 98)
     }
 
     fun startBrew(r: Int): Boolean {
@@ -199,13 +200,15 @@ object DongPhu {
                 margin >= 20 -> 1
                 else -> 0
             }
-            val n = 1 + (if (cap() >= 4) 1 else 0) + (if (cap() >= 7) 1 else 0)
+            val n = 1 + (if (cap() >= 4) 1 else 0) + (if (cap() >= 7) 1 else 0) +
+                (if (rec.group == DanDao.G_LUYEN_THE && TongMon.perk(TongMon.THIET_COT)) 1 else 0)
             pills[r * 4 + pham] = (pills[r * 4 + pham] ?: 0) + n
             val before = cap()
             made++
             lastResult = "Thành đan: $n viên ${rec.name} ${DanDao.PHAM[pham]}"
             Store.note(lastResult)
             if (cap() > before) Store.note("Đan đạo lên ${DanDao.CAP[cap() - 1]} luyện đan sư")
+            Store.fortune(com.exacta.reader.game.KyNgo.T_PILL, pham)
             Store.gainLinhThach(5L * rec.cap)
         } else {
             failed++
