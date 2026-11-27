@@ -68,6 +68,7 @@ class Ink(private val context: Context, width: Int) {
 
     fun fit(s: String, w: Float, p: Paint): String {
         if (p.measureText(s) <= w) return s
+        if (recordCuts) cuts.add(s)
         var n = s.length
         while (n > 0 && p.measureText(s.substring(0, n) + "…") > w) n--
         return s.substring(0, n).trimEnd() + "…"
@@ -112,6 +113,151 @@ class Ink(private val context: Context, width: Int) {
         val rad = RADIUS * u
         if (selected) c.drawRoundRect(r, rad, rad, gray)
         c.drawRoundRect(inset(r, u), rad, rad, stroke(if (selected) 3f else 2f))
+        adorn(c, r)
+    }
+
+    /** The realm reached (0 Luyện Khí … 9 Tiên nhân): the cards grow finer with it. */
+    val grade get() = com.exacta.reader.game.Realm.realmOf(com.exacta.reader.data.Store.level())
+
+    /**
+     * What the cards wear at each realm, only on cards with room for it: nothing in Luyện Khí; dots
+     * at the corners from Trúc Cơ; a thin inner line from Nguyên Anh; diamonds from Luyện Hư.
+     */
+    private fun adorn(c: Canvas, r: RectF) {
+        val g = grade
+        if (g < 1 || r.width() < 150 * u || r.height() < 70 * u) return
+        val i = 9 * u
+        val corners = listOf(r.left + i to r.top + i, r.right - i to r.top + i, r.left + i to r.bottom - i, r.right - i to r.bottom - i)
+        if (g >= 3) c.drawRoundRect(inset(r, 5 * u), (RADIUS - 3) * u, (RADIUS - 3) * u, hair)
+        for ((x, y) in corners) {
+            if (g >= 5) diamond(c, x, y, 3.6f * u) else c.drawCircle(x, y, (if (g >= 2) 2.2f else 1.6f) * u, fill)
+        }
+    }
+
+    private val hair by lazy { Paint(stroke(0.8f)).apply { color = DARK } }
+
+    /** A path around r (inset d), clockwise from the middle of the top edge. */
+    private fun ring(r: RectF, d: Float, rad: Float): Path {
+        val a = inset(r, d)
+        val q = rad.coerceIn(0f, minOf(a.width(), a.height()) / 2)
+        return Path().apply {
+            moveTo(a.centerX(), a.top)
+            lineTo(a.right - q, a.top)
+            arcTo(RectF(a.right - 2 * q, a.top, a.right, a.top + 2 * q), -90f, 90f)
+            lineTo(a.right, a.bottom - q)
+            arcTo(RectF(a.right - 2 * q, a.bottom - 2 * q, a.right, a.bottom), 0f, 90f)
+            lineTo(a.left + q, a.bottom)
+            arcTo(RectF(a.left, a.bottom - 2 * q, a.left + 2 * q, a.bottom), 90f, 90f)
+            lineTo(a.left, a.top + q)
+            arcTo(RectF(a.left, a.top, a.left + 2 * q, a.top + 2 * q), 180f, 90f)
+            close()
+        }
+    }
+
+    /**
+     * The frame of the book and of the realm on Home: an outer line, a band that inks itself
+     * clockwise from the top as the progress (0..1) grows, a mark every tenth along it, an inner
+     * line, corner ornaments that grow with the grade (the realm), and a plaque on the top edge.
+     */
+    fun frame(c: Canvas, r: RectF, grade: Int, progress: Float, label: String? = null) {
+        val rad = RADIUS * u
+        c.drawRoundRect(r, rad, rad, white)
+        c.drawRoundRect(inset(r, u), rad, rad, stroke(2f))
+        val band = 7 * u
+        val mid = ring(r, u + band / 2 + u, rad - band / 2)
+        val pm = android.graphics.PathMeasure(mid, true)
+        val len = pm.length
+        // The band: gray all round, black as far as the progress.
+        c.drawPath(mid, Paint(stroke(band / u)).apply { color = LIGHT; strokeCap = Paint.Cap.BUTT })
+        if (progress > 0f) {
+            val done = Path()
+            pm.getSegment(0f, len * progress.coerceIn(0f, 1f), done, true)
+            c.drawPath(done, Paint(stroke(band / u)).apply { strokeCap = Paint.Cap.BUTT })
+        }
+        // A mark every tenth.
+        val pos = FloatArray(2)
+        for (t in 1 until 10) {
+            pm.getPosTan(len * t / 10f, pos, null)
+            c.drawCircle(pos[0], pos[1], 1.6f * u, if (t / 10f <= progress) white else fill)
+        }
+        val inner = inset(r, 2 * u + band + 2 * u)
+        c.drawRoundRect(inner, rad - band, rad - band, stroke(1.2f))
+        if (grade >= 4) c.drawRoundRect(inset(inner, 4 * u), rad - band - 4 * u, rad - band - 4 * u, hair)
+
+        // Corners: a dot, a ring, a ring with a heart, a diamond, cloud scrolls, a knot, a star with rays.
+        val i = band + 10 * u
+        val corners = listOf(Triple(r.left + i, r.top + i, 0), Triple(r.right - i, r.top + i, 1), Triple(r.right - i, r.bottom - i, 2), Triple(r.left + i, r.bottom - i, 3))
+        for ((x, y, k) in corners) {
+            val sx = if (k == 0 || k == 3) 1f else -1f
+            val sy = if (k == 0 || k == 1) 1f else -1f
+            when {
+                grade <= 0 -> c.drawCircle(x, y, 2.4f * u, fill)
+                grade == 1 -> { c.drawCircle(x, y, 4.5f * u, fill); c.drawCircle(x, y, 2f * u, white) }
+                grade == 2 -> { c.drawCircle(x, y, 5.5f * u, fill); c.drawCircle(x, y, 3.8f * u, white); c.drawCircle(x, y, 2f * u, fill) }
+                grade == 3 -> diamond(c, x, y, 6.5f * u)
+                grade == 4 -> {
+                    diamond(c, x, y, 6 * u)
+                    // Two cloud scrolls along the edges from the corner.
+                    c.drawCircle(x + sx * 12 * u, y, 3.5f * u, stroke(1.3f))
+                    c.drawCircle(x, y + sy * 12 * u, 3.5f * u, stroke(1.3f))
+                }
+                grade <= 6 -> {
+                    // A knot: a square on its corner holding a square.
+                    diamond(c, x, y, 8 * u)
+                    diamond(c, x, y, 5 * u, white)
+                    diamond(c, x, y, 2.6f * u)
+                }
+                else -> {
+                    starAt(c, x, y, 9 * u)
+                    for (j in 0..2) {
+                        val a = Math.toRadians(10.0 + j * 35.0)
+                        c.drawLine(x + sx * (12 * u * Math.cos(a)).toFloat(), y + sy * (12 * u * Math.sin(a)).toFloat(),
+                            x + sx * (18 * u * Math.cos(a)).toFloat(), y + sy * (18 * u * Math.sin(a)).toFloat(), stroke(1.4f))
+                    }
+                }
+            }
+        }
+        // Marks at the middle of the edges, from Kim Đan.
+        if (grade >= 2) {
+            val my = r.bottom - band / 2 - 2 * u
+            diamond(c, r.centerX(), my, 5 * u, white)
+            diamond(c, r.centerX(), my, 5 * u, stroke(1.4f))
+            if (grade >= 6) {
+                diamond(c, r.left + band / 2 + 2 * u, r.centerY(), 5 * u, white)
+                diamond(c, r.left + band / 2 + 2 * u, r.centerY(), 5 * u, stroke(1.4f))
+                diamond(c, r.right - band / 2 - 2 * u, r.centerY(), 5 * u, white)
+                diamond(c, r.right - band / 2 - 2 * u, r.centerY(), 5 * u, stroke(1.4f))
+            }
+        }
+        // The plaque on the top edge.
+        if (label != null) {
+            val p = smallBold
+            val tw = p.measureText(label) + (if (grade >= 3) 40 else 28) * u
+            val pl = RectF(r.centerX() - tw / 2, r.top - u, r.centerX() + tw / 2, r.top + lineH(p) + 8 * u)
+            c.drawRoundRect(pl, 8 * u, 8 * u, white)
+            c.drawRoundRect(inset(pl, 0.8f * u), 8 * u, 8 * u, stroke(1.8f))
+            if (grade >= 3) {
+                diamond(c, pl.left + 9 * u, pl.centerY(), 3f * u)
+                diamond(c, pl.right - 9 * u, pl.centerY(), 3f * u)
+            }
+            centered(c, label, pl.left, pl.width(), pl.top + 4 * u, p)
+        }
+    }
+
+    /** The room inside a frame. */
+    fun framed(r: RectF) = inset(r, 2 * u + 7 * u + 2 * u)
+
+    private fun starAt(c: Canvas, cx: Float, cy: Float, rad: Float) {
+        val path = Path()
+        for (i in 0 until 10) {
+            val a = Math.toRadians(-90.0 + i * 36.0)
+            val rr = if (i % 2 == 0) rad else rad * 0.45f
+            val px = cx + (rr * Math.cos(a)).toFloat()
+            val py = cy + (rr * Math.sin(a)).toFloat()
+            if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
+        }
+        path.close()
+        c.drawPath(path, fill)
     }
 
     fun inset(r: RectF, d: Float) = RectF(r.left + d, r.top + d, r.right - d, r.bottom - d)
@@ -412,6 +558,10 @@ class Ink(private val context: Context, width: Int) {
         private val covers = object : LinkedHashMap<String, Bitmap?>(32, 0.75f, true) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap?>?) = size > 40
         }
+
+        /** Set by the screen tests: every string fit had to cut. */
+        var recordCuts = false
+        val cuts = LinkedHashSet<String>()
 
         /** Set by the screen tests to draw at a given density. */
         var dpiOverride = 0f

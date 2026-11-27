@@ -246,12 +246,31 @@ class ScreensTest {
 
     @Test
     fun home() {
+        com.exacta.reader.ui.Ink.recordCuts = true
+        com.exacta.reader.ui.Ink.cuts.clear()
         for (style in HomeView.STYLES.indices) {
             Store.homeStyle = style
             val a = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
             a.resources.displayMetrics.xdpi = 300f
             idle()
             shoot(root(a), "home_$style")
+        }
+        com.exacta.reader.ui.Ink.recordCuts = false
+        // What Home had to cut short, for a look.
+        File(out, "home_cuts.txt").writeText(com.exacta.reader.ui.Ink.cuts.joinToString("\n"))
+    }
+
+    /** Home at each realm: the frames and cards grow finer with it. */
+    @Test
+    fun homeRealms() {
+        for (r in listOf(0, 3, 5, 8)) {
+            Store.realmCap = r
+            Store.totalWords = com.exacta.reader.game.Realm.floor(r * 3) + 20_000
+            com.exacta.reader.data.TuLuyen.migrate()
+            Store.homeStyle = 0
+            val a = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+            idle()
+            shoot(root(a), "home_realm_$r")
         }
     }
 

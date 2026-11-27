@@ -4,9 +4,9 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.2.apk`](dist/Van-Quyen-Tien-Do-2.2.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.2.1.apk`](dist/Van-Quyen-Tien-Do-2.2.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
-Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, 73 trang, theo luật bản 2.2): [`dist/Van-Quyen-Tien-Do-2.2-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.2-Cam-nang.pdf).
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.2.1): [`dist/Van-Quyen-Tien-Do-2.2.1-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.2.1-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
 pháp, 72 pháp bảo, 18 bộ, 18 đan dược và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
 
@@ -16,6 +16,21 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, Đ
 Bản 2.0, 2.1, 2.2 là ba bước đầu của lộ trình; các bước 2.3 – 2.7 còn đó. Từ 2.1, bản thiết kế có thêm chương Độ Kiếp
 (giai đoạn đặc biệt chín tầng kiếp) và chương Phi Thăng kỳ: cảnh giới cuối của Linh giới, nơi Lục Giới Môn mở và người
 tu chọn một trong sáu đại thiên thế giới (Tiên, Ma, Phật, Yêu, Minh, Thần). Phần sau cửa để ngỏ cho các bản 3.x.
+
+## Bản 2.2.1 · Kim Khung Ngọc Khuyết
+
+Bản sửa giao diện Home sau 2.2.
+
+- **Khung riêng** cho thẻ sách đang đọc và thẻ tu vi: một đai mực chạy quanh khung theo % đọc (thẻ sách) hay % đường
+  qua cảnh giới (thẻ tu vi), chấm mốc mỗi 10%, nhãn ở giữa cạnh trên («Tứ tầng · 37%», «Kim Đan · 64%»), và hoa văn góc
+  lớn dần theo cảnh giới: chấm, vòng, vòng có tâm, hình thoi, mây cuộn, nút thắt, sao tỏa tia; từ Kim Đan có dấu giữa cạnh.
+- **Thẻ trong game đẹp dần theo cảnh giới**: chấm góc từ Trúc Cơ, viền trong mảnh từ Nguyên Anh, hình thoi góc từ Luyện Hư.
+- **Hết chữ bị cắt trên Home**: lời chào bớt dần từng phần thay vì «…», tên đạo hiệu và tên sách trên kệ xuống hai dòng,
+  khí linh và phẩm pháp bảo tách hai dòng, tên cảnh giới nhỏ lại khi chật. Test màn hình ghi lại mọi chữ bị cắt.
+- **Nút Thư viện** trên thẻ sách thành ô vuông lớn (icon trên chữ), vùng chạm rộng hơn.
+- **Bốn kiểu Home**: Bảng tu hành, Bìa lớn, Kệ sách, Tu tiên. Ai đang dùng Cổ điển chuyển sang Bảng tu hành, Tối giản sang
+  Bìa lớn.
+- versionCode 221.
 
 ## Bản 2.2 · Động Phủ Khai Lô
 
@@ -49,7 +64,7 @@ Bước ba của bản thiết kế: người tu có động phủ, trồng linh
 
 Bước hai của bản thiết kế: người tu có linh căn bẩm sinh, có công pháp để luyện, tâm pháp để giữ lòng, thuật pháp để
 ra tay. Màn mới **Công pháp** (5 tab: Linh căn, Công pháp, Tâm pháp, Thuật pháp, Tàng Kinh), mở từ Tu vi › Cảnh giới,
-từ dock kiểu Tu tiên, cột Cổ điển và hàng chữ của Home.
+từ dock các kiểu Home.
 
 - **Linh căn** thức tỉnh ở Luyện Khí tầng 3 theo khung giờ hay đọc: Kim 5 – 9 giờ, Mộc 9 – 13, Hỏa 13 – 18, Thổ 18 –
   23, Thủy 23 – 5; hành nào từ 15% giờ đọc là một linh căn. Một hành +30% linh lực, năm hành −20% nhưng không bị
@@ -128,6 +143,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.0 | Ngũ Khí Triều Nguyên | năm thước đo, tâm ma, tiểu cảnh, bình cảnh, đột phá tự bấm |
   | 2.1 | Vạn Pháp Quy Nguyên | linh căn, công pháp, tâm pháp, thuật pháp, ngộ tính, Tàng Kinh Các, vẽ lại đồ họa |
   | 2.2 | Động Phủ Khai Lô | động phủ, linh mạch, dược viên, đan phòng, đan độc, 36 kỳ ngộ, popup có khung |
+  | 2.2.1 | Kim Khung Ngọc Khuyết | khung Home theo % và cảnh giới, hết cắt chữ, nút Thư viện vuông, 4 kiểu Home |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.
@@ -306,7 +322,7 @@ khóa debug.
 
 - `game/`: cảnh giới (`Realm`), lịch âm và tiết khí (`Lunar`), pháp bảo (`Treasure`), danh mục công pháp, tâm pháp, thuật pháp (`PhapMon`), linh thảo và đan phương (`DanDao`), 36 kỳ ngộ (`KyNgo`), đạo hiệu (`DaoHieu`), Niên kỷ (`NienKy`), chữ của Home (`Texts`).
 - `data/`: dữ liệu lưu trong một tệp JSON (`Store`, kèm thiên kiếp, bí cảnh, đạo hiệu), luật tu luyện 2.0 (`TuLuyen`: năm thước đo, tâm ma, tiểu cảnh, đột phá), linh căn và công pháp 2.1 (`DaoPhap`), động phủ 2.2 (`DongPhu`), quét sách, bìa, đếm chữ (`Library`), CSS chèn vào chương (`BookCss`).
-- `ui/`: bộ vẽ kiểu Exacta.OS (`Ink`), Home 6 kiểu (`HomeView`), khung màn có tab (`TabScreen`), bảng chỉnh khi đọc (`ReaderSheet`).
+- `ui/`: bộ vẽ kiểu Exacta.OS (`Ink`, kèm khung theo cảnh giới), Home 4 kiểu (`HomeView`), khung màn có tab (`TabScreen`), bảng chỉnh khi đọc (`ReaderSheet`).
 - Các màn: `HomeActivity`, `LibraryActivity`, `ReaderActivity`, `TuViActivity`, `CongPhapActivity`, `DongPhuActivity`, `PhapBaoActivity`, `DaoHieuActivity`, `NienKyActivity`, `SettingsActivity`.
 
 ## Hướng tiếp

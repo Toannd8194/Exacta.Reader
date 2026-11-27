@@ -315,6 +315,8 @@ object Store {
             uiScale = it.optDouble("uiScale", uiScale); birthDay = it.optInt("birthDay"); birthMonth = it.optInt("birthMonth")
             textWeight = it.optInt("textWeight", textWeight); footerMode = it.optInt("footerMode", footerMode)
             homeStyle = it.optInt("homeStyle", homeStyle); showHeader = it.optBoolean("showHeader", showHeader)
+            if (!it.optBoolean("homeStyles4")) homeStyle = intArrayOf(0, 0, 1, 2, 1, 3).getOrElse(homeStyle) { 0 }
+            homeStyle = homeStyle.coerceIn(0, 3)
             showNotices = it.optBoolean("showNotices", showNotices); hyphens = it.optBoolean("hyphens", hyphens)
             indent = it.optBoolean("indent", indent); showProverb = it.optBoolean("showProverb", showProverb)
             dailyGoal = it.optInt("dailyGoal", dailyGoal); librarySort = it.optInt("librarySort", librarySort)
@@ -382,7 +384,7 @@ object Store {
                 .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
                 .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
                 .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes)
-                .put("refreshEvery", refreshEvery).put("sizeBase156", true).put("kyNgoPopup", kyNgoPopup)
+                .put("refreshEvery", refreshEvery).put("sizeBase156", true).put("kyNgoPopup", kyNgoPopup).put("homeStyles4", true)
                 .apply { paraSpacing?.let { v -> put("paraSpacing", v) } })
         }
         val tmp = File(file.parentFile, file.name + ".tmp")
