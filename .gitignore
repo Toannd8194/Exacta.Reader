@@ -1,0 +1,14 @@
+# Machine-local
+local.properties
+.gradle/
+.kotlin/
+.idea/
+*.iml
+build/
+app/build/
+
+# The signing key and its passwords stay on this machine (back them up).
+keystore.properties
+keystore/
+*.jks
+*.keystore

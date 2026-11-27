@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Books live anywhere on the shared storage: all-files access (Android 11+), else the old read permission. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove" />
+
+    <application
+        android:name=".ExactaApp"
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
+        android:supportsRtl="false"
+        android:theme="@style/Theme.Exacta">
+
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".LibraryActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".TuViActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".PhapBaoActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".SettingsActivity" android:exported="false" android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".ReaderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+    </application>
+</manifest>
