@@ -9,12 +9,14 @@ import android.view.MotionEvent
 import android.view.View
 import com.exacta.reader.data.BookCss
 import com.exacta.reader.data.Store
+import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * The reader's bottom sheet, as on Exacta.OS: a progress line with the chapter buttons and a
- * track to drag, one panel, and the tabs under it (Mục lục, Chữ, Trang, Khác). Nothing scrolls:
- * the contents are turned a page at a time.
+ * track to drag, one panel, and the tabs under it (Mục lục, Chữ, Trang, Khác). Every reading
+ * setting lives here; sizes step with − and +. Nothing scrolls: the contents turn a page at a time.
  */
 @SuppressLint("ViewConstructor")
 class ReaderSheet(context: Context, private val host: Host) : View(context) {
@@ -28,10 +30,14 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         fun openToc(index: Int)
         fun applyPrefs(rebuild: Boolean)
         fun go(where: String)                // "home", "library", "tuvi"
+        fun fonts(): List<Pair<String, String>>  // font id, name shown
+        fun addFont()
+        fun refreshScreen()
     }
 
     var tab = 1
     private var tocPage = -1
+    private var morePage = 0
     private var ink: Ink? = null
     private val hits = Hits()
     private var track = RectF()
@@ -65,12 +71,12 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         val m = Ink.MARGIN * u
 
         // Progress: the label, then ‹ track ›.
-        var y = 14 * u
+        var y = 12 * u
         val p = if (dragging) dragP else host.progress()
         val label = if (dragging) "Tới ${(dragP * 100).toInt()}%" else host.progressLabel()
         k.centered(c, label, m, w - 2 * m, y, k.smallBold)
-        y += k.lineH(k.smallBold) + 8 * u
-        val bh = 46 * u
+        y += k.lineH(k.smallBold) + 6 * u
+        val bh = 44 * u
         val prev = RectF(m, y, m + 64 * u, y + bh)
         val next = RectF(w - m - 64 * u, y, w - m, y + bh)
         k.button(c, prev, "‹", k.paint(26f, bold = true))
@@ -86,12 +92,12 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         c.drawRoundRect(tx0, ty - 2 * u, kx, ty + 2 * u, 2 * u, 2 * u, k.fill)
         c.drawCircle(kx, ty, 11 * u, k.fill)
         c.drawCircle(kx, ty, 5 * u, k.white)
-        y += bh + 14 * u
+        y += bh + 12 * u
         c.drawRect(m, y, w - m, y + u, k.gray)
-        y += 14 * u
+        y += 12 * u
 
         // The tabs along the bottom.
-        val tabH = 82 * u
+        val tabH = 78 * u
         val tabTop = h - tabH - 6 * u
         c.drawRect(m, tabTop - 8 * u, w - m, tabTop - 7 * u, k.gray)
         val names = listOf("toc" to "Mục lục", "font" to "Chữ", "page" to "Trang", "more" to "Khác")
@@ -108,13 +114,14 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             hits.add(slot) {
                 if (tab != i) {
                     tab = i
+                    morePage = 0
                     invalidate()
                 }
             }
         }
 
         // The panel.
-        val panel = RectF(m, y, w - m, tabTop - 20 * u)
+        val panel = RectF(m, y, w - m, tabTop - 18 * u)
         when (tab) {
             0 -> contents(c, k, panel)
             1 -> letters(c, k, panel)
@@ -123,10 +130,14 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         }
     }
 
-    /** One labelled row of choices; returns nothing, registers taps. */
+    // --- Rows ---------------------------------------------------------------------------------
+
+    private fun labelW(k: Ink) = 132 * k.u
+
+    /** A row of choices; the chosen one black. */
     private fun choices(c: Canvas, k: Ink, r: RectF, label: String, items: List<String>, chosen: Int, onPick: (Int) -> Unit) {
         val u = k.u
-        val lw = 118 * u
+        val lw = labelW(k)
         k.text(c, label, r.left, r.centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
         val gap = 8 * u
         val bw = (r.width() - lw - (items.size - 1) * gap) / items.size
@@ -140,79 +151,152 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         }
     }
 
+    /** A value with − and + on either side (and an optional reset in the middle). */
+    private fun stepper(c: Canvas, k: Ink, r: RectF, label: String, value: String, onStep: (Int) -> Unit, onReset: (() -> Unit)? = null) {
+        val u = k.u
+        val lw = labelW(k)
+        k.text(c, label, r.left, r.centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
+        val bw = 96 * u
+        val minus = RectF(r.left + lw, r.top, r.left + lw + bw, r.bottom)
+        val plus = RectF(r.right - bw, r.top, r.right, r.bottom)
+        val mid = RectF(minus.right + 10 * u, r.top, plus.left - 10 * u, r.bottom)
+        k.button(c, minus, "−", k.paint(24f, bold = true))
+        k.button(c, plus, "+", k.paint(24f, bold = true))
+        c.drawRoundRect(mid, 10 * u, 10 * u, k.gray)
+        k.centered(c, value, mid.left, mid.width(), mid.centerY() - k.lineH(k.ui10Bold) / 2, k.ui10Bold)
+        hits.add(minus) { onStep(-1); invalidate() }
+        hits.add(plus) { onStep(+1); invalidate() }
+        if (onReset != null) hits.add(mid) { onReset(); invalidate() }
+    }
+
     private fun rows(k: Ink, panel: RectF, n: Int): List<RectF> {
         val u = k.u
-        val rowH = minOf(56 * u, (panel.height() - (n - 1) * 12 * u) / n)
-        val gap = if (n > 1) minOf(28 * u, (panel.height() - n * rowH) / (n - 1)) else 0f
+        val rowH = minOf(56 * u, (panel.height() - (n - 1) * 10 * u) / n)
+        val gap = if (n > 1) minOf(26 * u, (panel.height() - n * rowH) / (n - 1)) else 0f
         val top = panel.top + maxOf(0f, (panel.height() - n * rowH - (n - 1) * gap) / 2)
         return (0 until n).map { RectF(panel.left, top + it * (rowH + gap), panel.right, top + it * (rowH + gap) + rowH) }
     }
 
+    private fun pct(v: Double) = "${(v * 100).roundToInt()}%"
+    private fun num(v: Double) = String.format(Locale.US, "%.1f", v).replace('.', ',')
+    private fun step(v: Double, d: Int, by: Double, lo: Double, hi: Double) = (Math.round((v + d * by) / by) * by).coerceIn(lo, hi)
+
+    // --- Tabs ---------------------------------------------------------------------------------
+
     private fun letters(c: Canvas, k: Ink, panel: RectF) {
-        val r = rows(k, panel, 3)
-        val fonts = listOf("Bitter" to "Bitter", "Original" to "Gốc", "serif" to "Có chân", "sans-serif" to "Không chân")
-        choices(c, k, r[0], "Font", fonts.map { it.second }, fonts.indexOfFirst { it.first == Store.fontFamily }) {
-            Store.fontFamily = fonts[it].first
+        val u = k.u
+        val r = rows(k, panel, 4)
+        // Font: ‹ name ›, through the built-in fonts and those added.
+        val fonts = host.fonts()
+        val at = fonts.indexOfFirst { it.first == Store.fontFamily }.coerceAtLeast(0)
+        stepper(c, k, r[0], "Font", fonts.getOrNull(at)?.second ?: Store.fontFamily, { d ->
+            Store.fontFamily = fonts[(at + d + fonts.size) % fonts.size].first
+            host.applyPrefs(false)
+        })
+        stepper(c, k, r[1], "Cỡ chữ", pct(Store.fontSize), { d ->
+            Store.fontSize = step(Store.fontSize, d, 0.05, 0.5, 3.0)
+            host.applyPrefs(false)
+        }) {
+            Store.fontSize = 1.0
             host.applyPrefs(false)
         }
-        val pct = (Store.fontSize * 100 + 0.5).toInt()
-        choices(c, k, r[1], "Cỡ chữ", listOf("A−", "$pct%", "A+"), 1) {
-            if (it == 0) Store.fontSize = (Store.fontSize - 0.1).coerceAtLeast(0.6)
-            if (it == 2) Store.fontSize = (Store.fontSize + 0.1).coerceAtMost(3.0)
+        stepper(c, k, r[2], "Độ đậm", BookCss.WEIGHT_NAMES[Store.textWeight.coerceIn(0, 5)], { d ->
+            Store.textWeight = (Store.textWeight + d).coerceIn(0, 5)
+            host.applyPrefs(false)
+        }) {
+            Store.textWeight = 1
             host.applyPrefs(false)
         }
-        choices(c, k, r[2], "Độ đậm", BookCss.WEIGHT_NAMES, Store.textWeight) {
-            if (Store.textWeight != it) {
-                Store.textWeight = it
-                host.applyPrefs(true)
-            }
-        }
+        val add = RectF(r[3].left + labelW(k), r[3].top, r[3].right, r[3].bottom)
+        k.text(c, "Thêm font", r[3].left, r[3].centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
+        k.button(c, add, "Chọn tệp TTF/OTF…  (hoặc chép vào ExactaReader/fonts)", k.small)
+        hits.add(add) { host.addFont() }
     }
 
     private fun page(c: Canvas, k: Ink, panel: RectF) {
-        val r = rows(k, panel, 4)
-        val lines = listOf(1.2, 1.4, 1.6, 1.8, 2.0)
-        choices(c, k, r[0], "Giãn dòng", lines.map { "%.1f".format(java.util.Locale.US, it).replace('.', ',') },
-            lines.indexOfFirst { abs(Store.lineHeight - it) < 0.05 }) {
-            Store.lineHeight = lines[it]
+        val r = rows(k, panel, 5)
+        stepper(c, k, r[0], "Giãn dòng", num(Store.lineHeight), { d ->
+            Store.lineHeight = step(Store.lineHeight, d, 0.1, 1.0, 2.6)
+            host.applyPrefs(false)
+        }) {
+            Store.lineHeight = 1.6
             host.applyPrefs(false)
         }
-        val margins = listOf(0.6 to "Hẹp", 1.0 to "Vừa", 1.5 to "Rộng")
-        choices(c, k, r[1], "Lề", margins.map { it.second }, margins.indexOfFirst { abs(Store.margins - it.first) < 0.05 }) {
-            Store.margins = margins[it].first
+        stepper(c, k, r[1], "Lề hai bên", pct(Store.margins), { d ->
+            Store.margins = step(Store.margins, d, 0.1, 0.0, 3.0)
+            host.applyPrefs(false)
+        }) {
+            Store.margins = 1.0
             host.applyPrefs(false)
         }
-        choices(c, k, r[2], "Căn chữ", listOf("Đều hai bên", "Trái"), if (Store.justify) 0 else 1) {
+        val ps = Store.paraSpacing
+        stepper(c, k, r[2], "Giãn đoạn", if (ps == null) "Theo sách" else num(ps), { d ->
+            Store.paraSpacing = step(ps ?: 0.5, if (ps == null) 0 else d, 0.1, 0.0, 2.5)
+            host.applyPrefs(false)
+        }) {
+            Store.paraSpacing = null
+            host.applyPrefs(false)
+        }
+        choices(c, k, r[3], "Căn chữ", listOf("Đều hai bên", "Trái"), if (Store.justify) 0 else 1) {
             Store.justify = it == 0
             host.applyPrefs(false)
         }
-        choices(c, k, r[3], "Chân trang", listOf("Đầy đủ", "Chỉ %", "Ẩn"), Store.footerMode.coerceIn(0, 2)) {
-            Store.footerMode = it
+        choices(c, k, r[4], "Thụt đầu dòng", listOf("Tắt", "Bật"), if (Store.indent) 1 else 0) {
+            Store.indent = it == 1
             host.applyPrefs(false)
         }
     }
 
     private fun more(c: Canvas, k: Ink, panel: RectF) {
         val u = k.u
-        val items = listOf(
-            "Về Home" to { host.go("home") },
+        val footers = listOf("Chân trang: đầy đủ", "Chân trang: chỉ %", "Chân trang: ẩn")
+        val refresh = listOf(0, 4, 8, 12, 20)
+        val items = listOf<Pair<String, () -> Unit>>(
+            "‹ Về Home" to { host.go("home") },
             "Thư viện" to { host.go("library") },
-            "Tu vi" to { host.go("tuvi") },
-            (if (Store.swapTaps) "Lật tới: chạm trái" else "Lật tới: chạm phải") to {
-                Store.swapTaps = !Store.swapTaps
-                Store.touch()
-                invalidate()
+            (if (Store.swapTaps) "Lật tới: chạm trái" else "Lật tới: chạm phải") to { Store.swapTaps = !Store.swapTaps; host.applyPrefs(false) },
+            footers[Store.footerMode.coerceIn(0, 2)] to { Store.footerMode = (Store.footerMode + 1) % 3; host.applyPrefs(false) },
+            (if (Store.showHeader) "Tên sách trên đầu: hiện" else "Tên sách trên đầu: ẩn") to { Store.showHeader = !Store.showHeader; host.applyPrefs(false) },
+            (if (Store.hyphens) "Ngắt từ cuối dòng: bật" else "Ngắt từ cuối dòng: tắt") to { Store.hyphens = !Store.hyphens; host.applyPrefs(false) },
+            (if (Store.refreshEvery > 0) "Làm sạch mỗi ${Store.refreshEvery} trang" else "Tự làm sạch: tắt") to {
+                Store.refreshEvery = refresh[(refresh.indexOf(Store.refreshEvery) + 1) % refresh.size]
+                host.applyPrefs(false)
             },
+            "Làm sạch màn hình ngay" to { host.refreshScreen() },
+            (if (Store.showNotices) "Báo tin tu tiên: bật" else "Báo tin tu tiên: tắt") to { Store.showNotices = !Store.showNotices; host.applyPrefs(false) },
+            "Tu vi" to { host.go("tuvi") },
         )
-        val gap = 14 * u
+        val gap = 12 * u
         val bw = (panel.width() - gap) / 2
-        val bh = minOf(84 * u, (panel.height() - gap) / 2)
-        val top = panel.top + maxOf(0f, (panel.height() - 2 * bh - gap) / 2)
-        for ((i, pair) in items.withIndex()) {
-            val r = RectF(panel.left + (i % 2) * (bw + gap), top + (i / 2) * (bh + gap), panel.left + (i % 2) * (bw + gap) + bw, top + (i / 2) * (bh + gap) + bh)
-            k.button(c, r, pair.first, k.ui10Bold)
-            hits.add(r) { pair.second() }
+        val rowsPer = ((panel.height() + gap) / (60 * u + gap)).toInt().coerceIn(1, 5)
+        val per = rowsPer * 2
+        val pages = (items.size + per - 1) / per
+        morePage = morePage.coerceIn(0, pages - 1)
+        val pagerH = if (pages > 1) 48 * u + gap else 0f
+        val bh = minOf(70 * u, (panel.height() - pagerH - (rowsPer - 1) * gap) / rowsPer)
+        for ((i, pair) in items.drop(morePage * per).take(per).withIndex()) {
+            val r = RectF(panel.left + (i % 2) * (bw + gap), panel.top + (i / 2) * (bh + gap), panel.left + (i % 2) * (bw + gap) + bw, panel.top + (i / 2) * (bh + gap) + bh)
+            k.button(c, r, pair.first, k.smallBold)
+            hits.add(r) {
+                pair.second()
+                invalidate()
+            }
         }
+        if (pages > 1) pager(c, k, panel, morePage, pages) { morePage = it }
+    }
+
+    private fun pager(c: Canvas, k: Ink, panel: RectF, page: Int, pages: Int, set: (Int) -> Unit) {
+        val u = k.u
+        val pagerH = 48 * u
+        val py = panel.bottom - pagerH
+        val bw = 120 * u
+        val prev = RectF(panel.left, py, panel.left + bw, panel.bottom)
+        val next = RectF(panel.right - bw, py, panel.right, panel.bottom)
+        k.button(c, prev, "‹ Trước", k.smallBold, enabled = page > 0)
+        k.button(c, next, "Sau ›", k.smallBold, enabled = page < pages - 1)
+        k.centered(c, "Trang ${page + 1}/$pages", prev.right, next.left - prev.right, py + (pagerH - k.lineH(k.small)) / 2, k.small)
+        hits.add(prev) { if (page > 0) { set(page - 1); invalidate() } }
+        hits.add(next) { if (page < pages - 1) { set(page + 1); invalidate() } }
     }
 
     private fun contents(c: Canvas, k: Ink, panel: RectF) {
@@ -222,7 +306,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             k.text(c, "Sách này không có mục lục.", panel.left, panel.top, k.ui10)
             return
         }
-        val pagerH = 50 * u
+        val pagerH = 48 * u
         val rowH = 50 * u
         val per = ((panel.height() - pagerH - 10 * u) / rowH).toInt().coerceAtLeast(1)
         val pages = (toc.size + per - 1) / per
@@ -240,17 +324,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             hits.add(r) { host.openToc(i) }
             y += rowH
         }
-        if (pages > 1) {
-            val py = panel.bottom - pagerH
-            val bw = 120 * u
-            val prev = RectF(panel.left, py, panel.left + bw, panel.bottom)
-            val next = RectF(panel.right - bw, py, panel.right, panel.bottom)
-            k.button(c, prev, "‹ Trước", k.smallBold, enabled = tocPage > 0)
-            k.button(c, next, "Sau ›", k.smallBold, enabled = tocPage < pages - 1)
-            k.centered(c, "Trang ${tocPage + 1}/$pages", prev.right, next.left - prev.right, py + (pagerH - k.lineH(k.small)) / 2, k.small)
-            hits.add(prev) { if (tocPage > 0) { tocPage--; invalidate() } }
-            hits.add(next) { if (tocPage < pages - 1) { tocPage++; invalidate() } }
-        }
+        if (pages > 1) pager(c, k, panel, tocPage, pages) { tocPage = it }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -275,8 +349,9 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
                     dragging = false
                     host.seek(trackValue(e.x))
                     invalidate()
-                } else if (abs(e.x - downX) > 70 * u && tab == 0) {
-                    tocPage += if (e.x < downX) 1 else -1
+                } else if (abs(e.x - downX) > 70 * u && (tab == 0 || tab == 3)) {
+                    val d = if (e.x < downX) 1 else -1
+                    if (tab == 0) tocPage += d else morePage = (morePage + d).coerceAtLeast(0)
                     invalidate()
                 } else if (abs(e.x - downX) < 24 * u && abs(e.y - downY) < 24 * u) {
                     hits.list.lastOrNull { it.first.contains(e.x, e.y) }?.second?.invoke()

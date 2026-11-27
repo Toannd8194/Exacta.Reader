@@ -29,7 +29,7 @@ import kotlin.math.abs
  */
 class SettingsActivity : TabActivity() {
     override fun title() = "Cài đặt"
-    override fun tabs() = listOf("Giao diện", "Đọc sách", "Tu tiên", "Thư viện", "Thông tin")
+    override fun tabs() = listOf("Giao diện", "Tu tiên", "Thư viện", "Thông tin")
 
     private class Row(val title: String, val value: String, val action: (() -> Unit)?)
 
@@ -50,11 +50,6 @@ class SettingsActivity : TabActivity() {
     private fun onOff(v: Boolean) = if (v) "Bật" else "Tắt"
 
     private val sizes = listOf(0.85 to "Nhỏ", 1.0 to "Vừa", 1.15 to "Lớn", 1.3 to "Rất lớn")
-    private val fonts = listOf("Bitter" to "Bitter (kèm app)", "Original" to "Font gốc của sách", "serif" to "Có chân (máy)", "sans-serif" to "Không chân (máy)")
-    private val fontSizes = listOf(0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6)
-    private val lines = listOf(1.2, 1.4, 1.6, 1.8, 2.0)
-    private val margins = listOf(0.6 to "Hẹp", 1.0 to "Vừa", 1.5 to "Rộng")
-    private val footers = listOf("Đầy đủ: chương · % · giờ", "Chỉ % và giờ", "Ẩn")
     private val goals = listOf(0, 15, 30, 45, 60, 90, 120)
     private val idles = listOf(2, 3, 5, 10)
     private val sorts = listOf("Đọc gần đây", "Tên sách", "Tác giả")
@@ -70,6 +65,7 @@ class SettingsActivity : TabActivity() {
                 Row("Kiểu Home", HomeView.STYLES[style] + " · " + HomeView.STYLE_NOTES[style]) {
                     choose("Kiểu Home", HomeView.STYLES.mapIndexed { i, s -> "$s\n${HomeView.STYLE_NOTES[i]}" }, style) { Store.homeStyle = it }
                 },
+                Row("Cài đặt đọc sách", "Font, cỡ chữ, độ đậm, giãn dòng, lề, giãn đoạn: chạm giữa trang khi đang đọc", null),
                 Row("Cỡ giao diện", sizes[at].second + " · chữ và khung của mọi màn, không đổi chữ trong sách") {
                     choose("Cỡ giao diện", sizes.map { it.second }, at) {
                         Store.uiScale = sizes[it].first
@@ -83,51 +79,7 @@ class SettingsActivity : TabActivity() {
                 },
             )
         }
-        1 -> listOf(
-            Row("Chạm để lật trang", if (Store.swapTaps) "Bên trái lật tới, bên phải lật lui" else "Bên phải lật tới, bên trái lật lui") {
-                Store.swapTaps = !Store.swapTaps
-                Store.touch()
-            },
-            Row("Font chữ", fonts.firstOrNull { it.first == Store.fontFamily }?.second ?: Store.fontFamily) {
-                choose("Font chữ", fonts.map { it.second }, fonts.indexOfFirst { it.first == Store.fontFamily }) { Store.fontFamily = fonts[it].first }
-            },
-            Row("Cỡ chữ", pct(Store.fontSize)) {
-                choose("Cỡ chữ", fontSizes.map { pct(it) }, fontSizes.indexOfFirst { abs(it - Store.fontSize) < 0.05 }) { Store.fontSize = fontSizes[it] }
-            },
-            Row("Độ đậm chữ", BookCss.WEIGHT_NAMES[Store.textWeight.coerceIn(0, 4)]) {
-                choose("Độ đậm chữ", BookCss.WEIGHT_NAMES, Store.textWeight) { Store.textWeight = it }
-            },
-            Row("Giãn dòng", num(Store.lineHeight)) {
-                choose("Giãn dòng", lines.map { num(it) }, lines.indexOfFirst { abs(it - Store.lineHeight) < 0.05 }) { Store.lineHeight = lines[it] }
-            },
-            Row("Lề trang", margins.firstOrNull { abs(it.first - Store.margins) < 0.05 }?.second ?: num(Store.margins)) {
-                choose("Lề trang", margins.map { it.second }, margins.indexOfFirst { abs(it.first - Store.margins) < 0.05 }) { Store.margins = margins[it].first }
-            },
-            Row("Căn chữ", if (Store.justify) "Đều hai bên" else "Căn trái") {
-                Store.justify = !Store.justify
-                Store.touch()
-            },
-            Row("Ngắt từ cuối dòng", onOff(Store.hyphens)) {
-                Store.hyphens = !Store.hyphens
-                Store.touch()
-            },
-            Row("Thụt đầu dòng", onOff(Store.indent) + " · thụt dòng đầu mỗi đoạn") {
-                Store.indent = !Store.indent
-                Store.touch()
-            },
-            Row("Tên sách trên đầu trang", if (Store.showHeader) "Hiện" else "Ẩn (vẫn chừa lề trên)") {
-                Store.showHeader = !Store.showHeader
-                Store.touch()
-            },
-            Row("Chân trang", footers[Store.footerMode.coerceIn(0, 2)]) {
-                choose("Chân trang", footers, Store.footerMode) { Store.footerMode = it }
-            },
-            Row("Báo tin tu tiên khi đọc", onOff(Store.showNotices) + " · đột phá, pháp bảo, thiên kiếp ở chân trang") {
-                Store.showNotices = !Store.showNotices
-                Store.touch()
-            },
-        )
-        2 -> {
+        1 -> {
             val birth = if (Store.birthDay > 0) "${Store.birthDay}/${Store.birthMonth}" else "Chưa đặt"
             listOf(
                 Row("Mục tiêu đọc mỗi ngày", if (Store.dailyGoal > 0) "${Store.dailyGoal} phút · Home hiện số phút còn thiếu" else "Không đặt") {
@@ -140,7 +92,7 @@ class SettingsActivity : TabActivity() {
                 Row("Luật tu tiên", "Cảnh giới, thiên kiếp, bí cảnh, pháp bảo, đạo hiệu") { showRules() },
             )
         }
-        3 -> listOf(
+        2 -> listOf(
             Row("Quét lại thẻ nhớ", "Tìm sách EPUB mới (5 tầng thư mục, bỏ qua Android/)") { rescan() },
             Row("Xếp tab Tất cả theo", sorts[Store.librarySort.coerceIn(0, 2)]) {
                 choose("Xếp tab Tất cả theo", sorts, Store.librarySort) { Store.librarySort = it }
@@ -155,6 +107,11 @@ class SettingsActivity : TabActivity() {
                 Store.books.values.forEach { it.words = -1 }
                 Store.touch()
                 toast("Thư viện sẽ đếm lại")
+            },
+            BookCss.userFonts().let { fonts ->
+                Row("Font đã thêm · ${fonts.size}", if (fonts.isEmpty()) "Chép tệp TTF/OTF vào ExactaReader/fonts, hoặc thêm khi đọc (tab Chữ)" else fonts.joinToString(" · ") { it.family } + " · chạm để gỡ") {
+                    if (fonts.isNotEmpty()) choose("Gỡ font nào?", fonts.map { it.family }, -1) { i -> BookCss.removeFamily(fonts[i].family) }
+                }
             },
         )
         else -> {
@@ -179,7 +136,7 @@ class SettingsActivity : TabActivity() {
         val u = k.u
         val rows = rows(tab)
         var top = area.top
-        if (tab == 4 && page == 0) {
+        if (tab == 3 && page == 0) {
             // The logo heads the about tab.
             val s = 96 * u
             k.logo(c, area.centerX() - s / 2, top, s)

@@ -137,6 +137,16 @@ class ScreensTest {
     private fun root(a: Activity): View = (a.findViewById<ViewGroup>(android.R.id.content)).getChildAt(0)
 
     @Test
+    fun homeEmpty() {
+        Store.beasts.clear()
+        Store.forge.clear()
+        Store.homeStyle = 0
+        val a = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+        idle()
+        shoot(root(a), "home_empty")
+    }
+
+    @Test
     fun home() {
         for (style in HomeView.STYLES.indices) {
             Store.homeStyle = style
@@ -179,6 +189,9 @@ class ScreensTest {
             override fun openToc(index: Int) {}
             override fun applyPrefs(rebuild: Boolean) {}
             override fun go(where: String) {}
+            override fun fonts() = listOf("Bitter" to "Bitter", "Original" to "Font gốc của sách")
+            override fun addFont() {}
+            override fun refreshScreen() {}
         }
         for (t in 0..3) {
             val sheet = ReaderSheet(a, host).apply { tab = t }

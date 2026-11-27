@@ -121,8 +121,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val free = mini.top - g - a.top
         val bookRect = RectF(a.left, a.top, a.right, a.top + ((free - g) * 0.45f).coerceIn(220 * u, 360 * u))
         drawBook(c, k, bookRect); bookTarget(bookRect)
-        val half = (a.width() - g) / 2
-        val realm = RectF(a.left, bookRect.bottom + g, a.left + half, mini.top - g)
+        val twoThirds = (a.width() - g) * 2 / 3
+        val realm = RectF(a.left, bookRect.bottom + g, a.left + twoThirds, mini.top - g)
         val treasures = RectF(realm.right + g, realm.top, a.right, realm.bottom)
         drawRealm(c, k, realm, today, lunar); on(realm, Action.TU_VI)
         drawTreasures(c, k, treasures); on(treasures, Action.PHAP_BAO)
@@ -445,8 +445,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
                 ny += k.lineH(small)
             }
         } else {
-            k.ore(c, 0, 0, pb.centerX() - art * 0.35f, ay, art * 0.7f)
-            k.centered(c, "Lò trống", pb.left, pb.width(), ay + art * 0.7f + 6 * u, small)
+            k.icon(c, "forge", pb.centerX() - art * 0.4f, ay, art * 0.8f)
+            k.centered(c, "Lò đang chờ", pb.left, pb.width(), ay + art * 0.8f + 6 * u, small)
         }
         var y = pb.bottom + g
         for (item in items) {
@@ -636,10 +636,9 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val sb = k.smallBold
         val sl = k.lineH(small)
         k.text(c, "PHÁP BẢO", x, r.top + pad, sb)
-        if (Store.unseen > 0) k.right(c, "${Store.unseen} món mới", x + w, r.top + pad, sb)
-        val foot = "Bảo khố ${Store.beasts.size} món · Bộ ${Store.setsCount()}/${Treasure.SETS}"
+        if (Store.unseen > 0) k.right(c, "•${Store.unseen} mới", x + w, r.top + pad, sb)
         val footY = r.bottom - pad - sl
-        k.centered(c, foot, x, w, footY, small)
+        k.centered(c, "${Store.beasts.size} món · bộ ${Store.setsCount()}/${Treasure.SETS}", x, w, footY, small)
 
         // The forge: three ores with their progress.
         val oreS = 40 * u
@@ -648,7 +647,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         for (i in 0 until Store.FORGE_SLOTS) {
             val ore = Store.forge.getOrNull(i)
             val sx = x + i * slotW
-            k.ore(c, ore?.tier ?: 0, ore?.percent ?: 0, sx + (slotW - oreS) / 2, forgeY, oreS)
+            if (ore != null) k.ore(c, ore.tier, ore.percent, sx + (slotW - oreS) / 2, forgeY, oreS)
+            else k.icon(c, "forge", sx + (slotW - oreS) / 2, forgeY, oreS, Ink.LIGHT)
             k.centered(c, if (ore != null) "${ore.percent}%" else "trống", sx, slotW, forgeY + oreS + 2 * u, small)
         }
         c.drawRect(x, forgeY - 14 * u, x + w, forgeY - 13 * u, k.gray)
@@ -657,18 +657,27 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val top = r.top + pad + sl + 10 * u
         val bottom = forgeY - 24 * u
         val beast = Store.strongest()
-        val nameLines = 2
-        val art = minOf(w * 0.8f, bottom - top - nameLines * sl - 8 * u)
-        val ay = top + maxOf(0f, (bottom - top - art - 8 * u - nameLines * sl) / 2)
+        val nb = k.ui10Bold
+        val names = if (beast != null) k.wrap(beast.name, w, nb, 2) else listOf("")
+        val textH = names.size * k.lineH(nb) + 2 * sl
+        val art = minOf(w * 0.8f, bottom - top - textH - 8 * u)
+        val ay = top + maxOf(0f, (bottom - top - art - 8 * u - textH) / 2)
         if (beast != null) {
             k.badge(c, beast.species, x + (w - art) / 2, ay, art)
-            k.centered(c, beast.name, x, w, ay + art + 8 * u, k.ui10Bold)
-            k.centered(c, "${Treasure.CLANS[beast.tier]} · ${Treasure.TIER_NAMES[beast.tier]}", x, w, ay + art + 8 * u + k.lineH(k.ui10Bold), small)
+            var ny = ay + art + 8 * u
+            for (l in names) {
+                k.centered(c, l, x, w, ny, nb)
+                ny += k.lineH(nb)
+            }
+            for (l in k.wrap("${Treasure.CLANS[beast.tier]} · ${Treasure.TIER_NAMES[beast.tier]}", w, small, 2)) {
+                k.centered(c, l, x, w, ny, small)
+                ny += sl
+            }
         } else {
-            val s = art * 0.7f
-            k.ore(c, 0, 0, x + (w - s) / 2, ay + (art - s) / 2, s)
-            k.centered(c, "Chưa có pháp bảo", x, w, ay + art + 8 * u, k.ui10Bold)
-            k.centered(c, "Đọc để lò luyện thành", x, w, ay + art + 8 * u + k.lineH(k.ui10Bold), small)
+            val s = art * 0.8f
+            k.icon(c, "forge", x + (w - s) / 2, ay + (art - s) / 2, s)
+            k.centered(c, "Lò đang chờ", x, w, ay + art + 8 * u, k.ui10Bold)
+            k.centered(c, "đọc để luyện bảo", x, w, ay + art + 8 * u + k.lineH(k.ui10Bold), small)
         }
     }
 

@@ -33,6 +33,7 @@ class ExactaApp : Application() {
             emptyList(),
         ) { container = com.exacta.reader.data.BookCss.wrap(container) }
         com.exacta.reader.data.Store.load(this)
+        com.exacta.reader.data.BookCss.init(this)
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
             log("CRASH " + error.stackTraceToString())
@@ -81,5 +82,5 @@ class ExactaApp : Application() {
 }
 
 object BuildConfigInfo {
-    const val VERSION = "0.4"
+    const val VERSION = "0.5"
 }

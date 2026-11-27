@@ -49,8 +49,10 @@ class PhapBaoActivity : TabActivity() {
             k.card(c, r)
             val ore = Store.forge.getOrNull(i)
             if (ore == null) {
-                k.ore(c, 0, 0, r.centerX() - 40 * u, r.top + 30 * u, 80 * u)
-                k.centered(c, "Ô trống", r.left, r.width(), r.top + 130 * u, sb)
+                val s = minOf(r.width() - 60 * u, slotH - 4 * sl - 50 * u)
+                k.icon(c, "forge", r.centerX() - s / 2, r.top + 20 * u, s)
+                k.centered(c, "Ô trống", r.left, r.width(), r.top + 30 * u + s, sb)
+                k.centered(c, "chờ khoáng thạch", r.left, r.width(), r.top + 30 * u + s + sl, small)
                 continue
             }
             val size = minOf(r.width() - 40 * u, slotH - 4 * sl - 50 * u)
@@ -113,7 +115,10 @@ class PhapBaoActivity : TabActivity() {
         val u = k.u
         val beasts = Store.beasts.sortedWith(compareByDescending<Beast> { it.tier }.thenByDescending { it.bornDay })
         if (beasts.isEmpty()) {
-            k.text(c, "Chưa có pháp bảo. Đọc sách để lò luyện thành.", a.left, a.top + 10 * u, k.ui10)
+            val s = 160 * u
+            k.icon(c, "forge", a.centerX() - s / 2, a.top + 60 * u, s)
+            k.centered(c, "Bảo khố còn trống", a.left, a.width(), a.top + 80 * u + s, k.ui12Bold)
+            k.centered(c, "Đọc hết một cuốn hoặc chờ lò luyện thành pháp bảo.", a.left, a.width(), a.top + 84 * u + s + k.lineH(k.ui12Bold), k.small)
             return 1
         }
         val gap = 12 * u

@@ -4,7 +4,22 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.4.apk`](dist/Exacta-Reader-0.4.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Exacta-Reader-0.5.apk`](dist/Exacta-Reader-0.5.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 0.5
+
+- **Mọi chỉnh khi đọc nằm trong màn đọc** (chạm giữa trang); Cài đặt chung bỏ phần đọc sách.
+- **Chỉnh bằng − / +**: font (lần lượt qua các font, cả font thêm vào), cỡ chữ (bước 5%), độ đậm (6 mức), giãn dòng
+  (bước 0,1), lề hai bên (bước 10%), giãn đoạn (bước 0,1; "Theo sách" là giữ của sách). Chạm vào giữa ô số để về mặc định.
+- **Cỡ chữ gốc lớn hơn**: 100% bây giờ bằng 130% cũ; cỡ đã chọn trước giữ nguyên độ lớn.
+- **Độ đậm làm lại**: Readium 3.0 không có quy tắc cho độ đậm. Font Bitter đổi sang đúng tệp Light → ExtraBold
+  theo từng mức; font khác được làm dày nét bằng viền chữ. Cả hai đổi ngay, không phải tải lại trang.
+- **Thêm font**: chép tệp TTF/OTF vào `ExactaReader/fonts` trên máy, hoặc tab Chữ › Thêm font để chọn tệp.
+  Tên họ font lấy theo tên tệp ("Tên Bold Italic.ttf"). Gỡ font ở Cài đặt › Thư viện.
+- **Bớt bóng mờ (lưu ảnh)**: cứ 8 trang màn hình được làm sạch một lần (nháy đen); chỉnh 4/8/12/20 trang hoặc tắt,
+  và có nút "Làm sạch màn hình ngay", ở tab Khác.
+- Home kiểu Bảng tu hành: ô tu hành 2/3, ô pháp bảo 1/3; icon lò luyện mới cho lúc chưa có pháp bảo; logo mới
+  (trăng, núi, sách mở). Ảnh 6 kiểu Home: [`docs/home-styles.png`](docs/home-styles.png).
 
 ## Bản 0.4
 

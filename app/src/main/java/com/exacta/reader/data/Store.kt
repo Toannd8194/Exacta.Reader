@@ -77,6 +77,8 @@ data class Ore(val tier: Int, var words: Long = 0) {
  */
 object Store {
     const val FORGE_SLOTS = 3
+    /** Readium's font size for the reader's 100%. */
+    const val BASE_SIZE = 1.3
     private lateinit var file: File
     val books = LinkedHashMap<String, Book>()
     val daySeconds = HashMap<Long, Long>()
@@ -124,7 +126,8 @@ object Store {
     private val notes = ArrayDeque<String>()
 
     // Reader preferences.
-    var fontSize = 1.1
+    /** Shown as a %: 100% is the base size, which is 130% of Readium's. */
+    var fontSize = 1.0
     var lineHeight = 1.6
     var margins = 1.0
     var fontFamily = "Bitter"   // "Original", "Bitter", "serif", "sans-serif"
@@ -144,6 +147,8 @@ object Store {
     var dailyGoal = 30          // minutes, 0 = none
     var librarySort = 0         // 0 recent, 1 title, 2 author
     var idleMinutes = 3         // reading time stops counting after this long without a touch
+    var paraSpacing: Double? = null   // rem between paragraphs, null = the book's
+    var refreshEvery = 8        // full refresh of the e-ink screen every N page turns, 0 = never
 
     private var dirty = false
 
@@ -209,9 +214,11 @@ object Store {
             indent = it.optBoolean("indent", indent); showProverb = it.optBoolean("showProverb", showProverb)
             dailyGoal = it.optInt("dailyGoal", dailyGoal); librarySort = it.optInt("librarySort", librarySort)
             idleMinutes = it.optInt("idleMinutes", idleMinutes)
-            // Values from 0.2/0.3 snap to the choices offered now.
-            lineHeight = listOf(1.2, 1.4, 1.6, 1.8, 2.0).minBy { v -> kotlin.math.abs(v - lineHeight) }
-            margins = listOf(0.6, 1.0, 1.5).minBy { v -> kotlin.math.abs(v - margins) }
+            paraSpacing = if (it.has("paraSpacing")) it.optDouble("paraSpacing") else null
+            refreshEvery = it.optInt("refreshEvery", refreshEvery)
+            // Before 0.5 the size was Readium's own: keep the same letters on the new 130% base.
+            if (!it.optBoolean("sizeBase130")) fontSize = Math.round(fontSize / BASE_SIZE * 20) / 20.0
+            textWeight = textWeight.coerceIn(0, 5)
         }
     }
 
@@ -249,7 +256,9 @@ object Store {
                 .put("textWeight", textWeight).put("footerMode", footerMode)
                 .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
                 .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
-                .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes))
+                .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes)
+                .put("refreshEvery", refreshEvery).put("sizeBase130", true)
+                .apply { paraSpacing?.let { v -> put("paraSpacing", v) } })
         }
         val tmp = File(file.parentFile, file.name + ".tmp")
         tmp.writeText(o.toString())

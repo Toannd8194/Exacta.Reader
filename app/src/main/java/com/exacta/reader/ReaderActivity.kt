@@ -17,6 +17,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.commitNow
 import androidx.lifecycle.lifecycleScope
 import com.exacta.reader.data.Book
+import com.exacta.reader.data.BookCss
 import com.exacta.reader.data.Library
 import com.exacta.reader.data.Store
 import com.exacta.reader.game.Realm
@@ -30,6 +31,7 @@ import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.navigator.epub.css.FontStyle
+import org.readium.r2.navigator.epub.css.FontWeight
 import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.preferences.FontFamily
@@ -58,6 +60,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     private lateinit var footerRight: TextView
     private lateinit var topBar: LinearLayout
     private lateinit var sheet: ReaderSheet
+    private lateinit var flash: View
     private var publication: Publication? = null
     private var navigator: EpubNavigatorFragment? = null
     private var navJob: Job? = null
@@ -124,12 +127,20 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
             addView(topBar, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
             addView(sheet, FrameLayout.LayoutParams(-1, sheetH, Gravity.BOTTOM))
         }
-        setContentView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
-            addView(header, LinearLayout.LayoutParams(-1, -2))
-            addView(page, LinearLayout.LayoutParams(-1, 0, 1f))
-            addView(footer, LinearLayout.LayoutParams(-1, -2))
+        flash = View(this).apply {
+            setBackgroundColor(Color.BLACK)
+            visibility = View.GONE
+            isClickable = true
+        }
+        setContentView(FrameLayout(this).apply {
+            addView(LinearLayout(this@ReaderActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setBackgroundColor(Color.WHITE)
+                addView(header, LinearLayout.LayoutParams(-1, -2))
+                addView(page, LinearLayout.LayoutParams(-1, 0, 1f))
+                addView(footer, LinearLayout.LayoutParams(-1, -2))
+            }, FrameLayout.LayoutParams(-1, -1))
+            addView(flash, FrameLayout.LayoutParams(-1, -1))
         })
         updateFooter()
         lifecycleScope.launch {
@@ -220,6 +231,10 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         walk(pub.tableOfContents, 0)
         toc = flat
         val initial = book.locator.takeIf { it.isNotEmpty() }?.let { runCatching { Locator.fromJSON(JSONObject(it)) }.getOrNull() }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { BookCss.importFromStorage() }.onFailure { ExactaApp.log("fonts: $it") }
+        }
+        if (Store.fontFamily !in fonts().map { it.first }) Store.fontFamily = "Bitter"
         buildNavigator(pub, initial)
     }
 
@@ -227,16 +242,21 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     private fun buildNavigator(pub: Publication, initial: Locator?) {
         val config = EpubNavigatorFragment.Configuration().apply {
             servedAssets = listOf("fonts/.*")
-            addFontFamilyDeclaration(FontFamily("Bitter")) {
-                addFontFace {
-                    addSource("fonts/Bitter-Variable.ttf")
-                    setFontStyle(FontStyle.NORMAL)
-                    setFontWeight(100..900)
-                }
-                addFontFace {
-                    addSource("fonts/Bitter-Italic-Variable.ttf")
-                    setFontStyle(FontStyle.ITALIC)
-                    setFontWeight(100..900)
+            // Bitter once per weight step: the family switches live when the weight changes.
+            for ((family, regular, bold) in BookCss.bitterFaces()) {
+                addFontFamilyDeclaration(FontFamily(family)) {
+                    for ((face, weight) in listOf(regular to FontWeight.NORMAL, bold to FontWeight.BOLD)) {
+                        addFontFace {
+                            addSource("fonts/Bitter-$face.ttf")
+                            setFontStyle(FontStyle.NORMAL)
+                            setFontWeight(weight)
+                        }
+                        addFontFace {
+                            addSource(if (face == "Regular") "fonts/Bitter-Italic.ttf" else "fonts/Bitter-${face}Italic.ttf")
+                            setFontStyle(FontStyle.ITALIC)
+                            setFontWeight(weight)
+                        }
+                    }
                 }
             }
         }
@@ -285,9 +305,13 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         }
     }
 
+    private var turns = 0
+
     private fun turn(forward: Boolean) {
         val nav = navigator ?: return
         if (forward) nav.goForward(animated = false) else nav.goBackward(animated = false)
+        turns++
+        if (Store.refreshEvery > 0 && turns % Store.refreshEvery == 0) container.postDelayed({ refreshScreen() }, 250)
     }
 
     private fun onMoved(locator: Locator) {
@@ -401,6 +425,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     override fun applyPrefs(rebuild: Boolean) {
         Store.touch()
         updateFooter()
+        header.visibility = if (Store.showHeader) View.VISIBLE else View.INVISIBLE
         val pub = publication ?: return
         if (rebuild) buildNavigator(pub, lastLocator) else navigator?.submitPreferences(preferences())
     }
@@ -414,16 +439,63 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     }
 
     private fun preferences() = EpubPreferences(
-        fontSize = Store.fontSize,
+        fontSize = Store.fontSize * Store.BASE_SIZE,
         lineHeight = Store.lineHeight,
         pageMargins = Store.margins,
-        fontFamily = if (Store.fontFamily == "Original") null else FontFamily(Store.fontFamily),
+        fontFamily = when (Store.fontFamily) {
+            "Original" -> null
+            "Bitter" -> FontFamily(BookCss.bitterFamily(Store.textWeight))
+            else -> FontFamily(Store.fontFamily)
+        },
         textAlign = if (Store.justify) TextAlign.JUSTIFY else TextAlign.START,
         hyphens = Store.hyphens,
         paragraphIndent = if (Store.indent) 1.0 else null,
+        paragraphSpacing = Store.paraSpacing,
+        wordSpacing = BookCss.strokeCarrier(Store.textWeight),
         publisherStyles = false,
         scroll = false,
     )
+
+    override fun fonts(): List<Pair<String, String>> =
+        listOf("Bitter" to "Bitter", "Original" to "Font gốc của sách", "serif" to "Có chân (máy)", "sans-serif" to "Không chân (máy)") +
+            BookCss.userFonts().map { it.family to it.family }
+
+    private val pickFont = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            val name = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val display = contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                    if (it.moveToFirst()) it.getString(0) else null
+                } ?: "font-${System.currentTimeMillis()}.ttf"
+                if (!BookCss.isFont(display)) return@withContext null
+                BookCss.importFile(display) { target -> contentResolver.openInputStream(uri)?.use { i -> target.outputStream().use { i.copyTo(it) } } }
+                display
+            }
+            if (name == null) {
+                android.widget.Toast.makeText(this@ReaderActivity, "Chỉ nhận tệp .ttf hoặc .otf", android.widget.Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            // The new @font-face lives in the chapters' CSS: open the page again with it.
+            Store.fontFamily = BookCss.userFonts().firstOrNull { f -> f.files.any { it.first.name == name } }?.family ?: Store.fontFamily
+            Store.touch()
+            publication?.let { buildNavigator(it, lastLocator) }
+            sheet.invalidate()
+        }
+    }
+
+    override fun addFont() {
+        try {
+            pickFont.launch(arrayOf("font/ttf", "font/otf", "application/x-font-ttf", "application/x-font-otf", "application/octet-stream", "*/*"))
+        } catch (e: Exception) {
+            ExactaApp.log("font picker: $e")
+        }
+    }
+
+    /** A full refresh of the e-ink panel: a black frame over everything, then the page again. */
+    override fun refreshScreen() {
+        flash.visibility = View.VISIBLE
+        flash.postDelayed({ flash.visibility = View.GONE }, 140)
+    }
 
     private fun footerText(ui: android.graphics.Typeface?) = TextView(this).apply {
         setTextColor(Color.BLACK)
