@@ -118,7 +118,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(side, Widgets.dp(context, 10), side, Widgets.dp(context, 6))
-            addView(headerLeft, LinearLayout.LayoutParams(Widgets.dp(context, 118), -2))
+            addView(headerLeft, LinearLayout.LayoutParams(Widgets.dp(context, 70), -2))
             addView(headerTitle, LinearLayout.LayoutParams(0, -2, 1f))
             addView(headerRight, LinearLayout.LayoutParams(Widgets.dp(context, 118), -2))
         }
@@ -409,7 +409,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         if (!::footer.isInitialized) return
         val mode = Store.footerMode
         val now = LocalTime.now()
-        headerLeft.text = com.exacta.reader.game.ThoiThan.share(book.percent)
+        headerLeft.text = "${book.percent}%"
         headerTitle.text = if (Store.beQuanTarget > 0) "Bế quan ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút" else book.title
         headerRight.text = com.exacta.reader.game.ThoiThan.clock(now)
         footer.visibility = if (mode == 2 && noticePages <= 0) View.INVISIBLE else View.VISIBLE
@@ -418,8 +418,15 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
             mode == 0 -> chapterTitle
             else -> ""
         }
-        val parts = listOfNotNull(HomeView.timeLeft(book)?.let { "quyển còn $it" }, chapterLeft()?.let { "chương còn $it" })
-        footerRight.text = if (parts.isEmpty()) "" else "  " + parts.joinToString(" · ")
+        // "còn 8 canh giờ (còn nửa khắc)": the book, then the chapter in brackets.
+        val bookLeft = HomeView.timeLeft(book)
+        val chapter = chapterLeft()
+        footerRight.text = when {
+            bookLeft != null && chapter != null -> "  còn $bookLeft (còn $chapter)"
+            bookLeft != null -> "  còn $bookLeft"
+            chapter != null -> "  chương còn $chapter"
+            else -> ""
+        }
     }
 
     // --- Bars ---------------------------------------------------------------------------------
@@ -458,8 +465,8 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     override fun progress() = book.progress
 
     override fun progressLabel(): String {
-        val left = HomeView.timeLeft(book)?.let { " · quyển còn $it" } ?: ""
-        return "${com.exacta.reader.game.ThoiThan.share(book.percent)} · ${Realm.tangName(Realm.tangOf(book.percent))}$left"
+        val left = HomeView.timeLeft(book)?.let { " · còn $it" } ?: ""
+        return "${book.percent}% · ${Realm.tangName(Realm.tangOf(book.percent))}$left"
     }
 
     override fun seek(progression: Double) {

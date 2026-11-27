@@ -104,7 +104,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         } else {
         // Progress: the label, then ‹ track ›.
         val p = if (dragging) dragP else host.progress()
-        val label = if (dragging) "Tới ${com.exacta.reader.game.ThoiThan.share((dragP * 100).toInt())} (${(dragP * 100).toInt()}%)" else host.progressLabel()
+        val label = if (dragging) "Tới ${(dragP * 100).toInt()}%" else host.progressLabel()
         k.centered(c, label, m, w - 2 * m, y, k.smallBold)
         y += k.lineH(k.smallBold) + 6 * u
         val bh = 48 * u

@@ -240,7 +240,7 @@ class ScreensTest {
         a.resources.displayMetrics.xdpi = 300f
         val host = object : ReaderSheet.Host {
             override fun progress() = 0.37
-            override fun progressLabel() = "Tam thành thất · Tứ tầng · quyển còn ~2 canh giờ 5 khắc"
+            override fun progressLabel() = "37% · Tứ tầng · còn 3 canh giờ"
             override fun seek(progression: Double) {}
             override fun chapter(delta: Int) {}
             override fun toc() = (1..400).map { "Chương $it. Một cái tên chương khá dài để thử" to (if (it % 5 == 0) 0 else 1) }

@@ -8,9 +8,9 @@ Tải bản cài: [`dist/Van-Quyen-Tien-Do-1.0.1.apk`](dist/Van-Quyen-Tien-Do-1.
 
 ## Bản 1.0.1 · Khắc Lậu Cổ Pháp
 
-- **Giờ và tiến độ kiểu xưa** khi đọc: góc trên phải là canh giờ và khắc (vd. "Giờ Thân 4 khắc"; mỗi canh giờ 2 tiếng,
-  mỗi khắc 15 phút); góc trên trái là phần đã đọc theo thành và phân ("Tam thành thất" = 37%, "Viên mãn" khi xong);
-  thời gian còn lại tính bằng canh giờ và khắc ("quyển còn ~8 canh giờ 4 khắc · chương còn ~2 khắc").
+- **Giờ kiểu xưa** khi đọc: góc trên phải là canh giờ và khắc (vd. "Giờ Thân 4 khắc"; mỗi canh giờ 2 tiếng, mỗi khắc
+  15 phút). Thời gian còn lại ghi gọn "còn 8 canh giờ (còn nửa khắc)": cả quyển, rồi chương trong ngoặc. Phần đã đọc
+  vẫn ghi bằng %.
 - **Mục lục trọn trang**: mở ra chiếm cả màn hình, mỗi trang đúng 10 mục, không còn hàng chuyển chương. Chạm nút giữa
   ("Mục 311 – 320 · trang 32/40") để chọn nhanh khoảng mục: 1 – 10, 11 – 20… Xem [`docs/muc-luc.png`](docs/muc-luc.png).
 - **Khác**: các tùy chọn thành thẻ, hai thẻ một hàng, chạm để đổi.

@@ -115,7 +115,7 @@ class BienNienActivity : TabActivity() {
             Era("1.0", "Vạn Pháp Quy Nhất",
                 "Bản chính thức. Hợp luyện ba pháp bảo dư thành khoáng thạch phẩm trên; rà soát và tối ưu cách vẽ; thêm Biên niên này."),
             Era("1.0.1", "Khắc Lậu Cổ Pháp",
-                "Giờ tính theo canh giờ và khắc, tiến độ theo thành và phân; Mục lục trọn trang, mười mục một trang, chọn theo khoảng; tùy chọn dạng thẻ."),
+                "Đồng hồ theo canh giờ và khắc, thời gian còn lại tính bằng canh giờ; Mục lục trọn trang, mười mục một trang, chọn theo khoảng; tùy chọn dạng thẻ."),
         )
     }
 }
