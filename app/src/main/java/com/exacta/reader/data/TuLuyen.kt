@@ -99,7 +99,7 @@ object TuLuyen {
     /** Căn cơ: 2 a day read 30 minutes (30 days), 10 a book read through (90 days, 4 at most), the Trúc Cơ's root. */
     fun canCo(): Int {
         val t = today()
-        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() -
+        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() - DongPhu.canCoPenalty() -
             (if (recent(tauHoaDay)) 10 else 0) - (jumps30() - 5).coerceIn(0, 20)
         return v.coerceIn(0, 100)
     }
@@ -127,7 +127,7 @@ object TuLuyen {
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
-    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum()).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }
+    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }
     fun theTier(v: Int = thePhach()) = THE_AT.indexOfLast { v >= it }
 
     // --- Realms and tiểu cảnh ----------------------------------------------------------------------
@@ -306,6 +306,9 @@ object TuLuyen {
             if (d.effect == PhapMon.E_DOT_PHA) list.add("Đặc hiệu ${d.name}" to 5)
         }
         if (DaoPhap.phapTuong() > 0) list.add("Pháp Tướng Thiên Địa" to DaoPhap.phapTuong())
+        if (DongPhu.breakBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.breakBonus())
+        if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])
+        if (DongPhu.danDoc >= 4) list.add("Đan độc ${DongPhu.danDoc}, chia bốn" to -(DongPhu.danDoc / 4))
         if (pill) list.add("Phá Cảnh Đan" to 15)
         if (fails > 0) list.add("Kiên trì, $fails lần trước" to minOf(30, 10 * fails))
         if (tamMa > 1) list.add("Tâm ma $tamMa, chia đôi" to -(tamMa / 2))
@@ -373,6 +376,7 @@ object TuLuyen {
         val roll = rng.nextInt(100)
         val ok = roll < rate
         DaoPhap.onRoll()
+        DongPhu.onRoll(g)
         if (ok) {
             val margin = rate - roll
             var extra = ""
@@ -402,6 +406,7 @@ object TuLuyen {
             Store.gainLinhThach(50L * g)
             lastResult = "Đột phá ${Realm.baseName(g)} ngày ${dayText(t)}$extra"
             Store.note("Đột phá thành công: ${Realm.baseName(g)}$extra · ${50 * g} linh thạch")
+            Store.fortune(com.exacta.reader.game.KyNgo.T_BREAK)
             advance()
         } else {
             // The độn thuật and the công pháp soften the fall.

@@ -50,7 +50,7 @@ class Ink(private val context: Context, width: Int) {
     fun stroke(w: Float): Paint = strokes.getOrPut(w) {
         Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = w * u }
     }
-    private val faint by lazy { Paint(stroke(1.2f)).apply { color = LIGHT } }
+    val faint by lazy { Paint(stroke(1.2f)).apply { color = LIGHT } }
     private val pixels = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
     private val tints = HashMap<Int, Paint>()
 

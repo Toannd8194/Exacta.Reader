@@ -30,7 +30,7 @@ import kotlin.random.Random
  */
 @SuppressLint("ViewConstructor")
 class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP }
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU }
 
     var book: Book? = null
     var needsPermission = false
@@ -227,11 +227,11 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         }
     }
 
-    /** Đạo hiệu on half the width, then Niên kỷ and Cài đặt. */
+    /** Đạo hiệu on a third of the width, then Công pháp, Động phủ, Niên kỷ and Cài đặt. */
     private fun drawBottomRow(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
         val g = Ink.GAP * u
-        val half = (r.width() - g) / 2
+        val half = (r.width() - g) / 3
         val dao = RectF(r.left, r.top, r.left + half, r.bottom)
         k.card(c, dao)
         val s = 44 * u
@@ -246,17 +246,19 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.text(c, k.fit(name, tw, nb), tx, top, nb)
         k.text(c, k.fit(sub, tw, k.small), tx, top + k.lineH(nb), k.small)
         on(dao, Action.DAO_HIEU)
-        val q = (r.width() - half - 2 * g) / 2
+        val cells = listOf(Triple(Action.CONG_PHAP, "congphap", "Công pháp"), Triple(Action.DONG_PHU, "dongphu", "Động phủ"),
+            Triple(Action.NIEN_KY, "nienky", "Niên kỷ"), Triple(Action.SETTINGS, "settings", "Cài đặt"))
+        val q = (r.width() - half - cells.size * g) / cells.size
         val due = NienKy.due()
-        for ((i, item) in listOf(Triple(Action.NIEN_KY, "nienky", "Niên kỷ"), Triple(Action.SETTINGS, "settings", "Cài đặt")).withIndex()) {
+        for ((i, item) in cells.withIndex()) {
             val cell = RectF(dao.right + g + i * (q + g), r.top, dao.right + g + i * (q + g) + q, r.bottom)
             k.card(c, cell)
-            val icon = 34 * u
+            val icon = 30 * u
             val p = k.smallBold
             val total = icon + 6 * u + k.lineH(p)
             val iy = cell.centerY() - total / 2
             k.icon(c, item.second, cell.centerX() - icon / 2, iy, icon)
-            k.centered(c, item.third, cell.left, cell.width(), iy + icon + 6 * u, p)
+            k.centered(c, k.fit(item.third, cell.width() - 6 * u, p), cell.left, cell.width(), iy + icon + 6 * u, p)
             if (item.first == Action.NIEN_KY && due != 0 && Store.nienKySeen != due) c.drawCircle(cell.centerX() + icon / 2 + 4 * u, iy + 4 * u, 5 * u, k.fill)
             on(cell, item.first)
         }
@@ -283,7 +285,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
         val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
         drawStrip(c, k, strip); on(strip, Action.TU_VI)
         val hero = RectF(a.left, a.top, a.right, strip.top - g)
@@ -325,7 +327,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
         val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
         drawStrip(c, k, strip); on(strip, Action.TU_VI)
         val bookRect = RectF(a.left, a.top, a.right, a.top + (a.height() * 0.3f).coerceIn(220 * u, 320 * u))
@@ -407,14 +409,21 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             }
         }
         // The screens as words along the bottom.
-        val items = listOf(Action.LIBRARY to "Thư viện", Action.TU_VI to "Tu vi", Action.CONG_PHAP to "Công pháp", Action.PHAP_BAO to "Pháp bảo",
+        val items = listOf(Action.LIBRARY to "Thư viện", Action.TU_VI to "Tu vi", Action.CONG_PHAP to "Công pháp", Action.DONG_PHU to "Động phủ", Action.PHAP_BAO to "Pháp bảo",
             Action.DAO_HIEU to "Đạo hiệu", Action.NIEN_KY to "Niên kỷ", Action.SETTINGS to "Cài đặt")
-        val rowY = a.bottom - 60 * u
+        val perRow = 4
+        val rowsN = (items.size + perRow - 1) / perRow
+        val lineH = 50 * u
+        val rowY = a.bottom - rowsN * lineH - 10 * u
         c.drawRect(a.left, rowY - 16 * u, a.right, rowY - 15 * u, k.gray)
-        val cw = a.width() / items.size
         for ((i, item) in items.withIndex()) {
-            val cell = RectF(a.left + i * cw, rowY - 14 * u, a.left + (i + 1) * cw, a.bottom)
-            k.centered(c, item.second, cell.left, cell.width(), rowY + 8 * u, k.smallBold)
+            val row = i / perRow
+            val inRow = minOf(perRow, items.size - row * perRow)
+            val cw = a.width() / inRow
+            val col = i % perRow
+            val ty = rowY + row * lineH
+            val cell = RectF(a.left + col * cw, ty - 8 * u, a.left + (col + 1) * cw, ty + lineH - 8 * u)
+            k.centered(c, item.second, cell.left, cell.width(), ty + 8 * u, k.smallBold)
             on(cell, item.first)
         }
     }
@@ -424,7 +433,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
         val bookRect = RectF(a.left, dock.top - g - 170 * u, a.right, dock.top - g)
         drawBookRow(c, k, bookRect); bookTarget(bookRect)
         libraryButton(c, k, bookRect)
@@ -557,6 +566,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val g = 10 * u
         val items = listOf(
             Triple(Action.CONG_PHAP, "congphap", "Công pháp"),
+            Triple(Action.DONG_PHU, "dongphu", "Động phủ"),
             Triple(Action.NIEN_KY, "nienky", "Niên kỷ"),
             Triple(Action.SETTINGS, "settings", "Cài đặt"),
         )
@@ -918,6 +928,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             Action.TU_VI to ("tuvi" to "Tu vi"),
             Action.LIBRARY to ("library" to "Thư viện"),
             Action.CONG_PHAP to ("congphap" to "Công pháp"),
+            Action.DONG_PHU to ("dongphu" to "Động phủ"),
         )
         val g = Ink.GAP * u
         val cw = (r.width() - (actions.size - 1) * g) / actions.size
@@ -927,6 +938,16 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             val (name, label) = all.getValue(action)
             val cell = RectF(r.left + i * (cw + g), r.top, r.left + i * (cw + g) + cw, r.bottom)
             k.card(c, cell)
+            if (actions.size >= 5) {
+                val ic = 30 * u
+                val lp = k.smallBold
+                val top = cell.centerY() - (ic + 4 * u + k.lineH(lp)) / 2
+                k.icon(c, name, cell.centerX() - ic / 2, top, ic)
+                k.centered(c, k.fit(label, cell.width() - 6 * u, lp), cell.left, cell.width(), top + ic + 4 * u, lp)
+                if (action == Action.NIEN_KY && due != 0 && Store.nienKySeen != due) c.drawCircle(cell.centerX() + ic / 2 + 4 * u, top + 3 * u, 5 * u, k.fill)
+                on(cell, action)
+                continue
+            }
             // Icon and label side by side, centred in the frame.
             val lw = p.measureText(label)
             val total = icon + 12 * u + lw

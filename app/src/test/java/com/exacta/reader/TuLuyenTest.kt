@@ -38,8 +38,10 @@ class TuLuyenTest {
         Store.realmCap = 0; Store.realmSeen = 0; Store.trialStart = -1; Store.trialPassed = 0; Store.failCount = 0
         Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0
         Store.hourSeconds.fill(0)
+        Store.luckRng = object : Random() { override fun nextBits(bitCount: Int) = 0; override fun nextInt(until: Int) = until - 1 }
         TuLuyen.reset()
         DaoPhap.reset()
+        com.exacta.reader.data.DongPhu.reset()
         TuLuyen.started = true
         TuLuyen.lastTick = today - 1
         TuLuyen.rng = roll(0)

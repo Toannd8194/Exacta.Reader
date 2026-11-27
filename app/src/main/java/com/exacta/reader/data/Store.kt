@@ -2,6 +2,7 @@ package com.exacta.reader.data
 
 import android.content.Context
 import com.exacta.reader.game.DaoHieu
+import com.exacta.reader.game.KyNgo
 import com.exacta.reader.game.Lunar
 import com.exacta.reader.game.PhapMon
 import com.exacta.reader.game.Realm
@@ -145,6 +146,13 @@ object Store {
     var kyNgoWords = 0L         // words toward the next roll of kỳ ngộ
     var kyNgoCount = 0
     val kyNgoLog = ArrayList<String>()
+    // 2.2: the 36 kỳ ngộ.
+    var kyNgoTarget = 0L        // words of the next «Linh khí hội tụ»
+    val kyNgoMet = IntArray(KyNgo.EVENTS.size)
+    val kyNgoDays = LongArray(KyNgo.EVENTS.size) { -1L }
+    private val popups = ArrayDeque<Pair<String, String>>()
+    var luckRng: Random = Random.Default
+    var kyNgoPopup = true       // a kỳ ngộ shows as a popup, even while reading
     var phaLoPassed = 0
     var phaLoFailed = 0
     var pillsUsed = 0
@@ -230,6 +238,7 @@ object Store {
         }
         if (!TuLuyen.started) TuLuyen.migrate()
         if (!DaoPhap.started) DaoPhap.migrate()
+        if (!DongPhu.started) DongPhu.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -287,6 +296,12 @@ object Store {
         }
         o.optJSONObject("tuLuyen")?.let { TuLuyen.read(it) }
         o.optJSONObject("daoPhap")?.let { DaoPhap.read(it) }
+        o.optJSONObject("kyNgo")?.let {
+            kyNgoTarget = it.optLong("target")
+            it.optJSONArray("met")?.let { a -> for (i in 0 until minOf(a.length(), kyNgoMet.size)) kyNgoMet[i] = a.getInt(i) }
+            it.optJSONArray("days")?.let { a -> for (i in 0 until minOf(a.length(), kyNgoDays.size)) kyNgoDays[i] = a.getLong(i) }
+        }
+        o.optJSONObject("dongPhu")?.let { DongPhu.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -306,6 +321,7 @@ object Store {
             idleMinutes = it.optInt("idleMinutes", idleMinutes)
             paraSpacing = if (it.has("paraSpacing")) it.optDouble("paraSpacing") else null
             refreshEvery = it.optInt("refreshEvery", refreshEvery)
+            kyNgoPopup = it.optBoolean("kyNgoPopup", true)
             // Keep the letters the reader chose when the base moved: Readium's own before 0.5, 1.3 in 0.5.
             val oldBase = if (it.optBoolean("sizeBase156")) BASE_SIZE else if (it.optBoolean("sizeBase130")) 1.3 else 1.0
             if (oldBase != BASE_SIZE) fontSize = Math.round(fontSize * oldBase / BASE_SIZE * 20) / 20.0
@@ -354,6 +370,9 @@ object Store {
                 .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes).put("merge", mergeCount))
             put("tuLuyen", TuLuyen.toJson())
             put("daoPhap", DaoPhap.toJson())
+            put("kyNgo", JSONObject().put("target", kyNgoTarget).put("met", JSONArray().apply { kyNgoMet.forEach { put(it) } })
+                .put("days", JSONArray().apply { kyNgoDays.forEach { put(it) } }))
+            put("dongPhu", DongPhu.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -363,7 +382,7 @@ object Store {
                 .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
                 .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
                 .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes)
-                .put("refreshEvery", refreshEvery).put("sizeBase156", true)
+                .put("refreshEvery", refreshEvery).put("sizeBase156", true).put("kyNgoPopup", kyNgoPopup)
                 .apply { paraSpacing?.let { v -> put("paraSpacing", v) } })
         }
         val tmp = File(file.parentFile, file.name + ".tmp")
@@ -397,12 +416,14 @@ object Store {
         realmCap = -1; trialStart = -1; tuViLoss = 0; failDay = -1; failCount = 0; trialPassed = 0; passedAfterFail = false
         biCanhWeek = -1; biCanhCount = 0; setsDone = 0; titleChosen = -1; titleLast = -1; titleUnseen = 0
         items.fill(0); fireWords = 0; kyNgoWords = 0; kyNgoCount = 0; kyNgoLog.clear()
+        kyNgoTarget = 0; kyNgoMet.fill(0); kyNgoDays.fill(-1)
         phaLoPassed = 0; phaLoFailed = 0; pillsUsed = 0; talismansUsed = 0; breakPillUsed = false; trialBonus = 0
         bonusTuVi = 0; trialSpare = 0; seekWords = 0; giftLuck = 0; biCanhBonusWeek = -1; biCanhBonusDays = 0
         bonusMinutes.clear(); sealedDays.clear()
         linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0; mergeCount = 0
         TuLuyen.reset()
         DaoPhap.reset()
+        DongPhu.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -410,6 +431,7 @@ object Store {
         }
         if (!TuLuyen.started) TuLuyen.migrate()
         if (!DaoPhap.started) DaoPhap.migrate()
+        if (!DongPhu.started) DongPhu.migrate()
         dirty = true
         save()
         return true
@@ -436,6 +458,7 @@ object Store {
     /** A sitting is over: `seconds` long (the tâm ma kiếp counts the ones given up early). */
     fun endSession(seconds: Long) {
         TuLuyen.onSessionEnd(seconds)
+        DongPhu.onSessionEnd(seconds)
         checkRealm()
         touch()
     }
@@ -446,23 +469,44 @@ object Store {
     fun addSeconds(book: Book, seconds: Long, session: Long = 0) {
         if (seconds <= 0) return
         val d = today()
-        daySeconds[d] = (daySeconds[d] ?: 0) + seconds
-        hourSeconds[LocalTime.now().hour] += seconds
+        val dayBefore = daySeconds[d] ?: 0
+        daySeconds[d] = dayBefore + seconds
+        val hour = LocalTime.now().hour
+        hourSeconds[hour] += seconds
         book.seconds += seconds
         totalSeconds += seconds
         book.lastDay = d
-        if (book.firstDay < 0) book.firstDay = d
+        val newBook = book.firstDay < 0
+        if (newBook) book.firstDay = d
+        moments(d, dayBefore, dayBefore + seconds, session - seconds, session, hour, newBook)
         bestSession = maxOf(bestSession, session)
         if (beQuanTarget > 0) {
             beQuanSeconds += seconds
             if (beQuanSeconds >= beQuanTarget * 60L) finishBeQuan()
         }
         TuLuyen.onSeconds(book, seconds, session)
+        DongPhu.onSeconds(session)
         checkKiep()
         checkRealm()
         checkBiCanh()
         checkTitles()
         touch()
+    }
+
+    /** The kỳ ngộ of a sitting: its length, the day's minutes, the hour, the lunar day, the streak, a new book. */
+    private fun moments(d: Long, dayBefore: Long, dayAfter: Long, before: Long, session: Long, hour: Int, newBook: Boolean) {
+        for (m in intArrayOf(30, 45, 60, 90, 120)) if (before < m * 60L && session >= m * 60L) fortune(KyNgo.T_SITTING, m)
+        for (m in intArrayOf(60, 120, 180)) if (dayBefore < m * 60L && dayAfter >= m * 60L) fortune(KyNgo.T_DAY, m)
+        if (session >= 600) fortune(KyNgo.T_HOUR, hour)
+        if (dayBefore < 600 && dayAfter >= 600) {
+            val t = LocalDate.ofEpochDay(d)
+            val l = Lunar.fromSolar(t.dayOfMonth, t.monthValue, t.year)
+            fortune(KyNgo.T_LUNAR, l.day + if (l.leap) 0 else 100 * l.month)
+            val y = t.minusDays(1)
+            if (Lunar.solarTerm(t.dayOfMonth, t.monthValue, t.year) != Lunar.solarTerm(y.dayOfMonth, y.monthValue, y.year)) fortune(KyNgo.T_TERM)
+        }
+        if (dayBefore < 60 && dayAfter >= 60) fortune(KyNgo.T_STREAK, streak())
+        if (newBook) fortune(KyNgo.T_NEW_BOOK)
     }
 
     /**
@@ -471,6 +515,7 @@ object Store {
      */
     fun moveTo(book: Book, progression: Double, pageTurn: Boolean = false) {
         book.progress = progression
+        if (pageTurn && book.maxProgress < 0.5 && progression >= 0.5) fortune(KyNgo.T_HALF_BOOK)
         val step = progression - book.maxProgress
         if (step > 0) {
             // Only reading counts: a page turned (or swiped, a page's worth) forward, at most a full page.
@@ -493,6 +538,11 @@ object Store {
             book.finishDay = today()
             TuLuyen.onFinish()
             DaoPhap.onFinish(book)
+            fortune(KyNgo.T_FINISH, 0)
+            if (book.firstDay >= 0 && book.finishDay - book.firstDay < 3) fortune(KyNgo.T_FINISH, 1)
+            val author = book.author.trim().lowercase()
+            if (author.isNotEmpty() && books.values.none { it !== book && it.finishDay >= 0 && it.author.trim().lowercase() == author }) fortune(KyNgo.T_FINISH, 2)
+            if (book.words >= 1_000_000) fortune(KyNgo.T_FINISH, 3)
             if (!book.forged && book.words > 0) {
                 book.forged = true
                 val tier = Treasure.tierForBook(book.words)
@@ -554,12 +604,14 @@ object Store {
             }
         }
         for (ore in done) complete(ore, book.title)
-        // Kỳ ngộ: a roll for every vạn words read.
+        // Kỳ ngộ: «Linh khí hội tụ» when the words reach a random 10 – 50 vạn.
         kyNgoWords += words
         if (seekWords > 0) seekWords = (seekWords - words).coerceAtLeast(0)
-        while (kyNgoWords >= 10_000) {
-            kyNgoWords -= 10_000
-            kyNgo(book)
+        if (kyNgoTarget <= 0) kyNgoTarget = Random.nextLong(KyNgo.WORDS_MIN, KyNgo.WORDS_MAX + 1)
+        if (kyNgoWords >= kyNgoTarget) {
+            kyNgoWords = 0
+            kyNgoTarget = Random.nextLong(KyNgo.WORDS_MIN, KyNgo.WORDS_MAX + 1)
+            fortune(KyNgo.T_WORDS)
         }
         // A gift ore every 10 vạn words.
         while (totalWords / Treasure.GIFT_WORDS > giftsAwarded) {
@@ -747,6 +799,7 @@ object Store {
         if (items[Treasure.TU_LINH_DAN] <= 0 || slot.tier < 3 || slot.inKiep || slot.isFinish) return false
         items[Treasure.TU_LINH_DAN]--
         pillsUsed++
+        DongPhu.poison(DongPhu.SHOP_PILL_DOC)
         touch()
         slot.words += slot.need * (if (setActive(11)) 30 else 15) / 100
         if (slot.words >= slot.need) complete(slot, if (slot.isBook) books[slot.book]?.title ?: "" else "Lò luyện")
@@ -777,6 +830,7 @@ object Store {
         if (!canBreakPill()) return false
         items[Treasure.PHA_CANH_DAN]--
         pillsUsed++
+        DongPhu.poison(DongPhu.SHOP_PILL_DOC)
         breakPillUsed = true
         if (inTrial()) {
             trialBonus++
@@ -793,48 +847,130 @@ object Store {
 
     // --- Kỳ ngộ -------------------------------------------------------------------------------------------
 
-    private fun kyNgo(book: Book) {
-        val chance = (if (setActive(10)) 180 else 120) * (if (seekWords > 0) 3 else 1) * (if (beQuanTarget > 0) 2 else 1) *
-            (if (DaoPhap.effect(PhapMon.E_KY_NGO)) 13 else 10) / 10
-        if (Random.nextInt(1000) >= chance) return
-        kyNgoCount++
-        val sleeping = beasts.filter { it.spirit.isEmpty() }
-        val r = Random.nextInt(100)
-        val text = when {
-            setActive(16) && r < 6 -> {
-                hatch(Random.nextInt(2), book.title)
-                "nhặt được pháp bảo ${beasts.last().name}"
-            }
-            r < 22 -> {
-                val t = Treasure.rollTier()
-                bag[t]++
-                fillForge()
-                "nhặt được khoáng thạch ${Treasure.TIER_NAMES[t]}"
-            }
-            r < 32 -> {
-                val n = (20 + Random.nextInt(61)).toLong() * feastMultiplier()
-                gainLinhThach(n)
-                "nhặt được $n linh thạch"
-            }
-            r < 38 && sleeping.isNotEmpty() -> {
-                val b = sleeping.random()
-                b.spirit = Treasure.SPIRITS.random()
-                unseen++
-                "khí linh của ${b.name} thức tỉnh: «${b.spirit}»"
-            }
-            r < 50 && DaoPhap.started -> "tàn hồn truyền thừa, nhận " + DaoPhap.dropScroll()
-            else -> {
-                val i = rollItem()
-                items[i]++
-                "nhặt được ${Treasure.ITEM_NAMES[i]}"
-            }
+    /** Luck: the chance of a kỳ ngộ (‰) with the set, Tầm Bảo Phù, bế quan and the công pháp; 95% at most. */
+    fun luck(permille: Int): Int {
+        if (permille >= 1000) return 1000
+        val v = permille.toLong() * (if (setActive(10)) 15 else 10) / 10 * (if (seekWords > 0) 3 else 1) *
+            (if (beQuanTarget > 0) 2 else 1) * (if (DaoPhap.effect(PhapMon.E_KY_NGO)) 13 else 10) / 10
+        return v.coerceAtMost(950).toInt()
+    }
+
+    private fun matches(e: KyNgo.Event, arg: Int): Boolean = when (e.trigger) {
+        KyNgo.T_SITTING, KyNgo.T_DAY, KyNgo.T_FINISH -> arg == e.arg
+        KyNgo.T_HOUR -> KyNgo.hourIn(arg, e.arg, e.arg2)
+        KyNgo.T_LUNAR -> arg % 100 == e.arg && (e.arg2 == 0 || arg / 100 == e.arg2)
+        KyNgo.T_STREAK -> arg > 0 && arg % e.arg == 0
+        else -> true
+    }
+
+    /** A moment of reading: each kỳ ngộ waiting for it rolls once a day (the words' one each time). */
+    fun fortune(trigger: Int, arg: Int = 0) {
+        val today = today()
+        for ((i, e) in KyNgo.EVENTS.withIndex()) {
+            if (e.trigger != trigger || !matches(e, arg)) continue
+            if (trigger != KyNgo.T_WORDS && kyNgoDays[i] == today) continue
+            kyNgoDays[i] = today
+            if (luckRng.nextInt(1000) >= luck(e.permille)) continue
+            meet(i)
         }
-        val d = LocalDate.now()
-        kyNgoLog.add(0, "${d.dayOfMonth}/${d.monthValue} · $text")
-        while (kyNgoLog.size > 40) kyNgoLog.removeAt(kyNgoLog.size - 1)
-        note("Kỳ ngộ: $text")
         touch()
     }
+
+    /** A kỳ ngộ met: its reward, rolled in its tier (the tier itself one time in five). */
+    fun meet(i: Int) {
+        val e = KyNgo.EVENTS[i]
+        val r = Random.nextInt(100)
+        val tier = (e.tier - when {
+            r < 20 -> 0
+            r < 55 -> 1
+            else -> 2
+        }).coerceAtLeast(0)
+        val text = reward(tier)
+        kyNgoCount++
+        kyNgoMet[i]++
+        val d = LocalDate.now()
+        kyNgoLog.add(0, "${d.dayOfMonth}/${d.monthValue} · ${e.name}: $text")
+        while (kyNgoLog.size > 40) kyNgoLog.removeAt(kyNgoLog.size - 1)
+        note("Kỳ ngộ ${e.name}: $text")
+        popups.addLast(e.name to "${e.text}.\n\nNhận được: $text\nPhẩm cơ duyên: ${KyNgo.TIERS[tier]}")
+        while (popups.size > 3) popups.removeFirst()
+        checkTitles()
+        touch()
+    }
+
+    /** What a kỳ ngộ gives, from thường (0) to tuyệt thế (4). */
+    private fun reward(tier: Int): String {
+        val f = feastMultiplier()
+        fun lt(n: Long): String {
+            gainLinhThach(n * f)
+            return "${n * f} linh thạch"
+        }
+        fun ore(t: Int): String {
+            bag[t]++
+            fillForge()
+            return "khoáng thạch ${Treasure.TIER_NAMES[t]}"
+        }
+        fun herb(min: Int, max: Int): String {
+            val kind = Random.nextInt(com.exacta.reader.game.DanDao.HERBS.size)
+            val years = min + Random.nextInt(max - min + 1)
+            DongPhu.herbs.add(kind to years)
+            return "linh thảo ${com.exacta.reader.game.DanDao.HERBS[kind]} $years năm"
+        }
+        fun treasure(t: Int): String {
+            hatch(t, "Kỳ ngộ")
+            return "pháp bảo ${beasts.last().name} (${Treasure.TIER_NAMES[t]})"
+        }
+        fun ngo(n: Int): String {
+            DaoPhap.ngo += n
+            DaoPhap.ngoEarned += n
+            return "ngộ tính +$n"
+        }
+        // Giang Hồ … (set 16): the low tiers may give a treasure of Hoàng or Huyền phẩm.
+        if (tier <= 1 && setActive(16) && Random.nextInt(100) < 15) return treasure(Random.nextInt(2))
+        val r = Random.nextInt(100)
+        return when (tier) {
+            0 -> when {
+                r < 40 -> lt(15L + Random.nextInt(26))
+                r < 70 -> DongPhu.dropSeed()
+                else -> ore(Random.nextInt(2))
+            }
+            1 -> when {
+                r < 35 -> {
+                    val i = rollItem()
+                    items[i]++
+                    Treasure.ITEM_NAMES[i]
+                }
+                r < 55 -> ore(2)
+                r < 75 -> herb(100, 200)
+                else -> lt(60L + Random.nextInt(61))
+            }
+            2 -> {
+                val sleeping = beasts.filter { it.spirit.isEmpty() }
+                when {
+                    r < 30 -> DaoPhap.dropScroll()
+                    r < 50 -> DongPhu.dropRecipe()
+                    r < 65 && sleeping.isNotEmpty() -> {
+                        val b = sleeping.random()
+                        b.spirit = Treasure.SPIRITS.random()
+                        unseen++
+                        "khí linh của ${b.name} thức tỉnh: «${b.spirit}»"
+                    }
+                    r < 82 -> ore(3)
+                    else -> ngo(2)
+                }
+            }
+            3 -> when {
+                r < 30 -> treasure(2 + Random.nextInt(2))
+                r < 55 -> ore(4)
+                r < 80 -> herb(500, 1000)
+                else -> ngo(4) + ", " + lt(150)
+            }
+            else -> (if (r < 50) treasure(4 + Random.nextInt(2)) else ore(5)) + ", " + ngo(3)
+        }
+    }
+
+    /** The kỳ ngộ to show as a popup, oldest first. */
+    fun takePopup(): Pair<String, String>? = popups.removeFirstOrNull()
 
     /** An item by its weight; the ones that cannot serve now are left out. */
     private fun rollItem(): Int {
@@ -860,7 +996,12 @@ object Store {
 
     private fun spend(i: Int) {
         items[i]--
-        if (Treasure.isPill(i)) pillsUsed++ else talismansUsed++
+        if (Treasure.isPill(i)) {
+            pillsUsed++
+            DongPhu.poison(DongPhu.SHOP_PILL_DOC)
+        } else {
+            talismansUsed++
+        }
         checkTitles()
         touch()
     }
@@ -1188,6 +1329,7 @@ object Store {
         }
         TuLuyen.advance()
         DaoPhap.check()
+        DongPhu.tick()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level
@@ -1199,6 +1341,8 @@ object Store {
 
     const val BI_CANH_MINUTES = 30
     const val BI_CANH_SCROLL = 35
+    const val BI_CANH_SEED = 40
+    const val BI_CANH_RECIPE = 15
     fun biCanhNeed() = if (setActive(2)) 4 else 5
 
     fun weekStart(day: Long): Long = LocalDate.ofEpochDay(day).with(DayOfWeek.MONDAY).toEpochDay()
@@ -1220,7 +1364,10 @@ object Store {
         val extra = DaoPhap.onBiCanh()
         if (extra > 0) note("Thuật pháp công kích diệt yêu thú: thêm $extra linh thạch")
         gainLinhThach(20 + extra)
+        fortune(KyNgo.T_BICANH)
         if (DaoPhap.started && Random.nextInt(100) < BI_CANH_SCROLL) note("Bí cảnh: " + DaoPhap.dropScroll())
+        if (DongPhu.started && Random.nextInt(100) < BI_CANH_SEED) note("Bí cảnh: hái được " + DongPhu.dropSeed())
+        if (DongPhu.started && Random.nextInt(100) < BI_CANH_RECIPE) note("Bí cảnh: " + DongPhu.dropRecipe())
         touch()
     }
 

@@ -227,10 +227,12 @@ object PhapMon {
     const val CONG = 0
     const val TAM = 1
     const val THUAT = 2
-    val SCROLL_KINDS = arrayOf("Công pháp", "Tâm pháp", "Thuật pháp")
+    const val DAN = 3
+    val SCROLL_KINDS = arrayOf("Công pháp", "Tâm pháp", "Thuật pháp", "Đan phương")
     fun scrollName(kind: Int, id: Int) = when (kind) {
         CONG -> CONG_PHAP[id].name
         TAM -> TAM_PHAP[id].name
+        DAN -> DanDao.RECIPES[id].name
         else -> THUAT_PHAP[id].name
     }
 }

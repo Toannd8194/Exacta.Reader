@@ -42,6 +42,7 @@ class HomeActivity : AppCompatActivity() {
                 })
                 HomeView.Action.SETTINGS -> startActivity(Intent(this, SettingsActivity::class.java))
                 HomeView.Action.CONG_PHAP -> startActivity(Intent(this, CongPhapActivity::class.java))
+                HomeView.Action.DONG_PHU -> startActivity(Intent(this, DongPhuActivity::class.java))
                 HomeView.Action.PERMISSION -> askAllFiles()
             }
         }
@@ -55,6 +56,7 @@ class HomeActivity : AppCompatActivity() {
         view.book = book
         Store.checkRealm()
         Store.checkTitles()
+        com.exacta.reader.ui.KyNgoPopup.show(this)
         view.shuffle()
         view.rescale()
         clock.postDelayed(minute, 60_000)

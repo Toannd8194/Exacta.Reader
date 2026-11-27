@@ -120,6 +120,8 @@ class BienNienActivity : TabActivity() {
                 "Người tu có năm thước đo và tâm ma; mỗi cảnh giới bốn tiểu cảnh, bình cảnh, áp chế; đột phá tự bấm, tỉ lệ hiện rõ; Trúc Cơ quan, ngưng đan, lôi kiếp kèm tâm ma kiếp, ngộ đạo."),
             Era("2.1", "Vạn Pháp Quy Nguyên",
                 "Linh căn thức tỉnh từ giờ đọc; công pháp chín tầng mở bằng ngộ tính, cửa ải đòi phẩm công pháp; tâm pháp, thuật pháp tự ra tay; Tàng Kinh Các; vẽ lại khoáng thạch, cảnh giới, khung Âm Dương."),
+            Era("2.2", "Động Phủ Khai Lô",
+                "Động phủ và linh mạch; dược viên trồng linh thảo theo ngày đọc; đan phòng luyện đan bằng hỏa hầu là một buổi đọc liền, đan độc; 36 kỳ ngộ theo lúc đọc, báo bằng khung nổi; Thống kê vào Niên kỷ; chữ đậm hơn."),
         )
     }
 }

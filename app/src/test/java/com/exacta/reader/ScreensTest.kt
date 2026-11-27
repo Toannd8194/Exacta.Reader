@@ -12,9 +12,11 @@ import android.view.View
 import android.view.ViewGroup
 import com.exacta.reader.data.Beast
 import com.exacta.reader.data.DaoPhap
+import com.exacta.reader.data.DongPhu
 import com.exacta.reader.data.Ore
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TuLuyen
+import com.exacta.reader.game.DanDao
 import com.exacta.reader.game.PhapMon
 import com.exacta.reader.game.Treasure
 import com.exacta.reader.ui.HomeView
@@ -148,6 +150,17 @@ class ScreensTest {
         listOf(PhapMon.T_KIM_CANG, PhapMon.T_THIEN_NHAN, PhapMon.T_HOA_DAN, PhapMon.T_PHONG_DON).forEach { DaoPhap.gainThuat(it) }
         DaoPhap.thuat[PhapMon.T_THO_DON]?.uses = 9
         DaoPhap.thuat[PhapMon.T_KIM_CANG]?.uses = 4
+        // 2.2: a cave of Tam giai, three luống, some herbs and pills.
+        DongPhu.migrate()
+        DongPhu.giai = 3
+        DongPhu.plant(0, 0); DongPhu.plots[0].day = today - 12
+        DongPhu.plant(1, 2); DongPhu.plots[1].day = today - 4
+        DongPhu.herbs.addAll(listOf(0 to 120, 1 to 60, 2 to 150, 4 to 90))
+        DongPhu.known.addAll(listOf(DanDao.THANH_TAM, DanDao.TUC_MACH, DanDao.NGUNG_NGUYEN))
+        DongPhu.pills[DanDao.TU_KHI * 4 + 2] = 3; DongPhu.pills[DanDao.HOI_KHI * 4] = 1; DongPhu.pills[DanDao.NGUNG_KIM * 4 + 1] = 1
+        DongPhu.made = 9
+        DongPhu.danDoc = 34
+        DongPhu.lastResult = "Thành đan: 2 viên Tụ Khí Đan thượng phẩm"
     }
 
     private fun cover(f: File, title: String, i: Int) {
@@ -167,7 +180,7 @@ class ScreensTest {
         }
     }
 
-    private fun shoot(view: View, name: String) {
+    private fun shoot(view: View, name: String): Bitmap {
         view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
         view.layout(0, 0, w, h)
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -175,7 +188,21 @@ class ScreensTest {
         c.drawColor(Color.WHITE)
         view.draw(c)
         File(out, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        return bmp
     }
+
+    /** Share of dark pixels between the tabs and the page row: a page turned to must not be empty. */
+    private fun ink(bmp: Bitmap): Double {
+        var dark = 0
+        var all = 0
+        for (y in 300 until h - 140 step 2) for (x in 0 until w step 2) {
+            all++
+            if (Color.red(bmp.getPixel(x, y)) < 160) dark++
+        }
+        return dark.toDouble() / all
+    }
+
+    private val empty = ArrayList<String>()
 
     private fun root(a: Activity): View = (a.findViewById<ViewGroup>(android.R.id.content)).getChildAt(0)
 
@@ -236,16 +263,70 @@ class ScreensTest {
             a.selectTab(t)
             idle()
             shoot(root(a), "${name}_$t")
+            // Every further page must hold something.
+            val n = a.pageCount()
+            for (p in 1 until n) {
+                a.page = p
+                a.refresh()
+                idle()
+                val bmp = shoot(root(a), "${name}_${t}_p${p + 1}")
+                if (ink(bmp) < 0.004) empty.add("${name} tab $t page ${p + 1}/$n")
+            }
+            a.page = 0
         }
+        assertTrue("Empty pages: $empty", empty.isEmpty())
     }
 
     @Test fun library() = tabs(LibraryActivity::class.java, "library")
     @Test fun tuVi() = tabs(TuViActivity::class.java, "tuvi")
     @Test fun phapBao() = tabs(PhapBaoActivity::class.java, "phapbao")
     @Test fun daoHieu() = tabs(DaoHieuActivity::class.java, "daohieu")
-    @Test fun nienKy() = tabs(NienKyActivity::class.java, "nienky")
+    @Test fun nienKy() {
+        Store.kyNgoMet[2] = 3; Store.kyNgoMet[15] = 1; Store.kyNgoMet[27] = 2
+        tabs(NienKyActivity::class.java, "nienky")
+    }
     @Test fun settings() = tabs(SettingsActivity::class.java, "settings")
     @Test fun bienNien() = tabs(BienNienActivity::class.java, "biennien")
+    /** Popups are framed: the forge's book picker and a kỳ ngộ. */
+    @Test fun dialogs() {
+        val a = Robolectric.buildActivity(PhapBaoActivity::class.java).setup().get()
+        idle()
+        fun snap(d: android.app.Dialog, name: String) {
+            idle()
+            val v = d.window!!.decorView
+            v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.AT_MOST))
+            v.layout(0, 0, v.measuredWidth, v.measuredHeight)
+            val bmp = Bitmap.createBitmap(w, maxOf(1, v.measuredHeight) + 40, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            c.drawColor(Color.rgb(200, 200, 200))
+            c.translate(0f, 20f)
+            v.draw(c)
+            File(out, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            d.dismiss()
+        }
+        val pick = androidx.appcompat.app.AlertDialog.Builder(a).setTitle("Đặt vào lò luyện")
+            .setItems(arrayOf("Sách: Đại Chu Tiên Lại · 37%", "Sách: Tiên Nghịch · 64%", "Khoáng thạch Địa phẩm (còn 1)", "Khoáng thạch Hoàng phẩm (còn 2)"), null)
+            .setNegativeButton("Thôi", null).show()
+        snap(pick, "dialog_forge")
+        Store.meet(5)
+        val (name, text) = Store.takePopup()!!
+        val ky = androidx.appcompat.app.AlertDialog.Builder(a).setTitle("✦ Kỳ ngộ · $name").setMessage(text).setPositiveButton("Nhận", null).show()
+        snap(ky, "dialog_kyngo")
+    }
+
+    @Test fun dongPhu() {
+        tabs(DongPhuActivity::class.java, "dongphu")
+        // A furnace burning.
+        DongPhu.herbs.add(0 to 80)
+        DongPhu.startBrew(DanDao.TU_KHI)
+        val a = Robolectric.buildActivity(DongPhuActivity::class.java).setup().get()
+        idle()
+        a.selectTab(2)
+        idle()
+        shoot(root(a), "dongphu_2_brew")
+        DongPhu.cancelBrew()
+    }
+
     @Test fun congPhap() {
         tabs(CongPhapActivity::class.java, "congphap")
         val a = Robolectric.buildActivity(CongPhapActivity::class.java).setup().get()

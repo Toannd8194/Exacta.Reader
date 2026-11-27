@@ -212,9 +212,9 @@ def intro():
 <h2>Đọc cẩm nang này thế nào</h2>
 <p>Mỗi chữ bạn đọc là một chút tu vi, một ngọn lửa trong lò, một cơ hội kỳ ngộ. Cẩm nang chia ba phần:</p>
 <ul>
-<li><b>Quyển I – VI: luật chơi</b>, mọi con số lấy thẳng từ mã nguồn bản này.</li>
-<li><b>Quyển VII: chiến lược cày</b>: lộ trình, xếp lò, tiêu linh thạch.</li>
-<li><b>Quyển VIII – XII: thư viện</b> khoáng thạch, pháp bảo, bộ, đan phù, đạo hiệu; cuối sách là bảng tra nhanh.</li>
+<li><b>Quyển I – VII: luật chơi</b>, mọi con số lấy thẳng từ mã nguồn bản này.</li>
+<li><b>Quyển VIII: chiến lược cày</b>: lộ trình, xếp lò, tiêu linh thạch.</li>
+<li><b>Quyển IX – XIII: thư viện</b> khoáng thạch, pháp bảo, bộ, đan phù, đạo hiệu; cuối sách là bảng tra nhanh.</li>
 </ul>
 <h2>Vài chữ dùng trong sách</h2>
 <table class="defs"><tbody>
@@ -227,7 +227,6 @@ def intro():
 <tr><td>ngày lễ</td><td>mồng một, ngày rằm âm lịch và ba ngày Tết.</td></tr>
 <tr><td>bộ</td><td>bốn loại pháp bảo; gom đủ thì có hiệu quả mãi mãi.</td></tr>
 </tbody></table>
-<p class="note">Các tỉ lệ (kỳ ngộ, quà, loại pháp bảo rơi ra) là ngẫu nhiên: con số trong sách là trung bình.</p>
 </section>'''
 
 
@@ -239,7 +238,7 @@ def part1():
 <div class="fl-grid">
 <div><b>Tu vi</b><br>cảnh giới, đạo hiệu</div>
 <div><b>Lò luyện</b><br>khoáng thạch → pháp bảo</div>
-<div><b>Kỳ ngộ</b><br>mỗi vạn chữ một lần gieo</div>
+<div><b>Kỳ ngộ</b><br>36 loại, theo lúc đọc</div>
 <div><b>Linh thạch</b><br>5 LT mỗi vạn chữ</div>
 <div><b>Quà 10 vạn</b><br>một khoáng thạch</div>
 <div><b>Phút mỗi ngày</b><br>thiên kiếp, bí cảnh, phá lô</div>
@@ -466,9 +465,8 @@ bậc cao thì mạnh hơn (thêm linh thạch, đỡ thêm ngày, hồi khí ng
 <ul>
 <li><b>Kỳ ngộ</b>: một phần kỳ ngộ là «tàn hồn truyền thừa», cho một ngọc giản công pháp, thuật pháp hoặc tâm pháp.</li>
 <li><b>Bí cảnh tuần</b>: qua bí cảnh có {BI_CANH_SCROLL}% gặp thêm một ngọc giản.</li>
-<li><b>Tàng Kinh Các</b> (Công pháp › Tàng Kinh): mỗi thứ Hai đổi kho ba công pháp, hai tâm pháp, ba thuật pháp; luôn có một công
-pháp đúng phẩm cửa kế tiếp cần. Tâm pháp {TAM_PRICE} LT, thuật pháp 80 LT, thần thông 400 LT.</li>
-<li>Ngọc giản đã có thì tham ngộ lại thành 1 ngộ tính.</li>
+<li><b>Tàng Kinh Các</b>: mỗi thứ Hai đổi kho ba công pháp, hai tâm pháp, ba thuật pháp, hai đan phương; luôn có một công
+pháp đúng phẩm cửa kế tiếp cần. Tâm pháp {TAM_PRICE} LT, thuật pháp 80 LT, thần thông 400 LT. Ngọc giản đã có thì thành 1 ngộ tính.</li>
 </ul>
 </section>
 <section class="page">
@@ -482,6 +480,78 @@ pháp đúng phẩm cửa kế tiếp cần. Tâm pháp {TAM_PRICE} LT, thuật 
 </section>'''
 
 
+KYNGO = read('game', 'KyNgo.kt')
+KY_EVENTS = re.findall(r'Event\("([^"]+)", T_\w+, -?\d+, -?\d+, (\d+), (\d), "([^"]+)"\)', KYNGO)
+KY_TIERS = strings(KYNGO, 'TIERS')
+assert len(KY_EVENTS) == 36, len(KY_EVENTS)
+
+
+def kyngo_table():
+    rows = [[f'<b>{e(n)}</b>', e(t), f'{(int(p) + 5) // 10}%', e(KY_TIERS[int(tier)])] for n, p, tier, t in KY_EVENTS]
+    return table(['Kỳ ngộ', 'Gặp khi', 'Tỉ lệ', 'Phẩm'], rows, 'lib')
+
+
+DANDAO = read('game', 'DanDao.kt')
+HERBS = strings(DANDAO, 'HERBS')
+SEED_PRICES = numbers(DANDAO, 'SEED_PRICES')
+GIAI = strings(DANDAO, 'GIAI')
+MACH_PRICES = numbers(DANDAO, 'MACH_PRICES')
+DAN_CAP = strings(DANDAO, 'CAP')
+DAN_CAP_AT = numbers(DANDAO, 'CAP_AT')
+DAN_PHAM = strings(DANDAO, 'PHAM')
+DOC_PCT = numbers(DANDAO, 'DOC_PCT')
+DAN_GROUPS = strings(DANDAO, 'GROUPS')
+RECIPES = re.findall(r'Recipe\("([^"]+)", (G_\w+), listOf\(([^)]*)\), (\d+), (\d), (\d+), "([^"]+)"', DANDAO)
+GROUP_CONST = ['G_TU_LUYEN', 'G_PHA_CANH', 'G_CHUA_THUONG', 'G_TAM_CANH', 'G_LUYEN_THE', 'G_GIAI_DOC', 'G_HIEM']
+assert len(RECIPES) == 15 and len(HERBS) == 8
+
+
+def herb_list(spec):
+    out = []
+    for kind, years in re.findall(r'(\d) to ([\d_]+)', spec):
+        out.append(f'{HERBS[int(kind)]} {num(int(years.replace("_", "")))} năm')
+    return ', '.join(out)
+
+
+def part2c():
+    recipes = table(['Đan', 'Loại', 'Linh thảo', 'Hỏa hầu', 'Cần', 'Độc', 'Công dụng'], [
+        [f'<b>{e(n)}</b>', e(DAN_GROUPS[GROUP_CONST.index(g)]), e(herb_list(h)), f'{m}′', e(DAN_CAP[int(c) - 1]), d, e(t)]
+        for n, g, h, m, c, d, t in RECIPES], 'lib')
+    mach = ' · '.join(f'{e(GIAI[g])} {num(MACH_PRICES[g])}' for g in range(1, 9))
+    caps = ' · '.join(f'{e(DAN_CAP[i])} {DAN_CAP_AT[i]}' for i in range(9))
+    seeds = ' · '.join(f'{e(HERBS[i])} {SEED_PRICES[i]}' for i in range(8))
+    return chapter('IV', 'Động phủ và đan đạo', 'Từ bản 2.2, người tu có động phủ: linh mạch nuôi tu vi, dược viên trồng linh thảo, đan phòng luyện đan bằng những buổi đọc liền.') + f'''
+{h2('Linh mạch', True)}
+<p>Động phủ nằm trên linh mạch từ Nhất giai tới Cửu giai. Mỗi giai trên Nhất giai: linh lực +2%, đột phá +1%, dược linh thêm 1 năm
+mỗi ngày. Luống dược viên mở ở Nhị, Tứ, Lục, Bát giai (2 tới 6 luống). Giá nâng (linh thạch): {mach}.</p>
+<p>Động phủ có năm gian: Linh mạch, Dược viên, Đan phòng, Đan dược, Tĩnh thất (bế quan); Luyện khí thất là lò luyện, Tàng thư là
+Kinh Các, đi từ tab Linh mạch.</p>
+
+{h2('Dược viên', True)}
+<p>Gieo một hạt vào luống trống. Mỗi ngày đọc từ 30 phút, linh thảo thêm <b>10 năm dược linh</b> (cộng giai linh mạch). Thảo 100 năm
+cần khoảng 10 ngày, 1.000 năm khoảng 100 ngày: đan cao cấp đòi kiên trì thật. Thu hoạch lúc nào cũng được; mỗi lần thu được thêm
+một hạt cùng loại. Hạt mua ở Dược viên (LT): {seeds}; còn hái được ở bí cảnh tuần và kỳ ngộ.</p>
+
+{h2('Đan phòng và hỏa hầu', True)}
+<p>Chọn đan phương, đủ linh thảo (dùng cây non nhất đủ tuổi), bấm <b>Khai lò</b>. Lò đỏ chờ <b>hỏa hầu</b>: buổi đọc tới phải liền
+đủ số phút của đan. Thoát giữa chừng (buổi từ một phút trở lên) là <b>nổ lò</b>, mất linh thảo; tắt lò trước khi đọc thì lấy lại thảo.</p>
+<p>Tỉ lệ thành = 60% + 8% mỗi bậc luyện đan sư trên mức đan cần + 3% mỗi 100 năm thảo dư (tối đa 15%), trong khoảng 20 – 98%.
+Thành thì phẩm đan theo độ dư: dư từ 20 trung phẩm, 40 thượng phẩm, 60 cực phẩm. Luyện đan sư Tứ phẩm ra 2 viên một lò, Thất phẩm
+3 viên. Cấp luyện đan sư theo số lò thành: {caps}.</p>
+
+{h2('Đan độc', True)}
+<p>Mỗi viên đan để lại độc: hạ phẩm trọn phần, trung {DOC_PCT[1]}%, thượng {DOC_PCT[2]}%, cực phẩm {DOC_PCT[3]}%. Đan mua ở Phường thị
+để lại 4. Đan độc trên 60: đan chỉ còn nửa công hiệu, căn cơ −10. Mọi lúc, tỉ lệ đột phá trừ đan độc / 4. Mỗi ngày đọc 30 phút
+tan 5; Giải Độc Đan tan 25. Phẩm đan cao còn mạnh hơn: mỗi phẩm +20% công dụng (đan phá cảnh +2% mỗi phẩm).</p>
+</section>
+<section class="page">
+{h2('Mười lăm đan phương', True)}
+<p class="small">Đan phá cảnh chỉ dùng cho đúng cửa của nó, một viên mỗi lần đột phá. Có từ đầu: Tụ Khí Đan, Trúc Cơ Đan, Hồi Khí Đan,
+Giải Độc Đan; còn lại tìm ở kỳ ngộ, bí cảnh tuần, Tàng Kinh Các.</p>
+{recipes}
+</section>'''
+
+
 def part3():
     rows = []
     for t in range(6):
@@ -490,7 +560,7 @@ def part3():
         length = f'dưới {van(hi)} vạn' if t == 0 else (f'{van(lo)} – {van(hi)} vạn' if hi else f'từ {van(lo)} vạn')
         rows.append([img(f'art_ore_{t}', 'oi'), f'<b>{e(TIER_NAMES[t])}</b>', num(FORGE_WORDS[t]), num(STAGE_WORDS[t]), length])
     kiep = [[f'<b>{e(TIER_NAMES[t])}</b>', f'{max(2, min(4, t - 1))} ngày', f'{10 * max(2, min(4, t - 1))} phút', f'{30 * (t - 1)} LT'] for t in (3, 4, 5)]
-    return chapter('IV', 'Lò luyện', 'Sáu ô lò cháy cùng lúc với mỗi chữ bạn đọc. Xếp lò khéo hay vụng quyết định bạn có bao nhiêu pháp bảo.') + f'''
+    return chapter('V', 'Lò luyện', 'Sáu ô lò cháy cùng lúc với mỗi chữ bạn đọc. Xếp lò khéo hay vụng quyết định bạn có bao nhiêu pháp bảo.') + f'''
 {h2('Sáu ô, ba kiểu')}
 <ul>
 <li><b>Khoáng thạch</b>: cháy bằng chữ của <i>mọi</i> cuốn; đủ chữ thì ra một pháp bảo cùng phẩm, ô trống ra. Lò tự nạp tới
@@ -536,7 +606,7 @@ chữ và phải luyện lại phần còn lại; ô trọn quyển thì kiếp 
 def part4():
     clans = ''.join(f'<tr><td><b>{e(TIER_NAMES[t])}</b></td><td>{e(CLANS[t])}</td><td>{e(NAMES[t * 12])}, {e(NAMES[t * 12 + 1])}…</td></tr>' for t in range(6))
     merge = ', '.join(f'{e(TIER_NAMES[t])} {10 * (t + 1)}' for t in range(5))
-    return chapter('V', 'Pháp bảo: bộ, khí linh, hợp luyện', '72 loại pháp bảo, sáu phẩm, mười tám bộ. Đây là thứ để sưu tầm, và cũng là chìa khóa của những hiệu quả mạnh nhất.') + f'''
+    return chapter('VI', 'Pháp bảo: bộ, khí linh, hợp luyện', '72 loại pháp bảo, sáu phẩm, mười tám bộ. Đây là thứ để sưu tầm, và cũng là chìa khóa của những hiệu quả mạnh nhất.') + f'''
 {h2('Sáu phẩm, sáu tộc')}
 <table class="clans"><thead><tr><th>Phẩm</th><th>Tộc</th><th>Ví dụ</th></tr></thead><tbody>{clans}</tbody></table>
 <p>Mỗi phẩm có 12 loại. Pháp bảo ra lò thuộc một loại <b>ngẫu nhiên</b> trong 12 loại của phẩm đó, mang thêm một chữ «chi»
@@ -544,11 +614,10 @@ def part4():
 
 {h2('Bộ pháp bảo')}
 <p>18 bộ, mỗi bộ bốn loại; mỗi loại thuộc đúng một bộ. Có đủ bốn loại thì bộ <b>kích hoạt mãi mãi</b> (kể cả khi sau này
-bạn dùng món trong bộ để hợp luyện), lần đầu được thưởng thêm một khoáng thạch Địa phẩm và 50 LT. Danh sách đầy đủ ở Quyển X.</p>
+bạn dùng món trong bộ để hợp luyện), lần đầu được thưởng thêm một khoáng thạch Địa phẩm và 50 LT. Danh sách đầy đủ ở Quyển XI.</p>
 
 {h2('Khí linh')}
-<p>Pháp bảo có thể thức tỉnh khí linh với một trong tám danh: {e(', '.join(SPIRITS))}. Khí linh đến từ kỳ ngộ (khoảng 6%
-mỗi lần) hoặc Khai Linh Đan. Món có khí linh được hợp luyện chừa lại; năm khí linh cho đạo hiệu «Khí Linh Chi Chủ».</p>
+<p>Pháp bảo có thể thức tỉnh khí linh với một trong tám danh: {e(', '.join(SPIRITS))}. Khí linh đến từ kỳ ngộ phẩm quý hoặc Khai Linh Đan. Món có khí linh được hợp luyện chừa lại; năm khí linh cho đạo hiệu «Khí Linh Chi Chủ».</p>
 
 {h2('Hợp luyện')}
 <p>Ba <b>món dư</b> cùng phẩm hợp thành <b>một khoáng thạch phẩm trên</b>, kèm linh thạch ({merge} LT). Món dư là mọi món
@@ -561,17 +630,23 @@ Hỗn Độn phẩm là phẩm cao nhất, không hợp luyện được.</p>
 def part5():
     item_cond = 'Đan phù chỉ rơi loại dùng được lúc đó: Tụ Linh Đan cần một ô Thiên phẩm trở lên đang luyện; Phá Cảnh Đan cần đã mở Kim Đan; Thọ Nguyên Đan cần đã mất tu vi hoặc đang bị thương kinh mạch; Hộ Lô Phù, Dẫn Lôi Phù cần lò Thiên phẩm hoặc đã mở Nguyên Anh.'
     gift = ' · '.join(f'{e(TIER_NAMES[t])} {str(GIFT_ODDS[t] / 10).replace(".", ",").replace(",0", "")}%' for t in range(6))
-    return chapter('VI', 'Kỳ ngộ, linh thạch, bế quan, bí cảnh', 'Những dòng chảy phụ của tu hành: cơ duyên ngẫu nhiên, tiền tiêu, những buổi bế quan và cửa bí cảnh mỗi tuần.') + f'''
-{h2('Kỳ ngộ')}
-<p>Cứ mỗi vạn chữ là một lần gieo kỳ ngộ, cơ hội <b>12%</b>. Bộ Cầm Tiêu Hợp Tấu nâng lên 18%; Tầm Bảo Phù ×3 và bế quan ×2
-nhân thêm. Khi gặp:</p>
-{table(['Kết quả', 'Tỉ lệ'], [
-    ['Khoáng thạch (phẩm gieo như quà 10 vạn)', '22%'],
-    ['20 – 80 linh thạch (×2 ngày rằm, mồng một; ×3 Tết)', '10%'],
-    ['Khí linh của một pháp bảo thức tỉnh', '6%'],
-    ['Một đan dược hoặc phù chú', 'phần còn lại, ~62%'],
+    return chapter('VII', 'Kỳ ngộ, linh thạch, bế quan, bí cảnh', 'Những dòng chảy phụ của tu hành: cơ duyên ngẫu nhiên, tiền tiêu, những buổi bế quan và cửa bí cảnh mỗi tuần.') + f'''
+{h2('Kỳ ngộ', True)}
+<p>Từ bản 2.2, kỳ ngộ không còn gieo theo từng vạn chữ. Có <b>36 loại</b>, mỗi loại chờ một lúc riêng của việc đọc; tới lúc
+đó thì gieo một lần trong ngày (mốc chữ thì mỗi lần chạm mốc). Mốc chữ là một số ngẫu nhiên từ <b>10 tới 50 vạn</b>, rút lại sau
+mỗi lần chạm. Gặp kỳ ngộ thì hiện khung báo, kể cả khi đang đọc (tắt được ở Cài đặt › Tu tiên), và ghi vào Niên kỷ › Kỳ ngộ.</p>
+<p>Mỗi loại có một <b>phẩm cơ duyên</b>. Khi gặp: 20% nhận đúng phẩm ấy, 35% thấp hơn một bậc, 45% thấp hơn hai bậc. Tỉ lệ gặp
+nhân với bộ Cầm Tiêu Hợp Tấu ×1,5, Tầm Bảo Phù ×3, bế quan ×2, công pháp có đặc hiệu kỳ ngộ ×1,3; tối đa 95%.</p>
+{kyngo_table()}
+{table(['Phẩm', 'Phần thưởng'], [
+    ['Thường', '15 – 40 linh thạch, hạt linh thảo, khoáng thạch Hoàng hay Huyền'],
+    ['Khá', 'một đan dược hoặc phù chú, khoáng thạch Địa, linh thảo 100 – 200 năm, 60 – 120 linh thạch'],
+    ['Quý', 'ngọc giản, đan phương, khí linh thức tỉnh, khoáng thạch Thiên, ngộ tính +2'],
+    ['Hiếm', 'pháp bảo Địa hay Thiên phẩm, khoáng thạch Âm Dương, linh thảo 500 – 1.000 năm, ngộ tính +4 và 150 LT'],
+    ['Tuyệt thế', 'pháp bảo Âm Dương hay Hỗn Độn, hoặc khoáng thạch Hỗn Độn; kèm ngộ tính +3'],
 ])}
-<p class="small">Bộ Thất Bảo Tiên Quang: 6% đầu thành một pháp bảo Hoàng hay Huyền phẩm (phần khoáng thạch còn 16%). {item_cond}</p>
+<p class="small">Linh thạch nhân đôi ngày rằm, mồng một, nhân ba ba ngày Tết. Bộ Thất Bảo Tiên Quang: phẩm thường và khá có 15% thành
+một pháp bảo Hoàng hay Huyền. {item_cond}</p>
 
 {h2('Quà 10 vạn chữ')}
 <p>Mỗi 10 vạn chữ (tính tổng mọi cuốn) được một khoáng thạch: {gift}. Bộ Vạn Kiếm Quy Tông gieo hai lần lấy phẩm cao;
@@ -623,7 +698,7 @@ def set_ranking():
 
 
 def part6():
-    return chapter('VII', 'Chiến lược cày', 'Luật thì ai cũng đọc được; đây là cách dùng luật cho lợi nhất. Mọi phép tính đều theo đúng con số của game.') + f'''
+    return chapter('VIII', 'Chiến lược cày', 'Luật thì ai cũng đọc được; đây là cách dùng luật cho lợi nhất. Mọi phép tính đều theo đúng con số của game.') + f'''
 {h2('Mười điều tâm pháp', True)}
 <ol class="tenets">
 <li><b>Không để ô lò trống.</b> Mỗi chữ đốt cùng lúc cả sáu ô; một ô trống là một phần sáu sản lượng bỏ phí.</li>
@@ -666,7 +741,7 @@ Hỗn Độn 27 vạn). Sách ngắn thì để ô đó làm chặng, đọc xon
 
 {h2('Ngày vàng', True)}
 <p>Một ngày rằm có bộ Tứ Hải Long Cung, bế quan 120 phút và một lá Thiên Hỏa Phù: mỗi chữ cháy như 6 chữ ở cả 6 ô, linh
-thạch ×2, kỳ ngộ ×2. Thêm Tầm Bảo Phù thì mỗi vạn chữ có <b>72%</b> gặp kỳ ngộ (108%, tức chắc chắn, với Cầm Tiêu Hợp Tấu).
+thạch ×2, kỳ ngộ ×2. Thêm Tầm Bảo Phù thì mọi kỳ ngộ gặp gấp sáu (tối đa 95%): ngày ấy mà đọc liền 90 phút vào rằm tháng Tám là cơ duyên lớn nhất năm.
 Chưa có bộ vẫn được ×3 lửa. Hãy để dành phù cho những ngày này.</p>
 
 {h2('Tiêu linh thạch', True)}
@@ -707,7 +782,7 @@ def part7():
 <p>Luyện: <b>{num(FORGE_WORDS[t])}</b> chữ → pháp bảo {e(CLANS[t].lower())}. Chặng sách: {num(STAGE_WORDS[t])} chữ.
 Phường thị: <b>{num(ORE_PRICES[t])} LT</b>. Quà 10 vạn: {str(GIFT_ODDS[t] / 10).replace('.', ',').replace(',0', '')}%.
 {'Phải qua kiếp phá lô.' if t >= 3 else ''}</p></div></div>''')
-    return chapter('VIII', 'Thư viện khoáng thạch', 'Sáu phẩm khoáng thạch, nguyên liệu của mọi pháp bảo.') + ''.join(cards) + f'''
+    return chapter('IX', 'Thư viện khoáng thạch', 'Sáu phẩm khoáng thạch, nguyên liệu của mọi pháp bảo.') + ''.join(cards) + f'''
 <p class="small">Khoáng thạch đến từ: quà 10 vạn chữ, kỳ ngộ, bí cảnh tuần (từ Huyền phẩm), đọc xong sách không đặt trọn quyển,
 thưởng gom bộ (Địa phẩm), hợp luyện, Luyện Hóa Phù, Tẩy Tủy Đan và Phường thị.</p>
 </section>'''
@@ -716,7 +791,7 @@ thưởng gom bộ (Địa phẩm), hợp luyện, Luyện Hóa Phù, Tẩy Tủ
 def part8():
     pages = []
     for t in range(6):
-        head = chapter('IX', 'Thư viện pháp bảo', '') if t == 0 else '<section class="page">'
+        head = chapter('X', 'Thư viện pháp bảo', '') if t == 0 else '<section class="page">'
         title = f'{TIER_NAMES[t]} · {CLANS[t]}'
         TOC.append((2, title, title))
         cells = []
@@ -738,7 +813,7 @@ def part9():
         mem = ''.join(f'<div class="sm">{img(f"badge_{m:02d}", "smi")}<b>{e(NAMES[m])}</b><span>{e(TIER_NAMES[m // 12])}</span></div>' for m in SETS[s])
         cards.append(f'''<div class="set"><div class="seth"><b>{s + 1}. {e(SET_NAMES[s])}</b><span>{e(SET_EFFECTS[s])}</span></div>
 <div class="setm">{mem}</div><p>{e(SET_DETAILS[s])}</p></div>''')
-    return chapter('X', '18 bộ pháp bảo', 'Gom đủ bốn loại là bộ kích hoạt mãi mãi, kèm một khoáng thạch Địa phẩm và 50 LT.') + ''.join(cards) + '</section>'
+    return chapter('XI', '18 bộ pháp bảo', 'Gom đủ bốn loại là bộ kích hoạt mãi mãi, kèm một khoáng thạch Địa phẩm và 50 LT.') + ''.join(cards) + '</section>'
 
 
 ITEM_TIPS = [
@@ -753,7 +828,7 @@ ITEM_TIPS = [
     'Đặt vào chặng Địa phẩm vừa luyện lại từ đầu để được trọn 13,5 vạn chữ. Đừng mua: 10 Bồi Nguyên Đan rẻ hơn mà làm được hơn.',
     'Dành cho món bạn quý nhất, như một Thần khí: món có khí linh không bao giờ bị hợp luyện lấy đi.',
     'Chỉ rơi khi bạn đã mất tu vi (hụt khí) hay đang bị kinh mạch tổn thương: lấy lại một nửa phần đã mất, không mất gì thì chữa lành kinh mạch.',
-    'Bật đầu buổi bế quan: gấp ba của phù nhân gấp đôi của bế quan, mỗi vạn chữ có 72% gặp kỳ ngộ.',
+    'Bật đầu buổi bế quan và trước một buổi đọc dài, một ngày lễ: gấp ba của phù nhân gấp đôi của bế quan.',
     'Dùng vào cuối tuần khi đã có 4 ngày; không dùng được khi bí cảnh tuần đã qua.',
     'Rẻ và cứu được cả kỳ kiếp; còn hạ tâm ma 10, nên đốt một lá trước khi đột phá. Không tính cho chuỗi ngày đọc hay bế quan.',
     'Dùng cho lò Hỗn Độn (4 ngày × 40 phút) để bớt một ngày phải đọc đủ phút.',
@@ -764,7 +839,7 @@ ITEM_TIPS = [
 
 
 def part10():
-    head = chapter('XI', 'Đan dược và phù chú', 'Mười tám món nhặt được từ kỳ ngộ hoặc mua ở Phường thị. Dùng trong Túi đồ.')
+    head = chapter('XII', 'Đan dược và phù chú', 'Mười tám món nhặt được từ kỳ ngộ hoặc mua ở Phường thị. Dùng trong Túi đồ.')
     order = [i for i in range(18) if ITEM_NAMES[i].endswith('Đan')] + [i for i in range(18) if not ITEM_NAMES[i].endswith('Đan')]
     cards = []
     for n, i in enumerate(order):
@@ -783,7 +858,7 @@ def part10():
 def part11():
     pages = []
     for g in range(6):
-        head = chapter('XII', '72 đạo hiệu', 'Danh hiệu theo thói quen đọc; chọn một để mang trên Home.') if g == 0 else '<section class="page">'
+        head = chapter('XIII', '72 đạo hiệu', 'Danh hiệu theo thói quen đọc; chọn một để mang trên Home.') if g == 0 else '<section class="page">'
         title = f'Đạo hiệu · {DAO_GROUPS[g]}'
         TOC.append((2, title, title))
         rows = ''.join(f'<tr><td><b>{e(DAO_NAMES[g * 12 + k])}</b></td><td>{e(DAO_RULES[g * 12 + k])}</td></tr>' for k in range(12))
@@ -796,7 +871,7 @@ def appendix():
         ['Chữ tối đa một trang', '450'],
         ['Đọc xong sách', '95%'],
         ['Linh thạch mỗi vạn chữ', '5 (lễ ×2, Tết ×3)'],
-        ['Kỳ ngộ mỗi vạn chữ', '12% (bộ 18%; bế quan ×2; Tầm Bảo ×3)'],
+        ['Kỳ ngộ', '36 loại; mốc chữ ngẫu nhiên 10 – 50 vạn; bộ ×1,5, bế quan ×2, Tầm Bảo ×3'],
         ['Quà', '1 khoáng thạch mỗi 10 vạn chữ'],
         ['Lò', '6 ô; tự nạp 3 khoáng thạch; mỗi cuốn 3 ô'],
         ['Kiếp phá lô', 'Thiên 2×20′ · Âm Dương 3×30′ · Hỗn Độn 4×40′'],
@@ -915,7 +990,7 @@ tr { break-inside: avoid; }
 
 def build_html(numbers=None):
     TOC.clear()
-    body = [cover(), None, intro(), part1(), part2(), part2b(), part3(), part4(), part5(), part6(), part7(), part8(), part9(), part10(), part11(), appendix()]
+    body = [cover(), None, intro(), part1(), part2(), part2b(), part2c(), part3(), part4(), part5(), part6(), part7(), part8(), part9(), part10(), part11(), appendix()]
     body[1] = contents(numbers)
     return f'<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Cẩm nang tu tiên</title><style>{CSS}</style></head><body>{"".join(body)}</body></html>'
 

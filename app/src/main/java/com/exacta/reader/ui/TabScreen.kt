@@ -51,6 +51,9 @@ abstract class TabActivity : AppCompatActivity() {
 
     fun refresh() = screen.invalidate()
 
+    /** Pages of the tab shown, as last drawn. */
+    fun pageCount() = screen.pageCount
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         tab = savedInstanceState?.getInt("tab") ?: intent.getIntExtra(EXTRA_TAB, 0)
@@ -83,6 +86,7 @@ class TabView(context: Context, private val host: TabActivity) : View(context) {
     private var ink: Ink? = null
     private val hits = Hits()
     private var pages = 1
+    val pageCount get() = pages
     private var downX = 0f
     private var downY = 0f
 

@@ -129,21 +129,21 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         y += 12 * u
         }
 
-        // The tabs along the bottom.
-        val tabH = 70 * u
+        // The tabs along the bottom, icons only, then Home.
+        val tabH = 64 * u
         val tabTop = h - tabH - 6 * u
         c.drawRect(m, tabTop - 8 * u, w - m, tabTop - 7 * u, k.gray)
-        val names = listOf("toc" to "Mục lục", "font" to "Chữ", "page" to "Trang", "more" to "Khác")
+        val names = listOf("toc", "font", "page", "more", "home")
         val sw = (w - 2 * m) / names.size
-        for ((i, pair) in names.withIndex()) {
+        for ((i, name) in names.withIndex()) {
             val slot = RectF(m + i * sw, tabTop, m + (i + 1) * sw, tabTop + tabH)
+            val icon = 34 * u
             if (i == tab) c.drawRoundRect(k.inset(slot, 8 * u), 14 * u, 14 * u, k.stroke(2.2f))
-            val icon = 24 * u
-            val lp = if (i == tab) k.smallBold else k.small
-            val total = icon + 4 * u + k.lineH(lp)
-            val iy = slot.top + (slot.height() - total) / 2
-            k.icon(c, pair.first, slot.centerX() - icon / 2, iy, icon, if (i == tab) Color.BLACK else Ink.DARK)
-            k.centered(c, pair.second, slot.left, slot.width(), iy + icon + 4 * u, lp)
+            k.icon(c, name, slot.centerX() - icon / 2, slot.centerY() - icon / 2, icon, if (i == tab || i == 4) Color.BLACK else Ink.DARK)
+            if (i == 4) {
+                hits.add(slot) { host.go("home") }
+                continue
+            }
             hits.add(slot) {
                 if (tab != i) {
                     tab = i
@@ -334,7 +334,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         )
         val gap = 10 * u
         val aw = (panel.width() - 3 * gap) / 4
-        val ah = 56 * u
+        val ah = 60 * u
         for ((i, a) in actions.withIndex()) {
             val r = RectF(panel.left + i * (aw + gap), panel.top, panel.left + i * (aw + gap) + aw, panel.top + ah)
             k.button(c, r, "", k.small)
@@ -360,13 +360,12 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             Triple("Báo tin tu tiên ở chân trang", if (Store.showNotices) "Bật" else "Tắt") { Store.showNotices = !Store.showNotices },
         )
         val top = panel.top + ah + 14 * u
-        val pagerH = 48 * u
         val cols = 2
-        val cardH = 76 * u
-        var rowsFit = ((panel.bottom - top + gap) / (cardH + gap)).toInt().coerceAtLeast(1)
-        if (rowsFit * cols < options.size) rowsFit = ((panel.bottom - top - pagerH - 6 * u + gap) / (cardH + gap)).toInt().coerceAtLeast(1)
-        val per = rowsFit * cols
-        val pages = (options.size + per - 1) / per
+        // Every option on the one page: the cards share the room left.
+        val rowsN = (options.size + cols - 1) / cols
+        val cardH = ((panel.bottom - top - (rowsN - 1) * gap) / rowsN).coerceIn(52 * u, 76 * u)
+        val per = options.size
+        val pages = 1
         morePage = morePage.coerceIn(0, pages - 1)
         val cw = (panel.width() - (cols - 1) * gap) / cols
         for ((j, o) in options.drop(morePage * per).take(per).withIndex()) {
@@ -386,7 +385,6 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
                 invalidate()
             }
         }
-        if (pages > 1) pager(c, k, panel, morePage, pages) { morePage = it }
     }
 
     private fun pager(c: Canvas, k: Ink, panel: RectF, page: Int, pages: Int, set: (Int) -> Unit) {

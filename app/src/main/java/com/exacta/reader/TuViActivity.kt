@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.RectF
 import android.os.Bundle
 import com.exacta.reader.data.DaoPhap
+import com.exacta.reader.data.DongPhu
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.DaoHieu
@@ -19,12 +20,12 @@ import java.time.LocalDate
 
 /**
  * Tu vi & thành tích, in tabs: the realm and its ladder, the body (the five measures and tâm ma),
- * the breakthrough, the week's bí cảnh, the stats, Kinh Các.
+ * the breakthrough, the week's bí cảnh, Kinh Các. The stats live in Niên kỷ.
  */
 class TuViActivity : TabActivity() {
     override fun title() = "Tu Vi"
     override fun right() = TuLuyen.name()
-    override fun tabs() = listOf("Cảnh giới", "Thân", "Đột phá", "Bí cảnh", "Thống kê", "Kinh Các")
+    override fun tabs() = listOf("Cảnh giới", "Thân", "Đột phá", "Bí cảnh", "Kinh Các")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Store.checkRealm()
@@ -48,7 +49,6 @@ class TuViActivity : TabActivity() {
             biCanhPage(c, k, area)
             1
         }
-        4 -> stats(c, k, area)
         else -> kinhCac(c, k, area, page)
     }.let { if (tab == 2) 2 else it }
 
@@ -92,11 +92,14 @@ class TuViActivity : TabActivity() {
         y += sl + 14 * u
 
         // 2.1: the công pháp running and the linh căn, a tap from here.
-        val cp = RectF(a.left, y, a.right, y + 52 * u)
-        val cpText = (DaoPhap.activeDef()?.let { "${it.name} tầng ${DaoPhap.tang()}" } ?: "Chưa vận công pháp") +
-            " · ${DaoPhap.shortName()} · ngộ tính ${DaoPhap.ngo} ›"
+        val half = (a.width() - 12 * u) / 2
+        val cp = RectF(a.left, y, a.left + half, y + 52 * u)
+        val cpText = (DaoPhap.activeDef()?.let { "${it.name} tầng ${DaoPhap.tang()}" } ?: "Công pháp") + " ›"
         k.button(c, cp, k.fit(cpText, cp.width() - 24 * u, k.smallBold), k.smallBold)
         hits.add(cp) { startActivity(Intent(this, CongPhapActivity::class.java)) }
+        val dp = RectF(cp.right + 12 * u, y, a.right, y + 52 * u)
+        k.button(c, dp, k.fit("Động phủ · linh mạch ${DongPhu.giaiName()} ›", dp.width() - 24 * u, k.smallBold), k.smallBold)
+        hits.add(dp) { startActivity(Intent(this, DongPhuActivity::class.java)) }
         y = cp.bottom + 16 * u
 
         // The ladder of ten realms fills the rest.
@@ -510,63 +513,6 @@ class TuViActivity : TabActivity() {
             k.diamond(c, a.left + 6 * u, y - sl * 0.5f - (sl * (k.wrap(r, a.width() - 24 * u, small, 3).size - 1)), 4 * u)
             y += 10 * u
         }
-    }
-
-    private fun stats(c: Canvas, k: Ink, a: RectF): Int {
-        val u = k.u
-        val d = Store.today()
-        val small = k.small
-        val sl = k.lineH(small)
-        val finished = Store.books.values.count { it.finishDay >= 0 }
-        val wpm = Store.pace()
-        val stats = listOf(
-            "Thời gian đọc" to HomeView.duration(Store.totalSeconds),
-            "Đã đọc" to "${Realm.van(Store.totalWords)} vạn từ",
-            "Hôm nay" to HomeView.duration(Store.daySeconds[d] ?: 0),
-            "7 ngày qua" to HomeView.hours(Store.secondsBetween(d - 6, d)),
-            "30 ngày qua" to HomeView.hours(Store.secondsBetween(d - 29, d)),
-            "Chữ 30 ngày" to "${Realm.van(Store.wordsBetween(d - 29, d))} vạn",
-            "Chuỗi ngày đọc" to "${Store.streak()} ngày",
-            "Chuỗi dài nhất" to "${Store.bestStreak()} ngày",
-            "Ngày đọc nhiều nhất" to HomeView.duration(Store.daySeconds.values.maxOrNull() ?: 0L),
-            "Lần đọc dài nhất" to HomeView.duration(Store.bestSession),
-            "Sách đã mở" to "${Store.books.values.count { it.lastOpened > 0 }} cuốn",
-            "Đọc xong" to "$finished cuốn",
-            "Ngộ tính" to "${DaoPhap.ngo} (đã nhận ${DaoPhap.ngoEarned})",
-            "Tốc độ" to if (wpm > 0) "$wpm từ/phút" else "đọc thêm",
-            "Đột phá" to "${TuLuyen.breaks} lần · hỏng ${TuLuyen.breakFails}",
-            "Bí cảnh" to "${Store.biCanhCount} lần",
-            "Pháp bảo" to "${Store.beasts.size} món · ${Store.kinds().size}/${Treasure.SPECIES} loại",
-            "Bộ pháp bảo" to "${Store.setsCount()}/${Treasure.SETS} bộ",
-            "Linh thạch" to "${Store.linhThach} (đã nhận ${Store.linhThachEarned})",
-            "Bế quan viên mãn" to "${Store.beQuanDone} lần · ${HomeView.hours(Store.beQuanMinutes * 60)}",
-        )
-        var y = k.section(c, a.left, a.top, a.width(), "THỐNG KÊ")
-        val cols = if (k.W >= 600) 2 else 1
-        val colW = (a.width() - (cols - 1) * 28 * u) / cols
-        val rows = (stats.size + cols - 1) / cols
-        val rowH = sl + 10 * u
-        for ((i, pair) in stats.withIndex()) {
-            val x = a.left + (i / rows) * (colW + 28 * u)
-            k.pair(c, pair.first, pair.second, x, y + (i % rows) * rowH, colW)
-        }
-        y += rows * rowH + 18 * u
-
-        // The last 14 days fill the rest.
-        y = k.section(c, a.left, y, a.width(), "14 NGÀY QUA (PHÚT)")
-        val chartH = a.bottom - y - sl - 4 * u
-        val days = (13 downTo 0).map { Store.daySeconds[d - it] ?: 0L }
-        val peak = maxOf(days.maxOrNull() ?: 0L, 60L)
-        val slot = a.width() / 14
-        for ((i, s) in days.withIndex()) {
-            val bx = a.left + i * slot
-            val bh = if (s == 0L) 0f else maxOf(3 * u, s.toFloat() / peak * (chartH - sl - 6 * u))
-            c.drawRect(bx, y + chartH - u, bx + slot - 2 * u, y + chartH, k.fill)
-            if (bh > 0) c.drawRoundRect(bx + 4 * u, y + chartH - bh, bx + slot - 6 * u, y + chartH, 3 * u, 3 * u, if (i == 13) k.fill else k.gray)
-            if (s >= 60) k.centered(c, "${s / 60}", bx, slot - 2 * u, y + chartH - bh - sl - 2 * u, small)
-            k.centered(c, LocalDate.ofEpochDay(d - 13 + i).dayOfMonth.toString(), bx, slot, y + chartH + 3 * u, if (i == 13) k.smallBold else small)
-        }
-        return 1
     }
 
     private fun kinhCac(c: Canvas, k: Ink, a: RectF, page: Int): Int {

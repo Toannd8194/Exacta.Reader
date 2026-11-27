@@ -175,10 +175,11 @@ object DaoPhap {
     fun washHours() = hanhSeconds(hoursAt).sum() / 3600
     fun canWash() = awakened() && !washed && washHours() >= WASH_HOURS && Store.linhThach >= WASH_PRICE
 
-    /** Tẩy linh: once, the roots again from the hours read since the awakening. */
-    fun wash(): Boolean {
-        if (!canWash()) return false
-        Store.linhThach -= WASH_PRICE
+    /** Tẩy linh: once (again with Tẩy Linh Đan, `free`), the roots from the hours read since the awakening. */
+    fun wash(free: Boolean = false): Boolean {
+        if (!awakened() || washHours() < WASH_HOURS) return false
+        if (!free && (washed || Store.linhThach < WASH_PRICE)) return false
+        if (!free) Store.linhThach -= WASH_PRICE
         val before = rootName()
         roots.clear()
         roots.addAll(rootsFrom(hanhSeconds(hoursAt)))
@@ -269,7 +270,7 @@ object DaoPhap {
     fun chungMa(): Int = if (tamWorks(PhapMon.TP_CHUNG_MA) && activeDef()?.attr == PhapMon.KIEM) minOf(20, TuLuyen.tamMa / 5) else 0
 
     /** Percent of linh lực the cultivator draws from a word (before bình cảnh and wounds). */
-    fun speed(): Int = (100 + rootBonus() + congBonus() + affinityBonus() + chungMa()).coerceIn(50, 200)
+    fun speed(): Int = (100 + rootBonus() + congBonus() + affinityBonus() + chungMa() + DongPhu.speedBonus()).coerceIn(50, 200)
 
     fun speedParts(): List<Pair<String, Int>> {
         val list = ArrayList<Pair<String, Int>>()
@@ -281,6 +282,7 @@ object DaoPhap {
             if (a < 0) list.add("Khắc linh căn (${PhapMon.attrName(d.attr)})" to a)
         }
         if (chungMa() > 0) list.add("Đạo Tâm Chủng Ma" to chungMa())
+        if (DongPhu.speedBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.speedBonus())
         return list
     }
 
@@ -520,18 +522,21 @@ object DaoPhap {
     fun owns(kind: Int, id: Int) = when (kind) {
         PhapMon.CONG -> id in cong
         PhapMon.TAM -> id in tam
+        PhapMon.DAN -> id in DongPhu.known
         else -> id in thuat
     }
 
     fun gain(kind: Int, id: Int): Boolean = when (kind) {
         PhapMon.CONG -> gainCong(id)
         PhapMon.TAM -> gainTam(id)
+        PhapMon.DAN -> DongPhu.learn(id)
         else -> gainThuat(id)
     }
 
     fun price(kind: Int, id: Int) = when (kind) {
         PhapMon.CONG -> PhapMon.PRICE[CONG_PHAP[id].pham]
         PhapMon.TAM -> PhapMon.TAM_PRICE
+        PhapMon.DAN -> com.exacta.reader.game.DanDao.recipePrice(id)
         else -> PhapMon.thuatPrice(id)
     }
 
@@ -584,6 +589,7 @@ object DaoPhap {
             picks.forEach { offers.add(PhapMon.CONG to it) }
             TAM_PHAP.indices.filter { it !in tam }.shuffled(r).take(2).forEach { offers.add(PhapMon.TAM to it) }
             THUAT_PHAP.indices.filter { it !in thuat && canLearnRealm(it) }.shuffled(r).take(3).forEach { offers.add(PhapMon.THUAT to it) }
+            if (DongPhu.started) com.exacta.reader.game.DanDao.RECIPES.indices.filter { it !in DongPhu.known }.shuffled(r).take(2).forEach { offers.add(PhapMon.DAN to it) }
             Store.touch()
         }
         return offers

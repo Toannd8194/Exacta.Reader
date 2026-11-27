@@ -89,6 +89,10 @@ class SettingsActivity : TabActivity() {
                     choose("Ngừng tính giờ đọc sau", idles.map { "$it phút không chạm" }, idles.indexOf(Store.idleMinutes)) { Store.idleMinutes = idles[it] }
                 },
                 Row("Ngày sinh nhật", "$birth · cho đạo hiệu Sinh Thần Đọc Sách") { pickBirthday() },
+                Row("Báo kỳ ngộ bằng khung nổi", if (Store.kyNgoPopup) "Bật · hiện cả khi đang đọc" else "Tắt · chỉ ghi ở chân trang và Niên kỷ") {
+                    Store.kyNgoPopup = !Store.kyNgoPopup
+                    Store.touch()
+                },
                 Row("Luật tu tiên", "Cảnh giới, thiên kiếp, bí cảnh, pháp bảo, đạo hiệu") { showRules() },
             )
         }
@@ -120,7 +124,6 @@ class SettingsActivity : TabActivity() {
                 Row("Biên niên phát triển", "Tiền kiếp Exacta.OS trên Xteink X4 · ${BienNienActivity.COUNT} thế hệ, từ Nhất Quyển Sơ Khai tới ${BienNienActivity.CURRENT}") { startActivity(android.content.Intent(this, BienNienActivity::class.java)) },
                 Row("Sao lưu dữ liệu", "Chép tiến độ, tu vi, pháp bảo, đạo hiệu vào ExactaReader/backup") { backup() },
                 Row("Khôi phục từ bản sao lưu", "Thay toàn bộ dữ liệu bằng một bản sao lưu") { restore() },
-                Row("Mã nguồn mở dùng trong app", "Readium Kotlin Toolkit (BSD-3) · font Bitter (SIL OFL 1.1)", null),
                 Row("Nhật ký lỗi", "ExactaReader/exacta-log.txt trên bộ nhớ máy", null),
             )
             val crash = File(filesDir, ExactaApp.LAST_CRASH)
@@ -145,9 +148,13 @@ class SettingsActivity : TabActivity() {
         }
         val rowH = 84 * u
         val gap = 10 * u
-        val per = ((area.bottom - top + gap) / (rowH + gap)).toInt().coerceAtLeast(1)
+        // The logo takes room on the first page of Thông tin only: later pages hold more rows.
+        val logoH = if (tab == 3) 96 * u + 20 * u else 0f
+        val perFirst = ((area.bottom - area.top - logoH + gap) / (rowH + gap)).toInt().coerceAtLeast(1)
+        val perRest = ((area.bottom - area.top + gap) / (rowH + gap)).toInt().coerceAtLeast(1)
+        val from = if (page == 0) 0 else perFirst + (page - 1) * perRest
         var y = top
-        for (row in rows.drop(page * per).take(per)) {
+        for (row in rows.drop(from).take(if (page == 0) perFirst else perRest)) {
             val r = RectF(area.left, y, area.right, y + rowH)
             k.card(c, r)
             val pad = 20 * u
@@ -164,7 +171,7 @@ class SettingsActivity : TabActivity() {
             }
             y += rowH + gap
         }
-        return (rows.size + per - 1) / per
+        return if (rows.size <= perFirst) 1 else 1 + (rows.size - perFirst + perRest - 1) / perRest
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
@@ -222,7 +229,7 @@ class SettingsActivity : TabActivity() {
                     "• Bí cảnh tuần: 5 ngày đọc từ 30 phút trong tuần được khoáng thạch Huyền phẩm trở lên.\n\n" +
                     "• Lò luyện 6 ô: khoáng thạch cháy bằng chữ đọc; một cuốn sách luyện tối đa 3 chặng; Thiên phẩm trở lên phải qua kiếp phá lô.\n\n" +
                     "• Pháp bảo: 72 loại, 18 bộ bốn món, đủ bộ có hiệu quả mãi mãi. Hợp luyện: 3 món dư cùng phẩm thành 1 khoáng thạch phẩm trên.\n\n" +
-                    "• Kỳ ngộ mỗi vạn từ: khoáng thạch, linh thạch, 18 loại đan dược và phù chú, khí linh thức tỉnh.\n\n" +
+                    "• Kỳ ngộ: 36 loại, gặp ở những lúc riêng (mốc chữ ngẫu nhiên 10 – 50 vạn, buổi đọc liền dài, giờ Tý, giờ Mão, ngày rằm, lễ Tết, đọc xong sách, chuỗi ngày, đột phá); thưởng từ thường tới tuyệt thế. Xem Niên kỷ › Kỳ ngộ.\n\n" +
                     "• Linh thạch: mỗi vạn từ +5, thưởng bế quan, bí cảnh, vượt kiếp; tiêu ở Phường thị. Bế quan 30–120 phút: lò ×1,5, kỳ ngộ ×2.\n\n" +
                     "• Đạo hiệu: 72 đạo hiệu theo thói quen đọc, chọn một để mang.\n\n" +
                     "• Niên kỷ: tổng kết mỗi năm âm lịch, mở vào dịp Tết."

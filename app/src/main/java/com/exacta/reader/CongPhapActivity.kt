@@ -279,7 +279,7 @@ class CongPhapActivity : TabActivity() {
             "Hoàng phẩm tu tới Trúc Cơ, Huyền tới Kim Đan, Địa tới Nguyên Anh, Thiên tới Hóa Thần; Linh giới cần Linh phẩm, Độ Kiếp cần Tiên phẩm.",
             if (Store.realmCap in 0..8 && g >= 2) "Cửa kế tiếp ${Realm.baseName(g)} cần công pháp ${PhapMon.PHAM[PhapMon.phamFor(g)]} phẩm" +
                 (if (DaoPhap.canBreakWith(g)) ": đã đủ." else ": tìm ở kỳ ngộ, bí cảnh tuần, Tàng Kinh Các.") else "Cửa kế tiếp không đòi phẩm công pháp.",
-            "Đổi công pháp không mất tầng: mỗi bộ giữ chữ đã luyện. Trang sau là các bộ đã có.",
+            "Đổi công pháp không mất tầng: mỗi bộ giữ chữ đã luyện." + if (others().isNotEmpty()) " Trang sau là các bộ khác đã có." else "",
         )
         for (r in rules) {
             if (y + sl > a.bottom) break
@@ -289,7 +289,7 @@ class CongPhapActivity : TabActivity() {
         return 1
     }
 
-    private fun others() = DaoPhap.cong.keys.sortedWith(compareBy<Int>({ it != DaoPhap.active }, { -PhapMon.CONG_PHAP[it].pham }, { it }))
+    private fun others() = DaoPhap.cong.keys.filter { it != DaoPhap.active }.sortedWith(compareBy<Int>({ -PhapMon.CONG_PHAP[it].pham }, { it }))
 
     private fun ownedPer(k: Ink, a: RectF): Int {
         val top = k.lineH(k.smallBold) + 14 * k.u
@@ -301,7 +301,7 @@ class CongPhapActivity : TabActivity() {
     private fun owned(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
         val u = k.u
         val list = others()
-        var y = k.section(c, a.left, a.top, a.width(), "CÔNG PHÁP ĐÃ CÓ · ${list.size} BỘ")
+        var y = k.section(c, a.left, a.top, a.width(), "CÔNG PHÁP KHÁC ĐÃ CÓ · ${list.size} BỘ")
         val per = ownedPer(k, a)
         val h = rowH(k)
         for (id in list.drop(page * per).take(per)) {
@@ -431,6 +431,9 @@ class CongPhapActivity : TabActivity() {
                         (if (aff > 0) " · hợp" else if (aff < 0) " · khắc" else "") + " · ${PhapMon.EFFECTS[it.effect]}")
                 }
                 PhapMon.TAM -> PhapMon.TAM_PHAP[id].let { Triple(it.name, "Tâm pháp", it.text) }
+                PhapMon.DAN -> com.exacta.reader.game.DanDao.RECIPES[id].let {
+                    Triple(it.name, "Đan phương", "${com.exacta.reader.game.DanDao.GROUPS[it.group]} · ${it.text} · luyện đan sư ${com.exacta.reader.game.DanDao.CAP[it.cap - 1].lowercase()}")
+                }
                 else -> PhapMon.THUAT_PHAP[id].let { Triple(it.name, "Thuật pháp", "${PhapMon.attrName(it.attr)} · ${PhapMon.KINDS[it.kind]} · ${it.text}") }
             }
             val r = RectF(a.left, y, a.right, y + h)

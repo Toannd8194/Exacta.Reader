@@ -368,6 +368,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         lastTang = maxOf(lastTang, Realm.tangOf(book.percent))
         chapterTitle = locator.title ?: tocTitle(tocCurrent()) ?: chapterTitle
         Store.takeNote().takeIf { it.isNotEmpty() && Store.showNotices }?.let { showNotice(it) }
+        com.exacta.reader.ui.KyNgoPopup.show(this)
         if (noticePages > 0) noticePages--
         updateFooter()
         if (sheet.visibility == View.VISIBLE) sheet.invalidate()
@@ -433,6 +434,8 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     // --- Bars ---------------------------------------------------------------------------------
 
     private fun showBars() {
+        // The menu opens on Khác, whatever tab was used last.
+        sheet.tab = 3
         sheet.opened()
         topBar.visibility = View.VISIBLE
         sheet.visibility = View.VISIBLE
@@ -450,13 +453,13 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         val pad = Widgets.dp(context, 14)
         setPadding(pad, Widgets.dp(context, 8), pad, Widgets.dp(context, 8))
         visibility = View.GONE
-        addView(Widgets.button(this@ReaderActivity, "‹ Home") { go("home") })
+        // Home and Thư viện live in the sheet (Khác, and Home along the bottom).
         addView(Widgets.text(this@ReaderActivity, book.title, 15f, bold = true).apply {
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
-            setPadding(pad, 0, pad, 0)
+            gravity = Gravity.CENTER
+            setPadding(pad, Widgets.dp(context, 6), pad, Widgets.dp(context, 6))
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        addView(Widgets.button(this@ReaderActivity, "Thư viện") { go("library") })
     }
 
     // --- Sheet host ---------------------------------------------------------------------------
@@ -512,6 +515,10 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
 
     override fun go(where: String) {
         when (where) {
+            "home" -> {
+                homeDialog()
+                return
+            }
             "library" -> startActivity(Intent(this, LibraryActivity::class.java))
             "tuvi" -> startActivity(Intent(this, TuViActivity::class.java))
             "bequan" -> {
@@ -519,7 +526,23 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
                 return
             }
         }
-        if (where == "home") finish() else hideBars()
+        hideBars()
+    }
+
+    /** Home asks first: the sitting ends there, and so does a bế quan or a furnace waiting for it. */
+    private fun homeDialog() {
+        val warn = ArrayList<String>()
+        if (Store.beQuanTarget > 0) warn.add("Đang bế quan ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút: về Home là dừng bế quan, chưa đủ phút thì mất thưởng ${Store.beQuanReward(Store.beQuanTarget)} linh thạch.")
+        if (com.exacta.reader.data.DongPhu.brew >= 0) warn.add("Lò đan đang đỏ (${com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.data.DongPhu.brew].name}): dừng buổi đọc giữa chừng là nổ lò.")
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Về Home?")
+            .setMessage((listOf("Buổi đọc dừng ở trang này; lần sau mở lại đúng chỗ.") + warn).joinToString("\n\n"))
+            .setPositiveButton("Về Home") { _, _ ->
+                if (Store.beQuanTarget > 0) Store.cancelBeQuan()
+                finish()
+            }
+            .setNegativeButton("Đọc tiếp", null)
+            .show()
     }
 
     /** Bế quan: a reading session of a set length; reading in it makes the forge burn half again. */
