@@ -80,7 +80,7 @@ class LibraryActivity : TabActivity() {
         val u = k.u
         if (!canReadAll()) {
             var y = area.top + 20 * u
-            for (line in k.wrap("Exacta Reader cần quyền đọc thẻ nhớ để tìm sách EPUB.", area.width(), k.ui10, 3)) {
+            for (line in k.wrap("Vạn Quyển Tiên Đồ cần quyền đọc thẻ nhớ để tìm sách EPUB.", area.width(), k.ui10, 3)) {
                 k.text(c, line, area.left, y, k.ui10)
                 y += k.lineH(k.ui10)
             }

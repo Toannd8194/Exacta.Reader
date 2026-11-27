@@ -348,6 +348,24 @@ class PhapBaoActivity : TabActivity() {
             k.centered(c, "Đọc hết một cuốn hoặc chờ lò luyện thành pháp bảo.", a.left, a.width(), a.top + 84 * u + s + k.lineH(k.ui12Bold), k.small)
             return 1
         }
+        // The hợp luyện bar.
+        val barH = 52 * u
+        val bar = RectF(a.left, a.top, a.right, a.top + barH)
+        val ready = Store.mergeTiers()
+        k.card(c, bar, selected = ready.isNotEmpty())
+        val btn = RectF(bar.right - 190 * u, bar.top + 8 * u, bar.right - 8 * u, bar.bottom - 8 * u)
+        k.button(c, btn, if (ready.isEmpty()) "Hợp luyện" else "Hợp luyện · ${ready.size}", enabled = ready.isNotEmpty())
+        val hint = if (ready.isEmpty()) "Hợp luyện: 3 pháp bảo dư cùng phẩm thành 1 khoáng thạch phẩm trên · đã luyện ${Store.mergeCount} lần"
+            else "Có ${ready.size} phẩm đủ 3 pháp bảo dư để hợp luyện · đã luyện ${Store.mergeCount} lần"
+        val hl = k.wrap(hint, btn.left - bar.left - 24 * u, k.small, 2)
+        var hy = bar.centerY() - hl.size * k.lineH(k.small) / 2
+        for (l in hl) {
+            k.text(c, l, bar.left + 14 * u, hy, k.small)
+            hy += k.lineH(k.small)
+        }
+        hits.add(bar) { mergeDialog() }
+        @Suppress("NAME_SHADOWING") val a = RectF(a.left, bar.bottom + 14 * u, a.right, a.bottom)
+
         val gap = 12 * u
         val cols = ((a.width() + gap) / (150 * u + gap)).toInt().coerceIn(3, 6)
         val cellW = (a.width() - (cols - 1) * gap) / cols
@@ -370,6 +388,41 @@ class PhapBaoActivity : TabActivity() {
             hits.add(r) { showBeast(b) }
         }
         return pages
+    }
+
+    /** Hợp luyện: pick a grade with three spares, see which three go, confirm. */
+    private fun mergeDialog() {
+        val tiers = Store.mergeTiers()
+        if (tiers.isEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle("Hợp luyện")
+                .setMessage("Ba pháp bảo dư cùng phẩm hợp luyện thành một khoáng thạch phẩm cao hơn, kèm ít linh thạch.\n\n" +
+                    "Mỗi loại pháp bảo luôn giữ lại một món (món có khí linh, hoặc món lâu nhất); chỉ những món trùng loại mới là dư. " +
+                    "Hỗn Độn phẩm là phẩm cao nhất nên không hợp luyện được.\n\nHiện chưa phẩm nào đủ 3 món dư.")
+                .setPositiveButton("Đóng", null)
+                .show()
+            return
+        }
+        val labels = tiers.map { t -> "${Treasure.TIER_NAMES[t]}: dư ${Store.spares(t).size} món → khoáng thạch ${Treasure.TIER_NAMES[t + 1]}" }
+        AlertDialog.Builder(this)
+            .setTitle("Hợp luyện phẩm nào?")
+            .setItems(labels.toTypedArray()) { _, w -> confirmMerge(tiers[w]) }
+            .setNegativeButton("Thôi", null)
+            .show()
+    }
+
+    private fun confirmMerge(tier: Int) {
+        val three = Store.spares(tier).take(Store.MERGE_COUNT)
+        val names = three.joinToString("\n") { "· ${it.name}" + if (it.spirit.isNotEmpty()) " «${it.spirit}»" else "" }
+        AlertDialog.Builder(this)
+            .setTitle("Hợp luyện ${Treasure.TIER_NAMES[tier]}")
+            .setMessage("Ba món này sẽ tan vào lò:\n$names\n\nNhận: 1 khoáng thạch ${Treasure.TIER_NAMES[tier + 1]} và ${10 * (tier + 1)} linh thạch.")
+            .setPositiveButton("Hợp luyện") { _, _ ->
+                if (Store.merge(tier)) android.widget.Toast.makeText(this, "Vạn khí quy nhất: khoáng thạch ${Treasure.TIER_NAMES[tier + 1]} vào túi", android.widget.Toast.LENGTH_SHORT).show()
+                refresh()
+            }
+            .setNegativeButton("Thôi", null)
+            .show()
     }
 
     private fun sets(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {

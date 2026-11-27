@@ -116,7 +116,8 @@ class SettingsActivity : TabActivity() {
         )
         else -> {
             val list = mutableListOf(
-                Row("Vạn Quyển Tiên Đồ ${BuildConfigInfo.VERSION}", "Exacta Reader · đọc vạn quyển, tu thành tiên đồ · máy đọc e-ink Android", null),
+                Row("Vạn Quyển Tiên Đồ ${BuildConfigInfo.VERSION} · Phi Thăng", "Đọc vạn quyển, tu thành tiên đồ · máy đọc e-ink Android", null),
+                Row("Biên niên phát triển", "Tiền kiếp Exacta.OS trên Xteink X4 · 11 thế hệ, từ Sơ Nhập Đạo Môn tới Phi Thăng") { startActivity(android.content.Intent(this, BienNienActivity::class.java)) },
                 Row("Sao lưu dữ liệu", "Chép tiến độ, tu vi, pháp bảo, đạo hiệu vào ExactaReader/backup") { backup() },
                 Row("Khôi phục từ bản sao lưu", "Thay toàn bộ dữ liệu bằng một bản sao lưu") { restore() },
                 Row("Mã nguồn mở dùng trong app", "Readium Kotlin Toolkit (BSD-3) · font Bitter (SIL OFL 1.1)", null),
@@ -214,13 +215,12 @@ class SettingsActivity : TabActivity() {
         AlertDialog.Builder(this)
             .setTitle("Luật tu tiên")
             .setMessage(
-                "• Cảnh giới: chữ đọc tuần tự quy ra tu vi; nhảy qua mục lục hay kéo thanh tiến độ không tính. 36 cấp từ Luyện Khí tới Tiên nhân nhất phẩm.\n\n" +
-                    "• Thiên kiếp: mỗi đại cảnh giới chỉ mở sau khi đọc liền 3–7 ngày, mỗi ngày 30–60 phút. Lỡ một ngày ở giữa là thất bại, tu vi lui về gần cửa ải.\n\n" +
-                    "• Bí cảnh tuần: thứ Hai đến Chủ nhật, đủ 5 ngày đọc từ 30 phút được một khoáng thạch Huyền phẩm trở lên.\n\n" +
-                    "• Pháp bảo: lò luyện 3 ô, khoáng thạch cháy bằng chữ đọc ở bất kỳ cuốn nào; mỗi 10 vạn từ được tặng một khoáng thạch; đọc xong một cuốn luyện thành một pháp bảo theo độ dày sách.\n\n" +
-                    "• Bộ pháp bảo: 72 loại, 18 bộ, mỗi bộ 4 loại; gom đủ bộ thì có hiệu quả mãi mãi.\n\n" +
-                    "• Kỳ ngộ: mỗi vạn từ một lần cơ duyên — khoáng thạch, Tụ Linh Đan, Thiên Hỏa Phù, Phá Cảnh Đan, Hộ Lô Phù, hay khí linh thức tỉnh.\n\n" +
-                    "• Kiếp phá lô: pháp bảo Thiên phẩm trở lên phải qua vài ngày đọc đủ phút mới xuất thế; lỡ ngày thì lò lui về bảy phần.\n\n" +
+                "• Cảnh giới: chữ đọc tuần tự (lật trang) quy ra tu vi, 36 cấp tới Tiên nhân nhất phẩm. Thiên kiếp chặn mỗi đại cảnh giới: đọc liền 3–7 ngày, mỗi ngày 30–60 phút.\n\n" +
+                    "• Bí cảnh tuần: 5 ngày đọc từ 30 phút trong tuần được khoáng thạch Huyền phẩm trở lên.\n\n" +
+                    "• Lò luyện 6 ô: khoáng thạch cháy bằng chữ đọc; một cuốn sách luyện tối đa 3 chặng; Thiên phẩm trở lên phải qua kiếp phá lô.\n\n" +
+                    "• Pháp bảo: 72 loại, 18 bộ bốn món, đủ bộ có hiệu quả mãi mãi. Hợp luyện: 3 món dư cùng phẩm thành 1 khoáng thạch phẩm trên.\n\n" +
+                    "• Kỳ ngộ mỗi vạn từ: khoáng thạch, linh thạch, 18 loại đan dược và phù chú, khí linh thức tỉnh.\n\n" +
+                    "• Linh thạch: mỗi vạn từ +5, thưởng bế quan, bí cảnh, vượt kiếp; tiêu ở Phường thị. Bế quan 30–120 phút: lò ×1,5, kỳ ngộ ×2.\n\n" +
                     "• Đạo hiệu: 72 đạo hiệu theo thói quen đọc, chọn một để mang.\n\n" +
                     "• Niên kỷ: tổng kết mỗi năm âm lịch, mở vào dịp Tết."
             )

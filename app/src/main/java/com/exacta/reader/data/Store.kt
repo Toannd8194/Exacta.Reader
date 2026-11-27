@@ -168,6 +168,7 @@ object Store {
     var beQuanSeconds = 0L      // reading seconds in it so far
     var beQuanDone = 0
     var beQuanMinutes = 0L      // minutes of all bế quan completed
+    var mergeCount = 0          // 1.0: hợp luyện done
 
     // Niên kỷ: the lunar year whose summary was opened at Tết.
     var nienKySeen = -1
@@ -267,6 +268,7 @@ object Store {
             linhThach = it.optLong("lt"); linhThachEarned = it.optLong("ltEarned"); ltWords = it.optLong("ltWords")
             beQuanTarget = it.optInt("bqTarget"); beQuanSeconds = it.optLong("bqSeconds")
             beQuanDone = it.optInt("bqDone"); beQuanMinutes = it.optLong("bqMinutes")
+            mergeCount = it.optInt("merge")
         }
         o.optJSONObject("omega2")?.let {
             it.optJSONArray("items")?.let { a -> for (i in 0 until minOf(a.length(), items.size)) items[i] = a.getInt(i) }
@@ -344,7 +346,7 @@ object Store {
                 .put("bonusMinutes", JSONObject().apply { bonusMinutes.forEach { (d, m) -> put(d.toString(), m) } })
                 .put("sealed", JSONArray().apply { sealedDays.forEach { put(it) } }))
             put("tienTe", JSONObject().put("lt", linhThach).put("ltEarned", linhThachEarned).put("ltWords", ltWords)
-                .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes))
+                .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes).put("merge", mergeCount))
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -391,7 +393,7 @@ object Store {
         phaLoPassed = 0; phaLoFailed = 0; pillsUsed = 0; talismansUsed = 0; breakPillUsed = false; trialBonus = 0
         bonusTuVi = 0; trialSpare = 0; seekWords = 0; giftLuck = 0; biCanhBonusWeek = -1; biCanhBonusDays = 0
         bonusMinutes.clear(); sealedDays.clear()
-        linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0
+        linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0; mergeCount = 0
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -890,6 +892,39 @@ object Store {
         return true
     }
 
+    // --- Hợp luyện -------------------------------------------------------------------------------------
+
+    const val MERGE_COUNT = 3
+
+    /**
+     * The spares of a grade: every treasure but one of each kind. The one kept is the one with a khí
+     * linh, else the eldest; the spares come newest first, those without a khí linh before the others.
+     */
+    fun spares(tier: Int): List<Beast> = beasts.filter { it.tier == tier }.groupBy { it.species }.values.flatMap { g ->
+        val keep = g.minWith(compareBy<Beast>({ it.spirit.isEmpty() }, { it.bornDay }))
+        g.filter { it !== keep }
+    }.sortedWith(compareBy<Beast>({ it.spirit.isNotEmpty() }, { -it.bornDay }))
+
+    /** The grades that can merge now (Hỗn Độn, the highest, has nothing above it). */
+    fun mergeTiers(): List<Int> = (0 until Treasure.TIERS - 1).filter { spares(it).size >= MERGE_COUNT }
+
+    /** Hợp luyện: three spares of a grade melt into one ore of the grade above, and some linh thạch. */
+    fun merge(tier: Int): Boolean {
+        if (tier !in 0 until Treasure.TIERS - 1) return false
+        val taken = spares(tier).take(MERGE_COUNT)
+        if (taken.size < MERGE_COUNT) return false
+        beasts.removeAll { b -> taken.any { it === b } }
+        mergeCount++
+        bag[tier + 1]++
+        fillForge()
+        gainLinhThach(10L * (tier + 1))
+        note("Hợp luyện ${MERGE_COUNT} pháp bảo ${Treasure.TIER_NAMES[tier]}: khoáng thạch ${Treasure.TIER_NAMES[tier + 1]}")
+        checkSets()
+        checkTitles()
+        touch()
+        return true
+    }
+
     /** The talismans and pills with no target; returns the line to show, or null when it cannot serve now. */
     fun useSimple(i: Int): String? {
         if (items[i] <= 0) return null
@@ -1202,7 +1237,7 @@ object Store {
             finished.size >= 25, finished.size >= 100, finished.any { it.words >= 1_000_000 }, quickest == 1L, tangCount >= 500,
             books.values.count { it.lastOpened > 0 } >= 100,
             // Pháp bảo
-            beasts.isNotEmpty(), kinds >= 18, kinds >= 36, beasts.any { it.tier == Treasure.TIERS - 1 }, beasts.size >= 30, setsDone != 0,
+            beasts.isNotEmpty(), kinds >= 18, kinds >= 36, beasts.any { it.tier == Treasure.TIERS - 1 }, beasts.size >= 30 || mergeCount >= 10, setsDone != 0,
             kinds >= 54, kinds >= Treasure.SPECIES, setsCount() >= 9, beasts.map { it.tier }.toSet().size >= Treasure.TIERS,
             phaLoPassed >= 5, beasts.count { it.spirit.isNotEmpty() && it.spirit != Treasure.TRIAL_MARK } >= 5,
             // Kỳ duyên

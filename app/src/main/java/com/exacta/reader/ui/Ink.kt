@@ -35,18 +35,24 @@ class Ink(private val context: Context, width: Int) {
         this.color = color
     }
 
-    val small get() = paint(SMALL)
-    val smallBold get() = paint(SMALL, bold = true)
-    val ui10 get() = paint(UI10)
-    val ui10Bold get() = paint(UI10, bold = true)
-    val ui12Bold get() = paint(UI12, bold = true)
-    val big get() = paint(BIG, big = true)
+    // Made once: callers only read them (a caller that needs another colour copies with Paint(p)).
+    val small = paint(SMALL)
+    val smallBold = paint(SMALL, bold = true)
+    val ui10 = paint(UI10)
+    val ui10Bold = paint(UI10, bold = true)
+    val ui12Bold = paint(UI12, bold = true)
+    val big = paint(BIG, big = true)
 
     val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.FILL }
     val gray = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = LIGHT; style = Paint.Style.FILL }
     val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
-    fun stroke(w: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = w * u }
+    private val strokes = HashMap<Float, Paint>()
+    fun stroke(w: Float): Paint = strokes.getOrPut(w) {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = w * u }
+    }
+    private val faint by lazy { Paint(stroke(1.2f)).apply { color = LIGHT } }
     private val pixels = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+    private val tints = HashMap<Int, Paint>()
 
     fun lineH(p: Paint) = p.fontSpacing
 
@@ -119,6 +125,9 @@ class Ink(private val context: Context, width: Int) {
 
     // --- Pixel art -------------------------------------------------------------------------
 
+    /** A drawable's id by name, looked up once (getIdentifier is slow, and screens draw often). */
+    private fun drawable(name: String): Int = ids.getOrPut(name) { context.resources.getIdentifier(name, "drawable", context.packageName) }
+
     private fun bitmap(id: Int) = bitmaps.getOrPut(id) {
         BitmapFactory.decodeResource(context.resources, id, BitmapFactory.Options().apply { inScaled = false })
     }
@@ -129,18 +138,18 @@ class Ink(private val context: Context, width: Int) {
     }
 
     fun badge(c: Canvas, species: Int, x: Float, y: Float, size: Float, alpha: Int = 255) {
-        val id = context.resources.getIdentifier("badge_" + species.coerceIn(0, com.exacta.reader.game.Treasure.SPECIES - 1).toString().padStart(2, '0'), "drawable", context.packageName)
+        val id = drawable("badge_" + species.coerceIn(0, com.exacta.reader.game.Treasure.SPECIES - 1).toString().padStart(2, '0'))
         if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), if (alpha >= 255) pixels else Paint(pixels).apply { this.alpha = alpha })
     }
 
     fun realmIcon(c: Canvas, realm: Int, x: Float, y: Float, size: Float) {
-        val id = context.resources.getIdentifier("realm_${realm.coerceIn(0, 9)}", "drawable", context.packageName)
+        val id = drawable("realm_${realm.coerceIn(0, 9)}")
         if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), pixels)
     }
 
     /** A grayscale drawing (res/drawable-nodpi/<name>.png) as it is, optionally faded. */
     fun art(c: Canvas, name: String, x: Float, y: Float, size: Float, alpha: Int = 255) {
-        val id = context.resources.getIdentifier(name, "drawable", context.packageName)
+        val id = drawable(name)
         if (id == 0) return
         val p = if (alpha >= 255) pixels else Paint(pixels).apply { this.alpha = alpha }
         c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), p)
@@ -205,7 +214,7 @@ class Ink(private val context: Context, width: Int) {
             c.drawRoundRect(r, rad, rad, fill)
         } else {
             c.drawRoundRect(r, rad, rad, white)
-            c.drawRoundRect(inset(r, u), rad, rad, stroke(if (enabled) 2f else 1.2f).apply { if (!enabled) color = LIGHT })
+            c.drawRoundRect(inset(r, u), rad, rad, if (enabled) stroke(2f) else faint)
         }
         val tp = Paint(p).apply { color = if (selected) Color.WHITE else if (enabled) Color.BLACK else DARK }
         centered(c, label, r.left + 6 * u, r.width() - 12 * u, r.centerY() - lineH(tp) / 2, tp)
@@ -225,16 +234,18 @@ class Ink(private val context: Context, width: Int) {
 
     /** The app's logo (res/drawable-nodpi/logo.png). */
     fun logo(c: Canvas, x: Float, y: Float, size: Float) {
-        val id = context.resources.getIdentifier("logo", "drawable", context.packageName)
+        val id = drawable("logo")
         if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), pixels)
     }
 
     /** A drawable icon (res/drawable-nodpi/ic_<name>.png), drawn black. */
     fun icon(c: Canvas, name: String, x: Float, y: Float, size: Float, color: Int = Color.BLACK) {
-        val id = context.resources.getIdentifier("ic_$name", "drawable", context.packageName)
+        val id = drawable("ic_$name")
         if (id == 0) return
-        val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
-            colorFilter = android.graphics.PorterDuffColorFilter(color, android.graphics.PorterDuff.Mode.SRC_IN)
+        val p = tints.getOrPut(color) {
+            Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
+                colorFilter = android.graphics.PorterDuffColorFilter(color, android.graphics.PorterDuff.Mode.SRC_IN)
+            }
         }
         c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), p)
     }
@@ -373,6 +384,7 @@ class Ink(private val context: Context, width: Int) {
     companion object {
         // Decoded images, shared by every screen (an e-ink app opens few at a time).
         private val bitmaps = HashMap<Int, Bitmap>()
+        private val ids = HashMap<String, Int>()
         private val covers = object : LinkedHashMap<String, Bitmap?>(32, 0.75f, true) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap?>?) = size > 40
         }

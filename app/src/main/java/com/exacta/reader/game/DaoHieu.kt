@@ -50,7 +50,7 @@ object DaoHieu {
         "Đọc xong 25 cuốn", "Đọc xong 100 cuốn", "Đọc xong một cuốn trên 100 vạn từ", "Đọc xong một cuốn trong 1 ngày",
         "Lên tầng công pháp 500 lần", "Mở 100 cuốn sách khác nhau",
         "Luyện thành pháp bảo đầu tiên", "Có 18 loại pháp bảo", "Có 36 loại pháp bảo", "Luyện thành một món Thần khí",
-        "Luyện thành 30 pháp bảo", "Gom đủ một bộ pháp bảo",
+        "Có 30 pháp bảo hoặc hợp luyện 10 lần", "Gom đủ một bộ pháp bảo",
         "Có 54 loại pháp bảo", "Có đủ 72 loại pháp bảo", "Gom đủ 9 bộ pháp bảo", "Có pháp bảo đủ 6 phẩm",
         "Vượt kiếp phá lô 5 lần", "5 pháp bảo thức tỉnh khí linh",
         "Nhận 20 khoáng thạch quà 10 vạn từ", "Bế quan viên mãn 20 lần (hoặc tổng 100 giờ đọc)", "Qua bí cảnh tuần 10 lần",

@@ -17,6 +17,8 @@ import com.exacta.reader.game.Treasure
 import com.exacta.reader.ui.HomeView
 import com.exacta.reader.ui.ReaderSheet
 import com.exacta.reader.ui.TabActivity
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -93,6 +95,9 @@ class ScreensTest {
             Store.beasts.add(Beast(i * 977L, sp / Treasure.KINDS, today - i * 3, titles[i % titles.size].first, sp % Treasure.KINDS,
                 if (i % 5 == 1) Treasure.SPIRITS[i % Treasure.SPIRITS.size] else if (i == 3) Treasure.TRIAL_MARK else ""))
         }
+        // Three spare Phàm phẩm of the first kind, for hợp luyện.
+        for (j in 0 until 3) Store.beasts.add(Beast(50_000L + j, 0, today - j, titles[0].first, 0))
+        Store.mergeCount = 2
         Store.items.fill(0)
         listOf(0, 1, 3, 4, 4, 7, 11, 13, 13, 16).forEach { Store.items[it]++ }
         Store.kyNgoCount = 7
@@ -214,6 +219,20 @@ class ScreensTest {
     @Test fun daoHieu() = tabs(DaoHieuActivity::class.java, "daohieu")
     @Test fun nienKy() = tabs(NienKyActivity::class.java, "nienky")
     @Test fun settings() = tabs(SettingsActivity::class.java, "settings")
+    @Test fun bienNien() = tabs(BienNienActivity::class.java, "biennien")
+
+    @Test
+    fun merge() {
+        assertTrue(0 in Store.mergeTiers())
+        val n = Store.beasts.size
+        val kinds = Store.kinds()
+        assertTrue(Store.merge(0))
+        assertEquals(n - 3, Store.beasts.size)
+        assertEquals(3, Store.mergeCount)
+        // Every kind is still owned: only spares melt.
+        assertEquals(kinds, Store.kinds())
+        assertTrue(Store.spares(0).isEmpty())
+    }
 
     @Test
     fun readerSheet() {

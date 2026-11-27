@@ -39,6 +39,7 @@
         <activity android:name=".SettingsActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".DaoHieuActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".NienKyActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".BienNienActivity" android:exported="false" android:screenOrientation="portrait" />
 
         <activity
             android:name=".ReaderActivity"

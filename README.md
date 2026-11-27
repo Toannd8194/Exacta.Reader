@@ -4,7 +4,35 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.10.apk`](dist/Exacta-Reader-0.10.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-1.0.apk`](dist/Van-Quyen-Tien-Do-1.0.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 1.0 · Phi Thăng (bản chính thức)
+
+- **Hợp luyện** (Pháp bảo › Bảo khố, thanh trên cùng): ba pháp bảo dư cùng phẩm luyện thành một khoáng thạch phẩm
+  trên, kèm 10 × phẩm linh thạch. Mỗi loại luôn giữ lại một món (món có khí linh, hoặc món lâu nhất), nên bộ sưu tập
+  không mất loại nào. Hỗn Độn phẩm không hợp luyện. Đạo hiệu Lò Hỏa Thuần Thanh: có 30 pháp bảo hoặc hợp luyện 10 lần.
+  Xem [`docs/hop-luyen.png`](docs/hop-luyen.png).
+- **Biên niên** (Cài đặt › Thông tin › Biên niên phát triển): tab Tiền kiếp kể Exacta.OS trên Xteink X4 (từ CrossPoint
+  2.0.0, Linh Thú, Beta 9, Beta 11 Trúc Cơ Vấn Đạo, Omega.v1 Vạn Pháp Quy Tông, Omega.v1.1); tab Thế hệ kể 11 thế hệ
+  của app, mỗi thế hệ mang tên một cảnh giới. Xem [`docs/bien-nien.png`](docs/bien-nien.png).
+
+  | Bản | Tên | Nội dung chính |
+  |---|---|---|
+  | 0.1 | Sơ Nhập Đạo Môn | bản dựng thử: Readium mở EPUB |
+  | 0.2 | Luyện Khí | trò tu tiên của Exacta.OS sang Android |
+  | 0.3 | Trúc Cơ | hết văng app, giao diện 300 ppi, thiên kiếp, bí cảnh, đạo hiệu |
+  | 0.4 | Kết Đan | tab thay cuộn, 6 kiểu Home, bộ pháp bảo, Niên kỷ |
+  | 0.5 | Nguyên Anh | cài đặt đọc trong sách, độ đậm chữ, font riêng |
+  | 0.6 | Hóa Thần | CSS vào chương sách, đếm chữ trung thực, sách vào lò |
+  | 0.7 | Luyện Hư | lò 6 ô, ba chặng mỗi cuốn, vẽ lại khoáng thạch |
+  | 0.8 | Hợp Thể | 72 pháp bảo, 18 bộ, kỳ ngộ, kiếp phá lô, tên mới |
+  | 0.9 | Đại Thừa | 18 đan dược và phù chú |
+  | 0.10 | Độ Kiếp | linh thạch, Phường thị, bế quan |
+  | 1.0 | Phi Thăng | hợp luyện, tối ưu, Biên niên |
+
+- **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
+  rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.
+- versionCode 100.
 
 ## Bản 0.10
 
