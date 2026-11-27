@@ -62,10 +62,19 @@ data class Beast(val seed: Long, val tier: Int, val bornDay: Long, val book: Str
  * A slot of the forge: an ore that words read (any book) forge, or a book (`book` = its path) that
  * forges a treasure of its length's grade when read to the end.
  */
-data class Ore(val tier: Int, var words: Long = 0, val book: String = "") {
+data class Ore(val tier: Int, var words: Long = 0, val book: String = "", val goal: Int = GOAL_ORE) {
     val isBook get() = book.isNotEmpty()
-    val need get() = Store.forgeNeed(tier)
-    val percent get() = if (isBook) (Store.books[book]?.percent ?: 0) else (words * 100 / need).toInt().coerceIn(0, 100)
+    val isStage get() = goal == GOAL_STAGE
+    val isFinish get() = goal == GOAL_FINISH
+    /** Words this slot needs: an ore's forging, or a book's stage; a whole book counts its %. */
+    val need get() = if (isStage) Store.stageNeed(tier) else Store.forgeNeed(tier)
+    val percent get() = if (isFinish) (Store.books[book]?.percent ?: 0) else (words * 100 / need).toInt().coerceIn(0, 100)
+
+    companion object {
+        const val GOAL_ORE = 0     // an ore: forged by the words read in any book
+        const val GOAL_STAGE = 1   // a stage of a book: every `need` words read in it forge a treasure of `tier`
+        const val GOAL_FINISH = 2  // a whole book: read to the end, a treasure of its length's grade
+    }
 }
 
 /**
@@ -80,7 +89,10 @@ data class Ore(val tier: Int, var words: Long = 0, val book: String = "") {
  *  - đạo hiệu: 36 titles earned by reading habits.
  */
 object Store {
-    const val FORGE_SLOTS = 3
+    const val FORGE_SLOTS = 6
+    const val SLOTS_PER_BOOK = 3
+    /** Ores the forge takes in by itself; the other slots wait for books. */
+    private const val AUTO_ORES = 3
     /** Readium's font size for the reader's 100%. */
     const val BASE_SIZE = 1.56
     private lateinit var file: File
@@ -187,7 +199,13 @@ object Store {
         }
         totalWords = o.optLong("totalWords"); totalSeconds = o.optLong("totalSeconds"); giftsAwarded = o.optLong("gifts")
         o.optJSONArray("bag")?.let { for (i in 0 until minOf(it.length(), bag.size)) bag[i] = it.getInt(i) }
-        o.optJSONArray("forge")?.let { a -> for (i in 0 until a.length()) a.getJSONArray(i).let { forge.add(Ore(it.getInt(0), it.getLong(1), it.optString(2, ""))) } }
+        o.optJSONArray("forge")?.let { a ->
+            for (i in 0 until a.length()) a.getJSONArray(i).let {
+                val book = it.optString(2, "")
+                val goal = it.optInt(3, if (book.isEmpty()) Ore.GOAL_ORE else Ore.GOAL_FINISH)
+                forge.add(Ore(it.getInt(0), it.getLong(1), book, goal))
+            }
+        }
         o.optJSONArray("beasts")?.let { a ->
             for (i in 0 until a.length()) a.getJSONObject(i).let {
                 beasts.add(Beast(it.getLong("seed"), it.getInt("tier"), it.optLong("born", -1), it.optString("book")))
@@ -242,7 +260,7 @@ object Store {
             })
             put("totalWords", totalWords); put("totalSeconds", totalSeconds); put("gifts", giftsAwarded)
             put("bag", JSONArray().apply { bag.forEach { put(it) } })
-            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words).apply { if (it.isBook) put(it.book) }) } })
+            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words).put(it.book).put(it.goal)) } })
             put("beasts", JSONArray().apply {
                 beasts.forEach { put(JSONObject().put("seed", it.seed).put("tier", it.tier).put("born", it.bornDay).put("book", it.book)) }
             })
@@ -368,13 +386,14 @@ object Store {
             if (!book.forged && book.words > 0) {
                 book.forged = true
                 val tier = Treasure.tierForBook(book.words)
-                val slot = forge.firstOrNull { it.book == book.path }
+                val slot = forge.firstOrNull { it.book == book.path && it.isFinish }
+                forge.removeAll { it.book == book.path && it.isStage }
                 if (slot != null) {
                     // A book in the forge becomes a treasure of its length's grade.
                     forge.remove(slot)
                     hatch(tier, book.title)
                     fillForge()
-                } else {
+                } else if (forge.none { it.book == book.path }) {
                     // Read outside the forge: an ore of the same grade.
                     giveOre(tier, "Đọc xong «${book.title}»")
                 }
@@ -399,9 +418,20 @@ object Store {
         val burn = if (setActive(6) && feastDay()) words * 2 else words
         val done = ArrayList<Ore>()
         for (ore in forge) {
-            if (ore.isBook) continue
-            ore.words += burn
-            if (ore.words >= ore.need) done.add(ore)
+            when {
+                ore.isStage && ore.book == book.path -> {
+                    ore.words += burn
+                    // A stage forges and starts again.
+                    while (ore.words >= ore.need) {
+                        ore.words -= ore.need
+                        hatch(ore.tier, book.title)
+                    }
+                }
+                !ore.isBook -> {
+                    ore.words += burn
+                    if (ore.words >= ore.need) done.add(ore)
+                }
+            }
         }
         for (ore in done) {
             forge.remove(ore)
@@ -464,10 +494,27 @@ object Store {
         }
     }
 
-    /** Puts a book being read into an empty slot; false when the forge is full or it is there. */
-    fun placeBook(book: Book): Boolean {
-        if (forge.size >= FORGE_SLOTS || forge.any { it.book == book.path } || book.finishDay >= 0) return false
-        forge.add(Ore(Treasure.tierForBook(book.words.coerceAtLeast(0)), 0, book.path))
+    /** Words of a book's stage for each grade (the firmware's stage pages × 135). */
+    private val STAGE_WORDS = longArrayOf(27_000, 67_500, 135_000, 270_000, 675_000, 1_350_000)
+
+    fun stageNeed(tier: Int): Long {
+        val base = STAGE_WORDS[tier.coerceIn(0, Treasure.TIERS - 1)]
+        return if (setActive(1)) base * 9 / 10 else base
+    }
+
+    /** What a book may still be put in the forge for: stage grades not taken, and the whole book. */
+    fun bookGoals(book: Book): List<Pair<Int, Int>> {  // (goal, tier)
+        val mine = forge.filter { it.book == book.path }
+        if (mine.size >= SLOTS_PER_BOOK || forge.size >= FORGE_SLOTS || book.finishDay >= 0) return emptyList()
+        val stages = (0 until Treasure.TIERS).filter { t -> mine.none { it.isStage && it.tier == t } }.map { Ore.GOAL_STAGE to it }
+        val whole = if (mine.none { it.isFinish } && book.words > 0) listOf(Ore.GOAL_FINISH to Treasure.tierForBook(book.words)) else emptyList()
+        return stages + whole
+    }
+
+    /** Puts a book being read into an empty slot for a stage of `tier` or for the whole book. */
+    fun placeBook(book: Book, goal: Int, tier: Int): Boolean {
+        if ((goal to tier) !in bookGoals(book)) return false
+        forge.add(Ore(tier, 0, book.path, goal))
         touch()
         return true
     }
@@ -488,9 +535,9 @@ object Store {
         return true
     }
 
-    /** Ores wait in the bag while the forge is full; the best one goes in first. */
+    /** Ores wait in the bag; up to three go into the forge by themselves, the best first. */
     fun fillForge() {
-        while (forge.size < FORGE_SLOTS) {
+        while (forge.size < FORGE_SLOTS && forge.count { !it.isBook } < AUTO_ORES) {
             val t = (Treasure.TIERS - 1 downTo 0).firstOrNull { bag[it] > 0 } ?: return
             bag[t]--
             forge.add(Ore(t))

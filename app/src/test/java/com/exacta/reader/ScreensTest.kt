@@ -94,6 +94,9 @@ class ScreensTest {
         }
         Store.forge.clear()
         Store.forge.addAll(listOf(Ore(1, 9_000), Ore(3, 12_000), Ore(0, 5_000)))
+        val first = Store.books.values.first()
+        Store.forge.add(Ore(2, 60_000, first.path, Ore.GOAL_STAGE))
+        Store.forge.add(Ore(Treasure.tierForBook(first.words), 0, first.path, Ore.GOAL_FINISH))
         Store.bag.fill(0)
         Store.bag[0] = 2; Store.bag[2] = 1
         Store.setsDone = 0
@@ -223,7 +226,7 @@ class ScreensTest {
         }
         for (t in 0..3) {
             val sheet = ReaderSheet(a, host).apply { tab = t }
-            val sh = (h * 0.64f).toInt()
+            val sh = (h * 0.56f).toInt()
             sheet.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(sh, View.MeasureSpec.EXACTLY))
             sheet.layout(0, 0, w, sh)
             val bmp = Bitmap.createBitmap(w, sh, Bitmap.Config.ARGB_8888)

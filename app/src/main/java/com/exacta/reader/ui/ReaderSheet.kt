@@ -79,8 +79,8 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         val label = if (dragging) "Tới ${(dragP * 100).toInt()}%" else host.progressLabel()
         k.centered(c, label, m, w - 2 * m, y, k.smallBold)
         y += k.lineH(k.smallBold) + 6 * u
-        val bh = 58 * u
-        val cbw = 150 * u
+        val bh = 48 * u
+        val cbw = 128 * u
         val prev = RectF(m, y, m + cbw, y + bh)
         val next = RectF(w - m - cbw, y, w - m, y + bh)
         k.button(c, prev, "‹ Chương", k.ui10Bold)
@@ -94,14 +94,14 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         c.drawRoundRect(tx0, ty - 1.5f * u, tx1, ty + 1.5f * u, u, u, k.gray)
         val kx = tx0 + (tx1 - tx0) * p.toFloat().coerceIn(0f, 1f)
         c.drawRoundRect(tx0, ty - 2 * u, kx, ty + 2 * u, 2 * u, 2 * u, k.fill)
-        c.drawCircle(kx, ty, 14 * u, k.fill)
-        c.drawCircle(kx, ty, 6 * u, k.white)
+        c.drawCircle(kx, ty, 12 * u, k.fill)
+        c.drawCircle(kx, ty, 5 * u, k.white)
         y += bh + 12 * u
         c.drawRect(m, y, w - m, y + u, k.gray)
         y += 12 * u
 
         // The tabs along the bottom.
-        val tabH = 82 * u
+        val tabH = 70 * u
         val tabTop = h - tabH - 6 * u
         c.drawRect(m, tabTop - 8 * u, w - m, tabTop - 7 * u, k.gray)
         val names = listOf("toc" to "Mục lục", "font" to "Chữ", "page" to "Trang", "more" to "Khác")
@@ -109,7 +109,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         for ((i, pair) in names.withIndex()) {
             val slot = RectF(m + i * sw, tabTop, m + (i + 1) * sw, tabTop + tabH)
             if (i == tab) c.drawRoundRect(k.inset(slot, 8 * u), 14 * u, 14 * u, k.stroke(2.2f))
-            val icon = 28 * u
+            val icon = 24 * u
             val lp = if (i == tab) k.smallBold else k.small
             val total = icon + 4 * u + k.lineH(lp)
             val iy = slot.top + (slot.height() - total) / 2
@@ -161,7 +161,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         val u = k.u
         val lw = labelW(k)
         k.text(c, label, r.left, r.centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
-        val bw = 110 * u
+        val bw = 92 * u
         val minus = RectF(r.left + lw, r.top, r.left + lw + bw, r.bottom)
         val plus = RectF(r.right - bw, r.top, r.right, r.bottom)
         val mid = RectF(minus.right + 10 * u, r.top, plus.left - 10 * u, r.bottom)
@@ -176,7 +176,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
 
     private fun rows(k: Ink, panel: RectF, n: Int): List<RectF> {
         val u = k.u
-        val rowH = minOf(60 * u, (panel.height() - (n - 1) * 10 * u) / n)
+        val rowH = minOf(50 * u, (panel.height() - (n - 1) * 10 * u) / n)
         val gap = if (n > 1) minOf(26 * u, (panel.height() - n * rowH) / (n - 1)) else 0f
         val top = panel.top + maxOf(0f, (panel.height() - n * rowH - (n - 1) * gap) / 2)
         return (0 until n).map { RectF(panel.left, top + it * (rowH + gap), panel.right, top + it * (rowH + gap) + rowH) }
@@ -303,7 +303,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         )
         val gap = 10 * u
         val aw = (panel.width() - 3 * gap) / 4
-        val ah = 62 * u
+        val ah = 56 * u
         for ((i, a) in actions.withIndex()) {
             val r = RectF(panel.left + i * (aw + gap), panel.top, panel.left + i * (aw + gap) + aw, panel.top + ah)
             k.button(c, r, "", k.small)
@@ -330,7 +330,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         )
         val top = panel.top + ah + 10 * u
         val pagerH = 48 * u
-        val rowH = 39 * u
+        val rowH = 36 * u
         var per = ((panel.bottom - top) / rowH).toInt().coerceAtLeast(1)
         if (per < options.size) per = ((panel.bottom - top - pagerH - 6 * u) / rowH).toInt().coerceAtLeast(1)
         val pages = (options.size + per - 1) / per

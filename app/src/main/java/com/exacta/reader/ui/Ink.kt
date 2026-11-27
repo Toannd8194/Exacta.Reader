@@ -138,25 +138,26 @@ class Ink(private val context: Context, width: Int) {
         if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), pixels)
     }
 
-    /** An ore being forged: a cut stone whose lower part fills with the progress. */
-    fun ore(c: Canvas, tier: Int, percent: Int, x: Float, y: Float, size: Float) {
-        val path = Path().apply {
-            moveTo(x + size * 0.5f, y + size * 0.06f)
-            lineTo(x + size * 0.9f, y + size * 0.32f)
-            lineTo(x + size * 0.8f, y + size * 0.86f)
-            lineTo(x + size * 0.2f, y + size * 0.86f)
-            lineTo(x + size * 0.1f, y + size * 0.32f)
-            close()
+    /** A grayscale drawing (res/drawable-nodpi/<name>.png) as it is, optionally faded. */
+    fun art(c: Canvas, name: String, x: Float, y: Float, size: Float, alpha: Int = 255) {
+        val id = context.resources.getIdentifier(name, "drawable", context.packageName)
+        if (id == 0) return
+        val p = if (alpha >= 255) pixels else Paint(pixels).apply { this.alpha = alpha }
+        c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), p)
+    }
+
+    /**
+     * An ore of a grade (each its own stone, from a rough rock to the chaos star); with `bar`, a thin
+     * progress bar under it, filled to `percent`.
+     */
+    fun ore(c: Canvas, tier: Int, percent: Int, x: Float, y: Float, size: Float, bar: Boolean = false, alpha: Int = 255) {
+        val art = if (bar) size * 0.84f else size
+        art(c, "art_ore_" + tier.coerceIn(0, 5), x + (size - art) / 2, y, art, alpha)
+        if (bar) {
+            val by = y + size - 5 * u
+            c.drawRoundRect(x + size * 0.1f, by, x + size * 0.9f, by + 5 * u, 2.5f * u, 2.5f * u, gray)
+            c.drawRoundRect(x + size * 0.1f, by, x + size * 0.1f + size * 0.8f * percent.coerceIn(0, 100) / 100f, by + 5 * u, 2.5f * u, 2.5f * u, fill)
         }
-        c.save()
-        c.clipPath(path)
-        val level = y + size * 0.86f - (size * 0.8f) * percent / 100f
-        c.drawRect(x, level, x + size, y + size, if (tier >= 3) fill else gray)
-        c.restore()
-        c.drawPath(path, stroke(2.5f))
-        c.drawLine(x + size * 0.1f, y + size * 0.32f, x + size * 0.9f, y + size * 0.32f, stroke(1.5f))
-        c.drawLine(x + size * 0.5f, y + size * 0.06f, x + size * 0.38f, y + size * 0.32f, stroke(1.5f))
-        c.drawLine(x + size * 0.5f, y + size * 0.06f, x + size * 0.62f, y + size * 0.32f, stroke(1.5f))
     }
 
     /**
@@ -388,8 +389,8 @@ class Ink(private val context: Context, width: Int) {
                 dm.densityDpi in 180..480 -> dm.densityDpi.toFloat()
                 else -> 300f
             }
-            // 1.2: the firmware's sizes read small at arm's length on a 6" screen.
-            var u = dpi / 215f * 1.2f * com.exacta.reader.data.Store.uiScale.toFloat()
+            // 1.1: the firmware's sizes read a little small at arm's length on a 6" screen.
+            var u = dpi / 215f * 1.1f * com.exacta.reader.data.Store.uiScale.toFloat()
             if (width > 0) u = u.coerceAtMost(width / 380f)  // keep about the firmware's room
             return u.coerceAtLeast(0.6f)
         }

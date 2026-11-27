@@ -4,7 +4,21 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.6.apk`](dist/Exacta-Reader-0.6.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Exacta-Reader-0.7.apk`](dist/Exacta-Reader-0.7.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 0.7
+
+- **Lò luyện 6 ô, sách luyện theo chặng**: một cuốn chiếm tối đa 3 ô, mỗi ô một phẩm. Chặng: cứ đọc đủ số chữ của phẩm
+  đó trong cuốn này (Hoàng 2,7 vạn · Huyền 6,75 vạn · Địa 13,5 vạn · Thiên 27 vạn · Âm Dương 67,5 vạn · Hỗn Độn 135 vạn
+  từ) là ra một pháp bảo rồi luyện tiếp; hoặc luyện cả cuốn (đọc xong thành pháp bảo theo độ dày). Khoáng thạch tự vào
+  lò tối đa 3 ô, các ô còn lại để dành cho sách.
+- **Hình mới**: lò luyện đan (ba chân, nắp vòm, quẻ bát quái, lửa); 6 khoáng thạch mỗi phẩm một dáng (đá thô, tinh thể,
+  cụm tinh thể, đá quý, ngọc âm dương, sao hỗn độn), vẽ xám, có thanh tiến độ.
+- **Home Bảng tu hành**: bỏ hàng ba ô; ô tu hành chứa luôn Thiên kiếp và Bí cảnh (chạm vào dòng nào mở đúng tab đó);
+  hàng dưới cùng Đạo hiệu (1/2) · Niên kỷ · Cài đặt; ô pháp bảo hiện 6 ô lò.
+- **Màn đọc**: dòng trên có % đã đọc (trái), tên sách, đồng hồ (phải); dòng dưới có tên chương và thời gian dự kiến
+  đọc xong sách và xong chương. Bảng chỉnh nhỏ gọn hơn.
+- Cỡ giao diện chung còn +10% (bản 0.6 là +20%).
 
 ## Bản 0.6
 

@@ -40,88 +40,83 @@ class PhapBaoActivity : TabActivity() {
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
-        var y = k.section(c, a.left, a.top, a.width(), "LÒ LUYỆN")
-        val gap = 14 * u
+        var y = k.section(c, a.left, a.top, a.width(), "LÒ LUYỆN · ${Store.forge.size}/${Store.FORGE_SLOTS} Ô")
+        // Six slots, three by two.
+        val gap = 12 * u
         val slotW = (a.width() - 2 * gap) / 3
-        val slotH = minOf(300 * u, a.height() * 0.42f)
+        val slotH = ((a.height() - 2 * gap) * 0.3f).coerceIn(140 * u, 210 * u)
         for (i in 0 until Store.FORGE_SLOTS) {
-            val r = RectF(a.left + i * (slotW + gap), y, a.left + i * (slotW + gap) + slotW, y + slotH)
-            k.card(c, r)
+            val x = a.left + (i % 3) * (slotW + gap)
+            val sy = y + (i / 3) * (slotH + gap)
+            val r = RectF(x, sy, x + slotW, sy + slotH)
             val ore = Store.forge.getOrNull(i)
+            k.card(c, r)
             hits.add(r) { slot(ore) }
+            val pad = 10 * u
+            val textH = 3 * sl
+            val pic = minOf(r.width() - 2 * pad, r.height() - 2 * pad - textH - 8 * u)
+            val py = r.top + pad
+            var ty = py + pic + 8 * u
+            when {
+                ore == null -> {
+                    k.art(c, "art_forge", r.centerX() - pic / 2, py, pic, 70)
+                    k.centered(c, "Ô trống", r.left, r.width(), ty, sb); ty += sl
+                    k.centered(c, "chạm để đặt", r.left, r.width(), ty, small)
+                }
+                ore.isBook -> {
+                    val b = Store.books[ore.book]
+                    val cw = pic * 0.66f
+                    k.cover(c, b?.cover ?: "", b?.title ?: "Sách", RectF(r.centerX() - cw / 2, py, r.centerX() + cw / 2, py + pic))
+                    k.centered(c, b?.title ?: "Sách", r.left + pad, r.width() - 2 * pad, ty, sb); ty += sl
+                    val goal = if (ore.isStage) "Chặng ${Treasure.TIER_NAMES[ore.tier]}" else "Cả cuốn → ${Treasure.TIER_NAMES[ore.tier]}"
+                    k.centered(c, goal, r.left + 4 * u, r.width() - 8 * u, ty, small); ty += sl
+                    val left = if (ore.isStage) "còn ${((ore.need - ore.words).coerceAtLeast(0) + 999) / 1000} nghìn từ" else "đã đọc ${ore.percent}%"
+                    k.centered(c, left, r.left, r.width(), ty, small)
+                }
+                else -> {
+                    k.ore(c, ore.tier, ore.percent, r.centerX() - pic / 2, py, pic, bar = true)
+                    k.centered(c, Treasure.TIER_NAMES[ore.tier], r.left, r.width(), ty, sb); ty += sl
+                    k.centered(c, "${Treasure.stageName(ore.percent)} · ${ore.percent}%", r.left, r.width(), ty, small); ty += sl
+                    k.centered(c, "còn ${((ore.need - ore.words).coerceAtLeast(0) + 999) / 1000} nghìn từ", r.left, r.width(), ty, small)
+                }
+            }
             if (ore != null && ore.isBook) {
-                // A book in the forge: its cover, how far it is read, what it will become.
-                val b = Store.books[ore.book]
-                val ch = slotH - 4 * sl - 36 * u
-                val cw = minOf(r.width() - 40 * u, ch * 0.67f)
-                val cr = RectF(r.centerX() - cw / 2, r.top + 14 * u, r.centerX() + cw / 2, r.top + 14 * u + ch)
-                k.cover(c, b?.cover ?: "", b?.title ?: "Sách", cr)
-                var ty = cr.bottom + 8 * u
-                k.centered(c, b?.title ?: "Sách", r.left + 8 * u, r.width() - 16 * u, ty, sb); ty += sl
-                k.centered(c, "Đã đọc ${ore.percent}%", r.left, r.width(), ty, small); ty += sl
-                k.centered(c, "thành ${Treasure.TIER_NAMES[Treasure.tierForBook(b?.words ?: 0)]}", r.left, r.width(), ty, small)
-                continue
+                // The stage's progress along the bottom edge.
+                val bx = r.left + 14 * u
+                val bw = r.width() - 28 * u
+                val by = r.bottom - 9 * u
+                c.drawRoundRect(bx, by, bx + bw, by + 4 * u, 2 * u, 2 * u, k.gray)
+                c.drawRoundRect(bx, by, bx + bw * ore.percent / 100f, by + 4 * u, 2 * u, 2 * u, k.fill)
             }
-            if (ore == null) {
-                val s = minOf(r.width() - 60 * u, slotH - 4 * sl - 50 * u)
-                k.icon(c, "forge", r.centerX() - s / 2, r.top + 20 * u, s)
-                k.centered(c, "Ô trống", r.left, r.width(), r.top + 30 * u + s, sb)
-                k.centered(c, "chạm để đặt sách", r.left, r.width(), r.top + 30 * u + s + sl, small)
-                continue
-            }
-            val size = minOf(r.width() - 40 * u, slotH - 4 * sl - 50 * u)
-            k.ore(c, ore.tier, ore.percent, r.centerX() - size / 2, r.top + 16 * u, size)
-            var ty = r.top + 24 * u + size
-            k.centered(c, Treasure.TIER_NAMES[ore.tier], r.left, r.width(), ty, k.ui10Bold); ty += k.lineH(k.ui10Bold)
-            k.centered(c, "${Treasure.stageName(ore.percent)} · ${ore.percent}%", r.left, r.width(), ty, small); ty += sl
-            val left = (ore.need - ore.words).coerceAtLeast(0)
-            k.centered(c, "còn ${(left + 999) / 1000} nghìn từ", r.left, r.width(), ty, small)
         }
-        y += slotH + 22 * u
+        y += 2 * slotH + gap + 20 * u
 
         // The bag, by grade.
         y = k.section(c, a.left, y, a.width(), "TÚI KHOÁNG THẠCH · ${Store.bag.sum()} viên")
         val cw = (a.width() - 5 * 10 * u) / 6
-        val ic = minOf(cw - 30 * u, 56 * u)
+        val ic = minOf(cw - 20 * u, 60 * u)
         for (t in 0 until Treasure.TIERS) {
             val x = a.left + t * (cw + 10 * u)
-            k.ore(c, t, if (Store.bag[t] > 0) 100 else 0, x + (cw - ic) / 2, y, ic)
+            k.ore(c, t, 0, x + (cw - ic) / 2, y, ic, alpha = if (Store.bag[t] > 0) 255 else 60)
             k.centered(c, Treasure.TIER_NAMES[t].removeSuffix(" phẩm"), x, cw, y + ic + 4 * u, small)
             k.centered(c, "× ${Store.bag[t]}", x, cw, y + ic + 4 * u + sl, sb)
         }
-        y += ic + 2 * sl + 26 * u
+        y += ic + 2 * sl + 22 * u
 
-        // How ores come.
-        y = k.section(c, a.left, y, a.width(), "NGUỒN KHOÁNG THẠCH")
+        // How it works.
+        y = k.section(c, a.left, y, a.width(), "CÁCH LUYỆN")
         val nextGift = (Store.giftsAwarded + 1) * Treasure.GIFT_WORDS - Store.totalWords
         val notes = listOf(
+            "Chặng: đọc đủ số chữ của phẩm trong cuốn đó là ra một pháp bảo, rồi luyện tiếp",
+            "Mỗi cuốn tối đa ${Store.SLOTS_PER_BOOK} ô, mỗi ô một phẩm; hoặc chọn luyện cả cuốn",
+            "Khoáng thạch cháy bằng chữ đọc ở bất kỳ cuốn nào",
             "Quà mỗi 10 vạn từ: còn ${(nextGift.coerceAtLeast(0) + 999) / 1000} nghìn từ",
-            "Bí cảnh tuần (${Store.biCanhNeed()} ngày × ${Store.BI_CANH_MINUTES} phút): Huyền phẩm trở lên",
-            "Đặt sách đang đọc vào lò: đọc xong luyện thành pháp bảo theo độ dày",
-            "Đọc xong sách ngoài lò: nhận một khoáng thạch cùng phẩm",
-            "Gom đủ một bộ pháp bảo: một khoáng thạch Địa phẩm",
         )
         for (n in notes) {
             if (y + sl > a.bottom) break
             k.diamond(c, a.left + 6 * u, y + sl / 2, 4 * u)
             k.text(c, k.fit(n, a.width() - 24 * u, small), a.left + 20 * u, y, small)
-            y += sl + 8 * u
-        }
-
-        // What the sets already give.
-        y += 14 * u
-        if (y + 3 * sl < a.bottom) {
-            y = k.section(c, a.left, y, a.width(), "HIỆU QUẢ ĐANG CÓ · ${Store.setsCount()}/${Treasure.SETS} BỘ")
-            val active = (0 until Treasure.SETS).filter { Store.setActive(it) }
-            if (active.isEmpty()) {
-                k.text(c, "Chưa gom đủ bộ nào. Xem tab Bộ pháp bảo.", a.left, y, small)
-            }
-            for (set in active) {
-                if (y + sl > a.bottom) break
-                k.text(c, Treasure.SET_NAMES[set], a.left, y, sb)
-                k.right(c, k.fit(Treasure.SET_EFFECTS[set], a.width() * 0.55f, small), a.right, y, small)
-                y += sl + 8 * u
-            }
+            y += sl + 6 * u
         }
         return 1
     }
@@ -131,7 +126,7 @@ class PhapBaoActivity : TabActivity() {
         val beasts = Store.beasts.sortedWith(compareByDescending<Beast> { it.tier }.thenByDescending { it.bornDay })
         if (beasts.isEmpty()) {
             val s = 160 * u
-            k.icon(c, "forge", a.centerX() - s / 2, a.top + 60 * u, s)
+            k.art(c, "art_forge", a.centerX() - s / 2, a.top + 60 * u, s)
             k.centered(c, "Bảo khố còn trống", a.left, a.width(), a.top + 80 * u + s, k.ui12Bold)
             k.centered(c, "Đọc hết một cuốn hoặc chờ lò luyện thành pháp bảo.", a.left, a.width(), a.top + 84 * u + s + k.lineH(k.ui12Bold), k.small)
             return 1
@@ -206,17 +201,15 @@ class PhapBaoActivity : TabActivity() {
             val what = if (ore.isBook) "«${Store.books[ore.book]?.title ?: "sách"}»" else "khoáng thạch ${Treasure.TIER_NAMES[ore.tier]}"
             AlertDialog.Builder(this)
                 .setTitle("Lấy $what ra khỏi lò?")
-                .setMessage(if (ore.isBook) "Sách ra khỏi lò thì đọc xong chỉ nhận khoáng thạch, không luyện thành pháp bảo." else "Khoáng thạch về lại túi, giữ nguyên phần đã luyện thì mất.")
+                .setMessage(if (ore.isBook) "Phần đã luyện của ô này sẽ mất." else "Khoáng thạch về lại túi, phần đã luyện thì mất.")
                 .setPositiveButton("Lấy ra") { _, _ -> Store.takeOut(ore); refresh() }
                 .setNegativeButton("Thôi", null)
                 .show()
             return
         }
-        val reading = Store.books.values.filter { it.lastOpened > 0 && it.finishDay < 0 && Store.forge.none { o -> o.book == it.path } }
-            .sortedByDescending { it.lastOpened }
+        val reading = Store.books.values.filter { it.lastOpened > 0 && Store.bookGoals(it).isNotEmpty() }.sortedByDescending { it.lastOpened }
         val ores = (Treasure.TIERS - 1 downTo 0).filter { Store.bag[it] > 0 }
-        val labels = reading.map { "Sách: ${it.title} · ${it.percent}% → ${Treasure.TIER_NAMES[Treasure.tierForBook(it.words.coerceAtLeast(0))]}" } +
-            ores.map { "Khoáng thạch ${Treasure.TIER_NAMES[it]} (còn ${Store.bag[it]})" }
+        val labels = reading.map { "Sách: ${it.title} · ${it.percent}%" } + ores.map { "Khoáng thạch ${Treasure.TIER_NAMES[it]} (còn ${Store.bag[it]})" }
         if (labels.isEmpty()) {
             android.widget.Toast.makeText(this, "Chưa có sách đang đọc hay khoáng thạch trong túi", android.widget.Toast.LENGTH_SHORT).show()
             return
@@ -224,7 +217,26 @@ class PhapBaoActivity : TabActivity() {
         AlertDialog.Builder(this)
             .setTitle("Đặt vào lò luyện")
             .setItems(labels.toTypedArray()) { _, i ->
-                if (i < reading.size) Store.placeBook(reading[i]) else Store.placeOre(ores[i - reading.size])
+                if (i < reading.size) chooseGoal(reading[i]) else { Store.placeOre(ores[i - reading.size]); refresh() }
+            }
+            .setNegativeButton("Thôi", null)
+            .show()
+    }
+
+    /** A stage of a grade, or the whole book. */
+    private fun chooseGoal(b: com.exacta.reader.data.Book) {
+        val goals = Store.bookGoals(b)
+        val labels = goals.map { (goal, tier) ->
+            if (goal == com.exacta.reader.data.Ore.GOAL_STAGE) {
+                "Chặng ${Treasure.TIER_NAMES[tier]} · mỗi ${com.exacta.reader.game.Realm.van(Store.stageNeed(tier))} vạn từ một món"
+            } else {
+                "Cả cuốn · đọc xong thành ${Treasure.TIER_NAMES[tier]}"
+            }
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Luyện «${b.title}» thế nào?")
+            .setItems(labels.toTypedArray()) { _, i ->
+                Store.placeBook(b, goals[i].first, goals[i].second)
                 refresh()
             }
             .setNegativeButton("Thôi", null)

@@ -41,6 +41,7 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.services.locateProgression
+import org.readium.r2.shared.publication.services.positionsByReadingOrder
 import org.readium.r2.shared.util.AbsoluteUrl
 import java.io.File
 import java.time.LocalTime
@@ -54,7 +55,12 @@ import java.time.LocalTime
 @OptIn(ExperimentalReadiumApi::class)
 class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     private lateinit var container: FrameLayout
-    private lateinit var header: TextView
+    private lateinit var header: LinearLayout
+    private lateinit var headerLeft: TextView
+    private lateinit var headerTitle: TextView
+    private lateinit var headerRight: TextView
+    /** Each chapter's share of the book (from Readium's positions), for the time left in a chapter. */
+    private var chapterShare: List<Double> = emptyList()
     private lateinit var footer: LinearLayout
     private lateinit var footerLeft: TextView
     private lateinit var footerRight: TextView
@@ -99,16 +105,22 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
 
         val ui = ResourcesCompat.getFont(this, R.font.bitter_ui)
         val side = Widgets.dp(this, 18)
-        header = TextView(this).apply {
+        // The line above the page: % read, the title, the clock (it also keeps the text off the edge).
+        headerLeft = footerText(ui).apply { gravity = Gravity.START }
+        headerRight = footerText(ui).apply { gravity = Gravity.END }
+        headerTitle = footerText(ui).apply {
             setTextColor(Ink.DARK)
-            Widgets.textSize(context, this, 11.5f)
-            typeface = ui
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
             gravity = Gravity.CENTER
-            setPadding(side, Widgets.dp(context, 10), side, Widgets.dp(context, 6))
+            ellipsize = TextUtils.TruncateAt.END
             text = book.title
             visibility = if (Store.showHeader) View.VISIBLE else View.INVISIBLE
+        }
+        header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(side, Widgets.dp(context, 10), side, Widgets.dp(context, 6))
+            addView(headerLeft, LinearLayout.LayoutParams(Widgets.dp(context, 70), -2))
+            addView(headerTitle, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(headerRight, LinearLayout.LayoutParams(Widgets.dp(context, 70), -2))
         }
         container = FrameLayout(this).apply { id = View.generateViewId() }
         footerLeft = footerText(ui).apply { gravity = Gravity.START; ellipsize = TextUtils.TruncateAt.END }
@@ -121,7 +133,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         }
         topBar = buildTopBar()
         sheet = ReaderSheet(this, this).apply { visibility = View.GONE }
-        val sheetH = (resources.displayMetrics.heightPixels * 0.64f).toInt()
+        val sheetH = (resources.displayMetrics.heightPixels * 0.56f).toInt()
         val page = FrameLayout(this).apply {
             addView(container, FrameLayout.LayoutParams(-1, -1))
             addView(topBar, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
@@ -213,7 +225,12 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         }
         publication = pub
         Library.describe(this, book, pub)
-        header.text = book.title
+        headerTitle.text = book.title
+        chapterShare = runCatching {
+            val counts = pub.positionsByReadingOrder().map { it.size.toDouble() }
+            val total = counts.sum()
+            if (total > 0) counts.map { it / total } else emptyList()
+        }.getOrDefault(emptyList())
         if (book.words < 0) {
             lifecycleScope.launch {
                 book.words = Library.countWords(pub)
@@ -361,20 +378,46 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
 
     private fun tocTitle(i: Int) = toc.getOrNull(i)?.first?.trimStart('\u0000')
 
-    /** Chapter (or a notice) on the left; chapter %, book % and the clock on the right. */
+    /** Reading pace in words a second: this book's, else the reader's overall. */
+    private fun pace(): Double = when {
+        book.wordsRead >= 2000 && book.seconds >= 300 -> book.wordsRead.toDouble() / book.seconds
+        Store.pace() > 0 -> Store.pace() / 60.0
+        else -> 0.0
+    }
+
+    private fun minutesText(minutes: Long) = if (minutes < 60) "~$minutes phút" else "~${minutes / 60} giờ " + (minutes % 60).toString().padStart(2, '0')
+
+    /** Time to the end of this chapter at the reader's pace. */
+    private fun chapterLeft(): String? {
+        val pace = pace()
+        val loc = lastLocator ?: return null
+        if (pace <= 0 || book.words <= 0) return null
+        val pub = publication ?: return null
+        val href = loc.href.toString().substringBefore('#')
+        val i = pub.readingOrder.indexOfFirst { it.url().toString().substringBefore('#') == href }
+        val share = chapterShare.getOrNull(i) ?: return null
+        val left = (1 - (loc.locations.progression ?: 0.0)) * share * book.words
+        return minutesText((left / pace / 60).toLong())
+    }
+
+    /**
+     * Above: % read on the left, the clock on the right. Below: the chapter (or a notice) on the left;
+     * the time left in the book and in the chapter on the right.
+     */
     private fun updateFooter() {
         if (!::footer.isInitialized) return
         val mode = Store.footerMode
-        footer.visibility = if (mode == 2 && noticePages <= 0) View.INVISIBLE else View.VISIBLE
         val now = LocalTime.now()
-        val clock = now.hour.toString().padStart(2, '0') + ":" + now.minute.toString().padStart(2, '0')
-        val chapter = lastLocator?.locations?.progression?.let { " · chương ${(it * 100).toInt()}%" } ?: ""
+        headerLeft.text = "${book.percent}%"
+        headerRight.text = now.hour.toString().padStart(2, '0') + ":" + now.minute.toString().padStart(2, '0')
+        footer.visibility = if (mode == 2 && noticePages <= 0) View.INVISIBLE else View.VISIBLE
         footerLeft.text = when {
             noticePages > 0 -> notice
             mode == 0 -> chapterTitle
             else -> ""
         }
-        footerRight.text = if (mode == 0) "  ${book.percent}%$chapter · $clock" else "  ${book.percent}% · $clock"
+        val parts = listOfNotNull(HomeView.timeLeft(book)?.let { "sách còn $it" }, chapterLeft()?.let { "chương $it" })
+        footerRight.text = if (parts.isEmpty()) "" else "  " + parts.joinToString(" · ")
     }
 
     // --- Bars ---------------------------------------------------------------------------------
@@ -449,7 +492,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     override fun applyPrefs(rebuild: Boolean) {
         Store.touch()
         updateFooter()
-        header.visibility = if (Store.showHeader) View.VISIBLE else View.INVISIBLE
+        headerTitle.visibility = if (Store.showHeader) View.VISIBLE else View.INVISIBLE
         val pub = publication ?: return
         if (rebuild) buildNavigator(pub, lastLocator) else navigator?.submitPreferences(preferences())
         probe("prefs")

@@ -37,7 +37,9 @@ class HomeActivity : AppCompatActivity() {
                 HomeView.Action.NIEN_KY -> startActivity(Intent(this, NienKyActivity::class.java))
                 HomeView.Action.LIBRARY -> startActivity(Intent(this, LibraryActivity::class.java))
                 HomeView.Action.PHAP_BAO -> startActivity(Intent(this, PhapBaoActivity::class.java))
-                HomeView.Action.TU_VI -> startActivity(Intent(this, TuViActivity::class.java))
+                HomeView.Action.TU_VI -> startActivity(Intent(this, TuViActivity::class.java).apply {
+                    path?.toIntOrNull()?.let { putExtra(com.exacta.reader.ui.TabActivity.EXTRA_TAB, it) }
+                })
                 HomeView.Action.SETTINGS -> startActivity(Intent(this, SettingsActivity::class.java))
                 HomeView.Action.PERMISSION -> askAllFiles()
             }
