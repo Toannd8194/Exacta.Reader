@@ -195,10 +195,10 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val gate = Realm.baseName(Store.nextGate())
         val (l1, l2) = when {
             Store.realmCap >= 9 -> "Thiên kiếp · đã phi thăng" to "Tiên lộ thênh thang"
-            Store.inTrial() -> "Đang độ kiếp vào $gate · ngày ${Store.trialDays().first}/${Store.trialNeed()}" to
+            Store.inTrial() -> "Độ kiếp ${Treasure.GATES[Store.nextGate()]} · ngày ${Store.trialDays().first}/${Store.trialNeed()}" to
                 "Hôm nay ${Store.minutes(Store.today())}/${Store.trialMinutes()} phút; lỡ một ngày là thất bại"
             Store.failDay == Store.today() -> "Độ kiếp thất bại" to "Tu vi đã lui về gần cửa ải, đọc tiếp"
-            else -> "Thiên kiếp · kiếp tới: $gate" to "Còn ${Realm.van(Store.wordsToGate())} vạn từ · ${Store.trialNeed()} ngày × ${Store.trialMinutes()} phút"
+            else -> "Kiếp tới: ${Treasure.GATES[Store.nextGate()]}" to "Còn ${Realm.van(Store.wordsToGate())} vạn từ · ${Store.trialNeed()} ngày × ${Store.trialMinutes()} phút"
         }
         k.text(c, k.fit(l1, tw, sb), tx, y, sb)
         k.text(c, k.fit(l2, tw, small), tx, y + sl, small)
@@ -583,7 +583,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
                 ny += k.lineH(small)
             }
         } else {
-            k.art(c, "art_forge", pb.centerX() - art * 0.4f, ay, art * 0.8f)
+            k.art(c, "art_crystal", pb.centerX() - art * 0.4f, ay, art * 0.8f)
             k.centered(c, "Lò đang chờ", pb.left, pb.width(), ay + art * 0.8f + 6 * u, small)
         }
         var y = pb.bottom + g
@@ -792,7 +792,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val cellH = oreS + 2 * u + sl
         val forgeH = 2 * cellH + 6 * u + 20 * u
         val beast = Store.strongest()
-        val names = if (beast != null) k.wrap(beast.name, w, nb, 2) else listOf("Lò đang chờ")
+        val names = if (beast != null) k.wrap(beast.name, w, nb, 2) else listOf("Linh tinh chờ luyện")
         val textH = names.size * k.lineH(nb) + sl + 8 * u
         val showForge = footY - top - forgeH - textH >= 80 * u
         val bottom = if (showForge) footY - 8 * u - forgeH else footY - 10 * u
@@ -804,7 +804,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
                 val sx = x + (i % 3) * slotW
                 val cy = fy + (i / 3) * (cellH + 6 * u)
                 when {
-                    ore == null -> k.art(c, "art_forge", sx + (slotW - oreS) / 2, cy, oreS, 55)
+                    ore == null -> k.art(c, "art_crystal", sx + (slotW - oreS) / 2, cy, oreS, 60)
+                    ore.inKiep -> k.icon(c, "thienkiep", sx + (slotW - oreS * 0.8f) / 2, cy + oreS * 0.1f, oreS * 0.8f)
                     ore.isBook -> {
                         val b = Store.books[ore.book]
                         val cw = oreS * 0.68f
@@ -820,13 +821,17 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val art = minOf(w * 0.82f, bottom - top - textH).coerceAtLeast(48 * u)
         val ay = top + maxOf(0f, (bottom - top - art - textH) / 2)
         if (beast != null) k.badge(c, beast.species, x + (w - art) / 2, ay, art)
-        else k.art(c, "art_forge", x + (w - art * 0.9f) / 2, ay + art * 0.05f, art * 0.9f)
+        else k.art(c, "art_crystal", x + (w - art * 0.9f) / 2, ay + art * 0.05f, art * 0.9f)
         var ny = ay + art + 8 * u
         for (l in names) {
             k.centered(c, l, x, w, ny, nb)
             ny += k.lineH(nb)
         }
-        val sub = if (beast != null) Treasure.CLANS[beast.tier] + " · " + Treasure.TIER_NAMES[beast.tier] else "chạm để đặt sách vào lò"
+        val sub = when {
+            beast == null -> "Thiên tài địa bảo, đợi ngày khai lô"
+            beast.spirit.isNotEmpty() -> "«${beast.spirit}» · " + Treasure.TIER_NAMES[beast.tier]
+            else -> Treasure.CLANS[beast.tier] + " · " + Treasure.TIER_NAMES[beast.tier]
+        }
         k.centered(c, sub, x, w, ny, small)
     }
 

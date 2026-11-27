@@ -26,9 +26,13 @@ class TuViActivity : TabActivity() {
         super.onCreate(savedInstanceState)
     }
 
+    private var pillButton: RectF? = null
+
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int = when (tab) {
         0 -> realm(c, k, area, hits)
-        1 -> trials(c, k, area, gates = true)
+        1 -> trials(c, k, area, gates = true).also {
+            pillButton?.let { b -> hits.add(b) { if (Store.useBreakPill()) refresh() } }
+        }
         2 -> trials(c, k, area, gates = false)
         3 -> stats(c, k, area)
         else -> kinhCac(c, k, area, page)
@@ -116,11 +120,11 @@ class TuViActivity : TabActivity() {
         val lines = when {
             Store.realmCap >= 9 -> listOf("Đã độ kiếp phi thăng. Tiên nhân không còn thiên kiếp." to false)
             Store.inTrial() -> listOf(
-                "Đang độ kiếp vào $gate: ${Store.trialDays().first}/${Store.trialNeed()} ngày" to true,
+                "Đang độ kiếp ${Treasure.GATES[Store.nextGate()]}: ${Store.trialDays().first}/${Store.trialNeed()} ngày" to true,
                 "Cần $rule. Hôm nay ${Store.minutes(Store.today())}/${Store.trialMinutes()} phút. Lỡ một ngày ở giữa là thất bại." to false,
             )
             else -> listOf(
-                "Kiếp tới: vào $gate, còn ${Realm.van(Store.wordsToGate())} vạn từ" to true,
+                "Kiếp tới: ${Treasure.GATES[Store.nextGate()]} (vào $gate), còn ${Realm.van(Store.wordsToGate())} vạn từ" to true,
                 "Khi tu vi chạm cửa ải, thiên kiếp giáng: $rule. Lỡ một ngày ở giữa là thất bại, tu vi lui về gần cửa ải." to false,
             )
         }
@@ -149,6 +153,14 @@ class TuViActivity : TabActivity() {
         }
         val tally = "Đã vượt ${Store.trialPassed} lần · thất bại ${Store.failCount} lần" + if (Store.setActive(4)) " · Đạo Môn Tứ Bảo tha 1 ngày" else ""
         k.text(c, k.fit(tally, tw, small), tx, top.bottom - pad - sl, small)
+        if (Store.canBreakPill()) {
+            // Phá Cảnh Đan: a day of this hard gate.
+            val btn = RectF(top.right - pad - 210 * u, top.top + pad, top.right - pad, top.top + pad + 42 * u)
+            k.button(c, btn, "Dùng Phá Cảnh Đan (${Store.items[Treasure.PHA_CANH_DAN]})", k.smallBold)
+            pillButton = btn
+        } else {
+            pillButton = null
+        }
 
         // Between them, the nine gates and what each asks, in two columns.
         y = k.section(c, a.left, top.bottom + 18 * u, a.width(), "CỬA ẢI THIÊN KIẾP")
@@ -167,7 +179,7 @@ class TuViActivity : TabActivity() {
             val tx2 = cell.left + ic + 20 * u
             val tw2 = cell.right - 8 * u - tx2
             val ty2 = cell.centerY() - sl
-            k.text(c, k.fit(Realm.baseName(r), tw2, if (passed || now) sb else small), tx2, ty2, if (passed || now) sb else small)
+            k.text(c, k.fit(Treasure.GATES[r], tw2, if (passed || now) sb else small), tx2, ty2, if (passed || now) sb else small)
             val state = when { passed -> "đã vượt"; now -> "đang độ kiếp"; else -> "chưa tới" }
             k.text(c, k.fit("${TRIAL_DAYS[r - 1]} ngày × ${TRIAL_MINUTES[r - 1]} phút · $state", tw2, small), tx2, ty2 + sl, small)
         }

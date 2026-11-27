@@ -53,16 +53,25 @@ class Book(val path: String) {
 }
 
 /** A forged treasure. */
-data class Beast(val seed: Long, val tier: Int, val bornDay: Long, val book: String) {
-    val species get() = Treasure.species(seed, tier)
-    val name get() = Treasure.shortName(seed, tier)
+data class Beast(
+    val seed: Long,
+    val tier: Int,
+    val bornDay: Long,
+    val book: String,
+    val kind: Int = Treasure.legacyKind(seed),
+    var spirit: String = "",   // khí linh awoken (kỳ ngộ) or the mark of a forge trial
+) {
+    val species get() = Treasure.speciesOf(tier, kind)
+    val name get() = Treasure.shortName(seed, species)
 }
 
 /**
  * A slot of the forge: an ore that words read (any book) forge, or a book (`book` = its path) that
  * forges a treasure of its length's grade when read to the end.
  */
-data class Ore(val tier: Int, var words: Long = 0, val book: String = "", val goal: Int = GOAL_ORE) {
+data class Ore(val tier: Int, var words: Long = 0, val book: String = "", val goal: Int = GOAL_ORE, var kiep: Long = -1, var spared: Int = 0) {
+    /** In a kiếp phá lô: the day it began (-1 none). */
+    val inKiep get() = kiep >= 0
     val isBook get() = book.isNotEmpty()
     val isStage get() = goal == GOAL_STAGE
     val isFinish get() = goal == GOAL_FINISH
@@ -128,6 +137,19 @@ object Store {
 
     // Bộ pháp bảo: bit per set completed (once complete, for good).
     var setsDone = 0
+
+    // 0.8: đan dược and phù, kỳ ngộ, kiếp phá lô.
+    val items = IntArray(Treasure.ITEMS)
+    var fireWords = 0L          // Thiên Hỏa Phù: words left that burn twice
+    var kyNgoWords = 0L         // words toward the next roll of kỳ ngộ
+    var kyNgoCount = 0
+    val kyNgoLog = ArrayList<String>()
+    var phaLoPassed = 0
+    var phaLoFailed = 0
+    var pillsUsed = 0
+    var talismansUsed = 0
+    var breakPillUsed = false
+    var trialBonus = 0          // days of the pending thiên kiếp given by Phá Cảnh Đan
 
     // Niên kỷ: the lunar year whose summary was opened at Tết.
     var nienKySeen = -1
@@ -203,12 +225,14 @@ object Store {
             for (i in 0 until a.length()) a.getJSONArray(i).let {
                 val book = it.optString(2, "")
                 val goal = it.optInt(3, if (book.isEmpty()) Ore.GOAL_ORE else Ore.GOAL_FINISH)
-                forge.add(Ore(it.getInt(0), it.getLong(1), book, goal))
+                forge.add(Ore(it.getInt(0), it.getLong(1), book, goal, it.optLong(4, -1), it.optInt(5, 0)))
             }
         }
         o.optJSONArray("beasts")?.let { a ->
             for (i in 0 until a.length()) a.getJSONObject(i).let {
-                beasts.add(Beast(it.getLong("seed"), it.getInt("tier"), it.optLong("born", -1), it.optString("book")))
+                val seed = it.getLong("seed")
+                beasts.add(Beast(seed, it.getInt("tier"), it.optLong("born", -1), it.optString("book"),
+                    it.optInt("kind", Treasure.legacyKind(seed)), it.optString("spirit")))
             }
         }
         unseen = o.optInt("unseen")
@@ -221,9 +245,19 @@ object Store {
         }
         o.optJSONObject("biCanh")?.let { biCanhWeek = it.optLong("week", -1); biCanhCount = it.optInt("count") }
         setsDone = o.optInt("sets"); nienKySeen = o.optInt("nienKySeen", -1)
+        o.optJSONObject("omega2")?.let {
+            it.optJSONArray("items")?.let { a -> for (i in 0 until minOf(a.length(), items.size)) items[i] = a.getInt(i) }
+            fireWords = it.optLong("fire"); kyNgoWords = it.optLong("kyNgoWords"); kyNgoCount = it.optInt("kyNgo")
+            it.optJSONArray("log")?.let { a -> for (i in 0 until a.length()) kyNgoLog.add(a.getString(i)) }
+            phaLoPassed = it.optInt("phaLoPassed"); phaLoFailed = it.optInt("phaLoFailed")
+            pillsUsed = it.optInt("pills"); talismansUsed = it.optInt("talismans"); breakPillUsed = it.optBoolean("breakPill")
+            trialBonus = it.optInt("trialBonus")
+        }
         o.optJSONObject("titles")?.let { t ->
-            t.optJSONObject("days")?.let { d -> for (k in d.keys()) titleDays[k.toInt()] = d.getLong(k) }
-            titleChosen = t.optInt("chosen", -1); titleLast = t.optInt("last", -1); titleUnseen = t.optInt("unseen")
+            val v2 = t.optInt("v") >= 2
+            val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
+            t.optJSONObject("days")?.let { d -> for (k in d.keys()) titleDays[move(k.toInt())] = d.getLong(k) }
+            titleChosen = move(t.optInt("chosen", -1)); titleLast = move(t.optInt("last", -1)); titleUnseen = t.optInt("unseen")
         }
         o.optJSONObject("prefs")?.let {
             fontSize = it.optDouble("fontSize", fontSize); lineHeight = it.optDouble("lineHeight", lineHeight)
@@ -260,9 +294,12 @@ object Store {
             })
             put("totalWords", totalWords); put("totalSeconds", totalSeconds); put("gifts", giftsAwarded)
             put("bag", JSONArray().apply { bag.forEach { put(it) } })
-            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words).put(it.book).put(it.goal)) } })
+            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words).put(it.book).put(it.goal).put(it.kiep).put(it.spared)) } })
             put("beasts", JSONArray().apply {
-                beasts.forEach { put(JSONObject().put("seed", it.seed).put("tier", it.tier).put("born", it.bornDay).put("book", it.book)) }
+                beasts.forEach {
+                    put(JSONObject().put("seed", it.seed).put("tier", it.tier).put("born", it.bornDay).put("book", it.book)
+                        .put("kind", it.kind).put("spirit", it.spirit))
+                }
             })
             put("unseen", unseen)
             put("hours", JSONArray().apply { hourSeconds.forEach { put(it) } })
@@ -271,7 +308,11 @@ object Store {
                 .put("failDay", failDay).put("fails", failCount).put("passed", trialPassed).put("passedAfterFail", passedAfterFail))
             put("biCanh", JSONObject().put("week", biCanhWeek).put("count", biCanhCount))
             put("sets", setsDone); put("nienKySeen", nienKySeen)
-            put("titles", JSONObject().put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
+            put("omega2", JSONObject().put("items", JSONArray().apply { items.forEach { put(it) } }).put("fire", fireWords)
+                .put("kyNgoWords", kyNgoWords).put("kyNgo", kyNgoCount).put("log", JSONArray().apply { kyNgoLog.forEach { put(it) } })
+                .put("phaLoPassed", phaLoPassed).put("phaLoFailed", phaLoFailed).put("pills", pillsUsed).put("talismans", talismansUsed)
+                .put("breakPill", breakPillUsed).put("trialBonus", trialBonus))
+            put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
                 .put("fontFamily", fontFamily).put("justify", justify).put("swapTaps", swapTaps)
@@ -313,6 +354,8 @@ object Store {
         bag.fill(0); hourSeconds.fill(0)
         realmCap = -1; trialStart = -1; tuViLoss = 0; failDay = -1; failCount = 0; trialPassed = 0; passedAfterFail = false
         biCanhWeek = -1; biCanhCount = 0; setsDone = 0; titleChosen = -1; titleLast = -1; titleUnseen = 0
+        items.fill(0); fireWords = 0; kyNgoWords = 0; kyNgoCount = 0; kyNgoLog.clear()
+        phaLoPassed = 0; phaLoFailed = 0; pillsUsed = 0; talismansUsed = 0; breakPillUsed = false; trialBonus = 0
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -354,6 +397,7 @@ object Store {
         book.lastDay = d
         if (book.firstDay < 0) book.firstDay = d
         bestSession = maxOf(bestSession, session)
+        checkKiep()
         checkRealm()
         checkBiCanh()
         checkTitles()
@@ -389,10 +433,8 @@ object Store {
                 val slot = forge.firstOrNull { it.book == book.path && it.isFinish }
                 forge.removeAll { it.book == book.path && it.isStage }
                 if (slot != null) {
-                    // A book in the forge becomes a treasure of its length's grade.
-                    forge.remove(slot)
-                    hatch(tier, book.title)
-                    fillForge()
+                    // A book in the forge becomes a treasure of its length's grade (through a trial when high).
+                    complete(slot, book.title)
                 } else if (forge.none { it.book == book.path }) {
                     // Read outside the forge: an ore of the same grade.
                     giveOre(tier, "Đọc xong «${book.title}»")
@@ -415,17 +457,18 @@ object Store {
         book.wordsRead += words
         totalWords += words
         // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
-        val burn = if (setActive(6) && feastDay()) words * 2 else words
+        var burn = if (setActive(6) && feastDay()) words * 2 else words
+        if (fireWords > 0) {
+            fireWords = (fireWords - words).coerceAtLeast(0)
+            burn *= 2
+        }
         val done = ArrayList<Ore>()
         for (ore in forge) {
+            if (ore.inKiep) continue
             when {
                 ore.isStage && ore.book == book.path -> {
                     ore.words += burn
-                    // A stage forges and starts again.
-                    while (ore.words >= ore.need) {
-                        ore.words -= ore.need
-                        hatch(ore.tier, book.title)
-                    }
+                    if (ore.words >= ore.need) done.add(ore)
                 }
                 !ore.isBook -> {
                     ore.words += burn
@@ -433,10 +476,12 @@ object Store {
                 }
             }
         }
-        for (ore in done) {
-            forge.remove(ore)
-            hatch(ore.tier, book.title)
-            fillForge()
+        for (ore in done) complete(ore, book.title)
+        // Kỳ ngộ: a roll for every vạn words read.
+        kyNgoWords += words
+        while (kyNgoWords >= 10_000) {
+            kyNgoWords -= 10_000
+            kyNgo(book)
         }
         // A gift ore every 10 vạn words.
         while (totalWords / Treasure.GIFT_WORDS > giftsAwarded) {
@@ -449,8 +494,187 @@ object Store {
         checkRealm()
     }
 
-    private fun hatch(tier: Int, bookTitle: String) {
-        val beast = Beast(Random.nextLong(0, Long.MAX_VALUE / 2), tier, today(), bookTitle)
+    /**
+     * A slot reaches its words (or its book's end): Hoàng to Địa phẩm come out at once; Thiên phẩm and
+     * above first pass a kiếp phá lô.
+     */
+    private fun complete(slot: Ore, title: String) {
+        if (slot.tier >= 3 && !slot.inKiep) {
+            slot.kiep = today()
+            slot.spared = 0
+            slot.words = slot.need
+            note("Kiếp phá lô: ${Treasure.TIER_NAMES[slot.tier]} sắp xuất thế · ${kiepDays(slot.tier)} ngày × ${kiepMinutes(slot.tier)} phút")
+            return
+        }
+        release(slot, title, "")
+    }
+
+    private fun release(slot: Ore, title: String, spirit: String) {
+        hatch(slot.tier, title, spirit)
+        slot.kiep = -1
+        if (slot.isStage) {
+            slot.words = (slot.words - slot.need).coerceAtLeast(0)
+        } else {
+            forge.remove(slot)
+            fillForge()
+        }
+    }
+
+    // --- Kiếp phá lô -------------------------------------------------------------------------------------
+
+    fun kiepDays(tier: Int): Int = ((tier - 1).coerceIn(2, 4) - if (setActive(9)) 1 else 0).coerceAtLeast(1)
+    fun kiepMinutes(tier: Int): Int = 10 * (tier - 1).coerceIn(2, 4)
+
+    /** Days of a forge trial met so far (the first and today only count when met). */
+    fun kiepMet(slot: Ore): Int {
+        if (!slot.inKiep) return 0
+        val need = kiepMinutes(slot.tier)
+        return (slot.kiep..today()).count { minutes(it) >= need }
+    }
+
+    /** Each day: a trial passes, or a day missed between breaks it (Hộ Lô Phù and the set may spare it). */
+    private fun checkKiep() {
+        val today = today()
+        for (slot in forge.toList()) {
+            if (!slot.inKiep) continue
+            val need = kiepMinutes(slot.tier)
+            var failed = false
+            var d = slot.kiep
+            var spared = 0
+            while (d <= today) {
+                if (minutes(d) < need && d != slot.kiep && d != today) {
+                    spared++
+                    if (spared > slot.spared) {
+                        when {
+                            setActive(15) && slot.spared == 0 -> slot.spared++
+                            items[Treasure.HO_LO_PHU] > 0 -> {
+                                items[Treasure.HO_LO_PHU]--
+                                talismansUsed++
+                                slot.spared++
+                                note("Hộ Lô Phù cháy thay, lò ${Treasure.TIER_NAMES[slot.tier]} không vỡ")
+                            }
+                            else -> { failed = true; break }
+                        }
+                    }
+                }
+                d++
+            }
+            val title = if (slot.isBook) books[slot.book]?.title ?: "" else "Lò luyện"
+            when {
+                failed -> {
+                    phaLoFailed++
+                    note("Phá lô thất bại: lò ${Treasure.TIER_NAMES[slot.tier]} nứt, lửa lui về bảy phần")
+                    if (slot.isFinish) {
+                        slot.kiep = today
+                        slot.spared = 0
+                    } else {
+                        slot.kiep = -1
+                        slot.words = slot.need * 7 / 10
+                    }
+                    touch()
+                }
+                kiepMet(slot) >= kiepDays(slot.tier) -> {
+                    phaLoPassed++
+                    release(slot, title, Treasure.TRIAL_MARK)
+                    touch()
+                }
+            }
+        }
+    }
+
+    // --- Đan dược and phù ---------------------------------------------------------------------------------
+
+    /** Tụ Linh Đan into a slot of Thiên phẩm or above: 15% of its way (30% with Linh Đăng Chiếu Lộ). */
+    fun useTuLinhDan(slot: Ore): Boolean {
+        if (items[Treasure.TU_LINH_DAN] <= 0 || slot.tier < 3 || slot.inKiep || slot.isFinish) return false
+        items[Treasure.TU_LINH_DAN]--
+        pillsUsed++
+        slot.words += slot.need * (if (setActive(11)) 30 else 15) / 100
+        if (slot.words >= slot.need) complete(slot, if (slot.isBook) books[slot.book]?.title ?: "" else "Lò luyện")
+        checkTitles()
+        touch()
+        return true
+    }
+
+    /** Thiên Hỏa Phù: the forge burns twice as fast for 2 vạn words (4 vạn with Võ Lâm Ám Khí). */
+    fun useThienHoaPhu(): Boolean {
+        if (items[Treasure.THIEN_HOA_PHU] <= 0) return false
+        items[Treasure.THIEN_HOA_PHU]--
+        talismansUsed++
+        fireWords += if (setActive(12)) 40_000 else 20_000
+        checkTitles()
+        touch()
+        return true
+    }
+
+    /** Phá Cảnh Đan: a day of a hard thiên kiếp (Phá Đan Thành Anh and above), once per day of need. */
+    fun canBreakPill() = items[Treasure.PHA_CANH_DAN] > 0 && inTrial() && nextGate() >= 3 && trialDays().first < trialNeed()
+
+    fun useBreakPill(): Boolean {
+        if (!canBreakPill()) return false
+        items[Treasure.PHA_CANH_DAN]--
+        pillsUsed++
+        trialBonus++
+        breakPillUsed = true
+        note("Phá Cảnh Đan: bình cảnh ${Treasure.GATES[nextGate()]} lung lay")
+        checkRealm()
+        checkTitles()
+        touch()
+        return true
+    }
+
+    // --- Kỳ ngộ -------------------------------------------------------------------------------------------
+
+    private fun kyNgo(book: Book) {
+        val chance = if (setActive(10)) 180 else 120
+        if (Random.nextInt(1000) >= chance) return
+        kyNgoCount++
+        val highSlot = forge.any { it.tier >= 3 && !it.inKiep && !it.isFinish }
+        val sleeping = beasts.filter { it.spirit.isEmpty() }
+        val r = Random.nextInt(100)
+        val text = when {
+            setActive(16) && r < 6 -> {
+                hatch(Random.nextInt(2), book.title)
+                "nhặt được pháp bảo ${beasts.last().name}"
+            }
+            r < 70 && r >= 56 && highSlot -> {
+                items[Treasure.TU_LINH_DAN]++
+                "nhặt được Tụ Linh Đan"
+            }
+            r < 82 && r >= 70 && realmCap >= 2 -> {
+                items[Treasure.PHA_CANH_DAN]++
+                "nhặt được Phá Cảnh Đan"
+            }
+            r >= 90 && sleeping.isNotEmpty() -> {
+                val b = sleeping.random()
+                b.spirit = Treasure.SPIRITS.random()
+                unseen++
+                "khí linh của ${b.name} thức tỉnh: «${b.spirit}»"
+            }
+            r < 46 && r >= 30 -> {
+                items[Treasure.THIEN_HOA_PHU]++
+                "nhặt được Thiên Hỏa Phù"
+            }
+            r < 56 && r >= 46 -> {
+                items[Treasure.HO_LO_PHU]++
+                "nhặt được Hộ Lô Phù"
+            }
+            else -> {
+                val t = Treasure.rollTier()
+                bag[t]++
+                fillForge()
+                "nhặt được khoáng thạch ${Treasure.TIER_NAMES[t]}"
+            }
+        }
+        val d = LocalDate.now()
+        kyNgoLog.add(0, "${d.dayOfMonth}/${d.monthValue} · $text")
+        while (kyNgoLog.size > 40) kyNgoLog.removeAt(kyNgoLog.size - 1)
+        note("Kỳ ngộ: $text")
+        touch()
+    }
+
+    private fun hatch(tier: Int, bookTitle: String, spirit: String = "") {
+        val beast = Beast(Random.nextLong(0, Long.MAX_VALUE / 2), tier, today(), bookTitle, Random.nextInt(Treasure.KINDS), spirit)
         beasts.add(beast)
         unseen++
         note("Pháp bảo xuất thế: ${beast.name} (${Treasure.TIER_NAMES[tier]})")
@@ -550,7 +774,7 @@ object Store {
     private val TRIAL_DAYS = intArrayOf(3, 3, 4, 4, 5, 5, 6, 6, 7)
 
     /** Words of tu vi: words read (+5% with Thượng Cổ Thần Khí), less what failed trials cost. */
-    fun tuViRaw() = if (setActive(8)) totalWords + totalWords / 20 else totalWords
+    fun tuViRaw() = totalWords + (if (setActive(8)) totalWords / 20 else 0) + (if (setActive(17)) totalWords / 20 else 0)
     fun tuVi() = (tuViRaw() - tuViLoss).coerceAtLeast(0)
 
     private fun rawLevel() = Realm.level(tuVi())
@@ -563,7 +787,7 @@ object Store {
 
     fun inTrial() = realmCap in 0..8 && Realm.realmOf(rawLevel()) > realmCap
     fun trialNeed() = TRIAL_DAYS[realmCap.coerceIn(0, 8)]
-    fun trialMinutes() = TRIAL_MINUTES[realmCap.coerceIn(0, 8)]
+    fun trialMinutes() = TRIAL_MINUTES[realmCap.coerceIn(0, 8)] - if (setActive(13)) 5 else 0
     fun minutes(day: Long) = (daySeconds[day] ?: 0) / 60
 
     /** The realm the next trial opens (realmCap + 1), and the words to its gate. */
@@ -586,7 +810,7 @@ object Store {
                 if (forgiven > 0) forgiven-- else return run to true
             }
         }
-        return run to false
+        return (run + trialBonus) to false
     }
 
     fun checkRealm() {
@@ -595,7 +819,8 @@ object Store {
             val today = today()
             if (trialStart < 0) {
                 trialStart = today
-                note("Thiên kiếp giáng: ${trialNeed()} ngày, mỗi ngày ${trialMinutes()} phút để vào ${Realm.baseName(nextGate())}")
+                trialBonus = 0
+                note("Thiên kiếp ${Treasure.GATES[nextGate()]}: ${trialNeed()} ngày, mỗi ngày ${trialMinutes()} phút")
                 touch()
             }
             val (days, failed) = trialDays()
@@ -606,6 +831,7 @@ object Store {
                 val target = hi - (hi - lo) / 9
                 if (tuViRaw() > target) tuViLoss = tuViRaw() - target
                 trialStart = -1
+                trialBonus = 0
                 failDay = today
                 failCount++
                 note("Độ kiếp thất bại: tu vi lui về ${Realm.van(target)} vạn từ")
@@ -613,6 +839,7 @@ object Store {
             } else if (days >= trialNeed()) {
                 realmCap++
                 trialStart = -1
+                trialBonus = 0
                 trialPassed++
                 if (failCount > 0) passedAfterFail = true
                 note("Vượt thiên kiếp: mở cảnh giới ${Realm.baseName(realmCap)}")
@@ -647,7 +874,8 @@ object Store {
         if (biCanhWeek == week || biCanhDays() < biCanhNeed()) return
         biCanhWeek = week
         biCanhCount++
-        giveOre(maxOf(Treasure.rollTier(), 1), "Qua bí cảnh tuần")  // never below Huyền
+        val lift = if (setActive(14)) 1 else 0
+        giveOre((maxOf(Treasure.rollTier(), 1) + lift).coerceAtMost(Treasure.TIERS - 1), "Qua bí cảnh tuần")  // never below Huyền
         if (setActive(5)) giveOre(maxOf(Treasure.rollTier(), 1), "Phong Thần Bảo Lục")
         touch()
     }
@@ -674,22 +902,35 @@ object Store {
         val trungThu = readToday && !lunar.leap && lunar.month == 8 && lunar.day == 15
         val birthday = readToday && birthDay > 0 && date.dayOfMonth == birthDay && date.monthValue == birthMonth
         val kinds = beasts.map { it.species }.toSet().size
+        val level = level()
+        val readDays = daySeconds.values.count { it >= 60 }
+        val months = daySeconds.filterValues { it >= 600 }.keys.map { LocalDate.ofEpochDay(it).monthValue }.toSet().size
+        val sacred = daySeconds.filterValues { it >= 600 }.keys.count { lunarDay(it).let { l -> l == 1 || l == 15 } }
         val earned = booleanArrayOf(
             // Tu hành
             totalWords >= 10_000, totalWords >= 100_000, totalWords >= 1_000_000, totalWords >= 5_000_000,
             totalWords >= 10_000_000, realmCap >= 9,
+            level >= 6, level >= 9, level >= 12, level >= 21, totalWords >= 20_000_000, level >= Realm.LEVELS - 1,
             // Đạo tâm
             streak >= 7, streak >= 30, streak >= 100, streak >= 365, trialPassed >= 1, passedAfterFail,
+            streak >= 14, streak >= 60, streak >= 200, trialPassed >= 9, failCount >= 3, readDays >= 300,
             // Thời khắc
             night >= 36_000, dawn >= 18_000, hourSeconds[0] >= 3_600, bestSession >= 7_200,
             (daySeconds.values.maxOrNull() ?: 0) >= 14_400, tet,
+            hourSeconds[11] + hourSeconds[12] >= 18_000, hourSeconds[17] + hourSeconds[18] >= 36_000, bestSession >= 14_400,
+            (daySeconds.values.maxOrNull() ?: 0) >= 28_800, months >= 12, sacred >= 12,
             // Kinh các
             finished.size >= 1, finished.size >= 10, finished.size >= 50, quickest in 1..3, tangCount >= 100,
             books.values.count { it.lastOpened > 0 } >= 30,
+            finished.size >= 25, finished.size >= 100, finished.any { it.words >= 1_000_000 }, quickest == 1L, tangCount >= 500,
+            books.values.count { it.lastOpened > 0 } >= 100,
             // Pháp bảo
             beasts.isNotEmpty(), kinds >= 18, kinds >= 36, beasts.any { it.tier == Treasure.TIERS - 1 }, beasts.size >= 30, setsDone != 0,
+            kinds >= 54, kinds >= Treasure.SPECIES, setsCount() >= 9, beasts.map { it.tier }.toSet().size >= Treasure.TIERS,
+            phaLoPassed >= 5, beasts.count { it.spirit.isNotEmpty() && it.spirit != Treasure.TRIAL_MARK } >= 5,
             // Kỳ duyên
             giftsAwarded >= 20, totalSeconds >= 360_000, biCanhCount >= 10, trungThu, birthday, trialPassed >= 5,
+            kyNgoCount >= 20, kyNgoCount >= 100, pillsUsed >= 10, talismansUsed >= 10, breakPillUsed, biCanhCount >= 30,
         )
         for (t in 0 until DaoHieu.COUNT) {
             if (earned[t] && !hasTitle(t)) {
@@ -700,6 +941,12 @@ object Store {
                 touch()
             }
         }
+    }
+
+    private val lunarDays = HashMap<Long, Int>()
+    private fun lunarDay(day: Long): Int = lunarDays.getOrPut(day) {
+        val d = LocalDate.ofEpochDay(day)
+        Lunar.fromSolar(d.dayOfMonth, d.monthValue, d.year).day
     }
 
     // --- Stats ------------------------------------------------------------------------------------

@@ -129,7 +129,7 @@ class Ink(private val context: Context, width: Int) {
     }
 
     fun badge(c: Canvas, species: Int, x: Float, y: Float, size: Float, alpha: Int = 255) {
-        val id = context.resources.getIdentifier("badge_" + species.coerceIn(0, 35).toString().padStart(2, '0'), "drawable", context.packageName)
+        val id = context.resources.getIdentifier("badge_" + species.coerceIn(0, com.exacta.reader.game.Treasure.SPECIES - 1).toString().padStart(2, '0'), "drawable", context.packageName)
         if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), if (alpha >= 255) pixels else Paint(pixels).apply { this.alpha = alpha })
     }
 

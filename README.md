@@ -1,10 +1,31 @@
-# Exacta Reader
+# Vạn Quyển Tiên Đồ (Exacta Reader)
 
 Ứng dụng đọc EPUB cho máy đọc sách e-ink Android (thử trên iReader Neo 3: Android 11, 300 ppi,
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.7.apk`](dist/Exacta-Reader-0.7.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Exacta-Reader-0.8.apk`](dist/Exacta-Reader-0.8.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 0.8
+
+- **Tên mới: Vạn Quyển Tiên Đồ** (đọc vạn quyển, tu thành tiên đồ); logo mới: cuốn sách mở, một viên tinh thạch
+  lơ lửng bay lên.
+- **72 loại pháp bảo** (12 mỗi phẩm), 36 loại mới vẽ cùng phong cách lệnh bài; cả 72 huy hiệu vẽ lại pixel art ở lưới
+  128×128 (gấp đôi chi tiết), có viền sáng và bóng chấm. Xem [`docs/phap-bao-72.png`](docs/phap-bao-72.png).
+  Pháp bảo cũ giữ nguyên loại.
+- **18 bộ pháp bảo**: 9 bộ mới (Thiết Huyết Quân Trận, Cầm Tiêu Hợp Tấu, Linh Đăng Chiếu Lộ, Võ Lâm Ám Khí,
+  Thất Tinh Bắc Đẩu, Phật Quang Phổ Chiếu, Thái Cực Lưỡng Nghi, Thất Bảo Tiên Quang, Tam Hoàng Thánh Khí).
+- **Kỳ ngộ**: mỗi vạn từ một lần cơ duyên (khoảng 12%): khoáng thạch, đan dược, phù chú, hay khí linh của một pháp bảo
+  thức tỉnh (danh hiệu riêng cho pháp bảo). Nhật ký kỳ ngộ ở Pháp bảo › Túi đồ.
+- **Đan dược và phù**: Tụ Linh Đan (+15% cho lò Thiên phẩm trở lên), Thiên Hỏa Phù (lò ×2 trong 2 vạn từ),
+  Phá Cảnh Đan (thêm một ngày khi độ kiếp từ Phá Đan Thành Anh trở lên), Hộ Lô Phù (tự cháy khi kiếp phá lô lỡ ngày).
+- **Kiếp phá lô**: pháp bảo Thiên, Âm Dương, Hỗn Độn phẩm luyện xong còn phải qua 2, 3, 4 ngày đọc đủ 20, 30, 40 phút;
+  vượt kiếp thì pháp bảo mang dấu «Kiếp Luyện», lỡ ngày thì lò nứt, lửa lui về bảy phần.
+- **Cửa ải thiên kiếp có tên**: Trúc Cơ, Kết Đan, Phá Đan Thành Anh, Anh Biến Hóa Thần, Luyện Thần Phản Hư,
+  Hợp Thể Quy Nguyên, Đại Thừa Viên Mãn, Độ Kiếp, Phi Thăng.
+- **72 đạo hiệu** (12 mỗi nhóm): thêm các đạo hiệu cảnh giới, chuỗi dài, giờ đọc, sách dày, 72 loại pháp bảo,
+  kiếp phá lô, khí linh, kỳ ngộ, đan phù.
+- Ô lò trống hiện viên tinh thạch: «Linh tinh chờ luyện · Thiên tài địa bảo, đợi ngày khai lô».
 
 ## Bản 0.7
 

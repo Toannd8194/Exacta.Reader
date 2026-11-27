@@ -89,14 +89,20 @@ class ScreensTest {
             Store.dayWords[today - d] = s * 4
         }
         Store.beasts.clear()
-        for ((i, sp) in listOf(0, 6, 24, 30, 3, 13, 20, 33, 8, 19, 1, 14).withIndex()) {
-            Store.beasts.add(Beast(Treasure.seedFor(sp), sp / 6, today - i * 3, titles[i % titles.size].first))
+        for ((i, sp) in listOf(0, 12, 48, 60, 3, 25, 40, 63, 14, 37, 1, 26, 43, 70, 19, 55).withIndex()) {
+            Store.beasts.add(Beast(i * 977L, sp / Treasure.KINDS, today - i * 3, titles[i % titles.size].first, sp % Treasure.KINDS,
+                if (i % 5 == 1) Treasure.SPIRITS[i % Treasure.SPIRITS.size] else if (i == 3) Treasure.TRIAL_MARK else ""))
         }
+        Store.items[0] = 2; Store.items[1] = 1; Store.items[2] = 0; Store.items[3] = 1
+        Store.kyNgoCount = 7
+        Store.kyNgoLog.clear()
+        Store.kyNgoLog.addAll(listOf("27/11 · nhặt được Thiên Hỏa Phù", "25/11 · khí linh của Long Song kiếm thức tỉnh: «Ẩn Long»", "22/11 · nhặt được khoáng thạch Địa phẩm"))
         Store.forge.clear()
         Store.forge.addAll(listOf(Ore(1, 9_000), Ore(3, 12_000), Ore(0, 5_000)))
         val first = Store.books.values.first()
         Store.forge.add(Ore(2, 60_000, first.path, Ore.GOAL_STAGE))
         Store.forge.add(Ore(Treasure.tierForBook(first.words), 0, first.path, Ore.GOAL_FINISH))
+        Store.forge.add(Ore(4, 0, "", Ore.GOAL_ORE, today - 1).apply { words = need })
         Store.bag.fill(0)
         Store.bag[0] = 2; Store.bag[2] = 1
         Store.setsDone = 0

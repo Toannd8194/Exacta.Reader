@@ -53,18 +53,22 @@ class DaoHieuActivity : TabActivity() {
 
         // The six titles of the group.
         val top = head.bottom + 18 * u
-        val cols = if (k.W >= 600) 2 else 1
-        val rows = DaoHieu.PER_GROUP / cols
+        val cols = if (k.W >= 560) 2 else 1
         val gap = 12 * u
+        val rows = ((area.bottom - top + gap) / (110 * u + gap)).toInt().coerceIn(1, 6)
+        val per = rows * cols
+        val pages = (DaoHieu.PER_GROUP + per - 1) / per
         val cw = (area.width() - (cols - 1) * gap) / cols
-        val ch = minOf((area.bottom - top - (rows - 1) * gap) / rows, 190 * u)
-        for (i in 0 until DaoHieu.PER_GROUP) {
-            val t = tab * DaoHieu.PER_GROUP + i
+        val ch = minOf((area.bottom - top - (rows - 1) * gap) / rows, 170 * u)
+        for (i in 0 until per) {
+            val n = page * per + i
+            if (n >= DaoHieu.PER_GROUP) break
+            val t = tab * DaoHieu.PER_GROUP + n
             val x = area.left + (i % cols) * (cw + gap)
             val y = top + (i / cols) * (ch + gap)
             drawTitle(c, k, RectF(x, y, x + cw, y + ch), t, hits)
         }
-        return 1
+        return pages
     }
 
     private fun drawTitle(c: Canvas, k: Ink, r: RectF, t: Int, hits: Hits) {
