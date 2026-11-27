@@ -35,6 +35,7 @@
         </activity>
         <activity android:name=".LibraryActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".TuViActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".CongPhapActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".PhapBaoActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".DaoHieuActivity" android:exported="false" android:screenOrientation="portrait" />

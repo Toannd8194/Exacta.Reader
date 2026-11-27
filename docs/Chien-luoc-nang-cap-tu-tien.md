@@ -1,6 +1,6 @@
 # Chiến lược nâng cấp hệ tu tiên
 
-*Vạn Quyển Tiên Đồ · bản thiết kế từ Nhân giới qua Linh giới, dừng ở ngưỡng chạm Tiên cảnh*
+*Vạn Quyển Tiên Đồ · bản thiết kế từ Nhân giới qua Linh giới, dừng ở Phi Thăng kỳ trước cửa Lục Giới*
 
 ## Tầm nhìn
 
@@ -12,7 +12,7 @@ Ba nguyên tắc không đổi:
 - **Khó nhưng không tàn nhẫn.** Thất bại làm chậm lại, gây thương thế, tăng tâm ma, nhưng không xóa sạch công sức và không bao giờ đánh rớt cảnh giới đã mở. Muốn khắc nghiệt thật thì bật chế độ Chân Tu.
 - **Giao diện thẻ và trang, không cuộn.** Mỗi hệ mới là một màn hình nhiều tab, chạm là xong, hợp màn e-ink.
 
-Phạm vi: **Nhân giới** (Luyện Khí tới Hóa Thần), **phi thăng**, **Linh giới** (Luyện Hư tới Độ Kiếp), và kết thúc ở sự kiện **Tiên Môn**: chạm tới Tiên cảnh. Chín phẩm Tiên nhân của bản hiện tại để dành cho một chương sau.
+Phạm vi: **Nhân giới** (Luyện Khí tới Hóa Thần), **phi thăng** lên **Linh giới** (Luyện Hư tới Đại Thừa), giai đoạn đặc biệt **Độ Kiếp**, và cảnh giới cuối của Linh giới là **Phi Thăng kỳ**. Ở Phi Thăng kỳ, **Lục Giới Môn** mở ra: người tu chọn một trong sáu đại thiên thế giới để đi tiếp. Mỗi giới là một hướng chơi khác hẳn, nên bản thiết kế này dừng ở ngưỡng cửa và để ngỏ phần sau (xem chương Phi Thăng kỳ và Lục Giới). Chín phẩm Tiên nhân của bản hiện tại trở thành phần mở đầu của nhánh Tiên giới.
 
 ## Bản đồ hai giới
 
@@ -25,12 +25,13 @@ Mốc tu vi giữ đúng như bản 1.0 để dữ liệu cũ chuyển sang khô
 | Nhân giới | Kim Đan | 30 – 60 | ngưng đan, chọn đường | ~6 tuần |
 | Nhân giới | Nguyên Anh | 60 – 100 | phá đan thành anh: lôi kiếp, tâm ma | ~3 tháng |
 | Nhân giới | Hóa Thần | 100 – 160 | cảm ngộ thiên địa: thần thức | ~5 tháng |
-| — | Phi thăng | 160 | không gian tiết điểm, phi thăng kiếp | ~8 tháng |
+| — | Phi thăng lên Linh giới | 160 | không gian tiết điểm, phi thăng kiếp | ~8 tháng |
 | Linh giới | Luyện Hư | 160 – 250 | lĩnh ngộ pháp tắc | — |
 | Linh giới | Hợp Thể | 250 – 400 | thân thần hợp nhất | ~1 năm |
 | Linh giới | Đại Thừa | 400 – 600 | đạo vực ba pháp tắc | ~1 năm 7 tháng |
-| Linh giới | Độ Kiếp | 600 – 1.000 | cửu cửu thiên kiếp | ~2 năm 4 tháng |
-| — | Chạm Tiên cảnh | 1.000 | Tiên Môn: thiên nhân ngũ suy | ~4 năm |
+| Linh giới | Độ Kiếp (giai đoạn đặc biệt) | 600 – 1.000 | chín tầng kiếp | ~2 năm 4 tháng |
+| Linh giới | Phi Thăng kỳ (cảnh giới cuối) | 1.000 | thiên nhân ngũ suy, Lục Giới Môn | ~4 năm |
+| — | Sáu đại thiên thế giới | — | chọn giới, để ngỏ | — |
 
 Mỗi đại cảnh giới (trừ Luyện Khí) có bốn tiểu cảnh: **sơ kỳ, trung kỳ, hậu kỳ, viên mãn**. Lên tiểu cảnh là tự động khi đủ điều kiện; lên đại cảnh luôn là một **đột phá** do người chơi bấm, có tỉ lệ thành công hiện rõ trước khi bấm.
 
@@ -115,9 +116,53 @@ Không có mức nào đánh rớt cảnh giới đã mở.
 
 **Hợp Thể → Đại Thừa: đạo vực.** Ba pháp tắc lĩnh ngộ và một **đạo vực** tự đặt tên. Đạo vực là hiệu quả thụ động mạnh nhất game, được ghép từ ba pháp tắc đã chọn.
 
-**Đại Thừa → Độ Kiếp: cửu cửu thiên kiếp.** Chín đợt lôi kiếp trong 15 ngày, mỗi đợt một ngày đọc từ 60 phút; được nghỉ tối đa 6 ngày xen giữa. Mỗi đợt chín đạo lôi; pháp bảo, thể phách, phù lục và trận pháp đỡ bớt. Đợt thứ chín là **tâm lôi**: chỉ tâm cảnh đỡ được.
+**Đại Thừa → Độ Kiếp.** Đại Thừa viên mãn có đạo vực, rồi bước vào **Độ Kiếp**. Độ Kiếp không phải một cửa ải mà là cả một **giai đoạn đặc biệt**: từ 600 tới 1.000 vạn chữ, người tu không lên tiểu cảnh bằng chữ như các cảnh giới khác mà phải lần lượt vượt chín tầng kiếp (xem chương Độ Kiếp). Chữ đọc trong Độ Kiếp vẫn thành linh lực, nhưng chỉ để nạp vào tầng kiếp kế tiếp.
 
-**Chạm Tiên cảnh: Tiên Môn.** Ở 1.000 vạn chữ, thiên nhân ngũ suy giáng xuống: căn cơ, tâm cảnh, thần thức, thể phách và thọ nguyên cùng suy. Trong 30 ngày phải kéo cả năm thước đo về ngưỡng. Qua được, Tiên Môn mở, **Tiên quang tiếp dẫn**: màn kết, Niên kỷ trọn đời tu, đạo hiệu «Bán Bộ Chân Tiên». Con đường Tiên nhân để dành cho phần sau.
+**Độ Kiếp → Phi Thăng kỳ.** Qua tầng kiếp thứ chín ở 1.000 vạn chữ, người tu vào **Phi Thăng kỳ**, cảnh giới cuối của Linh giới. Ở đây không còn tầng nào để leo; việc còn lại là qua thiên nhân ngũ suy rồi chọn giới để phi thăng (xem chương Phi Thăng kỳ và Lục Giới).
+
+## Độ Kiếp: giai đoạn đặc biệt
+
+Độ Kiếp là nơi mọi thứ đã có được đem ra thử một lần. Giai đoạn chia **chín tầng kiếp**, mỗi tầng chiếm khoảng 44 vạn chữ của khoảng 600 – 1.000 vạn:
+
+| Tầng | Kiếp | Thử gì | Đỡ bằng |
+|---|---|---|---|
+| 1 – 3 | Lôi kiếp (thiên lôi, địa hỏa, cương phong) | mỗi tầng 5 ngày × 55 phút | pháp bảo, phù lục, thuật pháp phòng ngự |
+| 4 – 6 | Pháp tắc kiếp | mỗi tầng đọc trọn một cuốn của tác giả mới trong 30 ngày | pháp tắc đã lĩnh ngộ, thần thức |
+| 7 – 8 | Tâm ma kiếp | 7 ngày đọc một cuốn, không nhảy chương, không đổi sách | tâm cảnh, tâm pháp |
+| 9 | Cửu cửu thiên kiếp | chín đợt trong 15 ngày, mỗi đợt một ngày đọc từ 60 phút, nghỉ tối đa 6 ngày xen giữa; đợt chín là tâm lôi | mọi thứ đã có; tâm lôi chỉ tâm cảnh đỡ |
+
+Mỗi tầng qua được để lại một **kiếp ấn** trong Niên kỷ. Hỏng một tầng không mất tầng đã qua: thương thế và tâm ma như đột phá hỏng, rồi thử lại sau thời gian hồi khí. Chữ đọc khi chưa mở tầng kế tiếp được tích lại làm **kiếp lực**, cộng tỉ lệ cho tầng đó, giống áp chế ở bình cảnh.
+
+Cách người tu vượt chín tầng được ghi lại: bao nhiêu tầng nhờ pháp bảo, bao nhiêu nhờ tâm cảnh, có thất bại hay không, có dùng đan hay không. Bản ghi này góp phần quyết định **giới nào gọi** ở Phi Thăng kỳ.
+
+## Phi Thăng kỳ và Lục Giới
+
+Phi Thăng kỳ là **cảnh giới cuối của Linh giới**. Linh giới không còn chứa nổi người tu; trên trời mở ra **Lục Giới Môn**, sáu cánh cửa dẫn tới sáu đại thiên thế giới. Phi thăng là chọn một cửa và bước qua. Đây là ngã rẽ lớn nhất của game: mỗi giới một luật chơi, một lối đọc, một mạch truyện riêng. Bản thiết kế này **để ngỏ** phần sau cửa, chỉ định ra cách tới cửa và cách chọn.
+
+### Trước khi cửa mở: thiên nhân ngũ suy
+
+Vào Phi Thăng kỳ, thiên nhân ngũ suy giáng xuống: căn cơ, tâm cảnh, thần thức, thể phách và thọ nguyên cùng suy. Trong 30 ngày phải kéo cả năm thước đo về ngưỡng. Qua được thì Lục Giới Môn mở. Không qua thì ngũ suy lặp lại vào tháng sau; người tu không mất gì, chỉ chưa thấy cửa.
+
+### Sáu đại thiên thế giới
+
+Mỗi cửa có một **lời gọi**: một điều kiện rút ra từ cả đời tu. Cửa có lời gọi thì sáng. Cửa tối vẫn chọn được nhưng vào thế bất lợi: bắt đầu ở bậc thấp nhất của giới đó và không mang theo kiếp ấn.
+
+| Giới | Lời gọi (gợi ý) | Luật sống ở giới đó (để ngỏ) |
+|---|---|---|
+| **Tiên giới** | năm thước đo cân bằng, Pháp tu hay Thần tu, qua cửu cửu thiên kiếp không dùng đan | chín phẩm Tiên nhân, tiên lực, tiên phủ; nối tiếp chín phẩm của bản hiện tại |
+| **Ma giới** | từng tẩu hỏa nhập ma rồi tự đứng dậy, vận Đạo Tâm Chủng Ma, Kiếm tu | tâm ma thành sức mạnh; ma công đổi tu vi lấy liều; đọc đêm được thưởng |
+| **Phật giới** | tâm cảnh Vô Cấu, chuỗi ngày đọc từ một năm, ít khi bỏ sách dở | công đức thay tu vi; xá lợi; độ hóa tâm ma của đồng đạo ảo |
+| **Yêu giới** | Thể tu, thể phách Bất Diệt Thể, nhiều buổi đọc liền dài | huyết mạch, hóa hình; pháp bảo thành yêu sủng; sức mạnh theo giờ đọc |
+| **Minh giới** | đọc lại sách cũ, đọc xong sách bỏ dở lâu năm, từng chuyển thế ở chế độ Chân Tu | luân hồi, hồn lực; giữ ký ức các đời tu; sách đọc lại có giá trị riêng |
+| **Thần giới** | thần thức Cửu trọng, đọc trọn sách của rất nhiều tác giả, đạo vực ba pháp tắc | thần vị, tín ngưỡng; thần quốc lớn dần theo số tác giả đã đọc |
+
+Nguyên tắc chung cho cả sáu giới, để phần sau không lệch:
+
+- **Vẫn chỉ sinh ra từ việc đọc.** Mỗi giới đổi cách đọc được thưởng, không đổi nguồn.
+- **Chọn là chọn thật.** Một đời tu chỉ vào một giới. Muốn thử giới khác thì chuyển thế (chế độ Chân Tu) hoặc mở một đời tu mới; đạo hiệu, bộ sưu tập và Niên kỷ vẫn giữ.
+- **Mang theo có hạn.** Qua cửa chỉ mang bản mệnh pháp bảo, công pháp đang vận, linh căn và kiếp ấn. Phần còn lại ở lại Linh giới làm di sản, như lúc rời Nhân giới.
+- **Màn kết của phần một.** Bước qua cửa là màn kết của Vạn Quyển Tiên Đồ phần một: Niên kỷ trọn đời tu và đạo hiệu theo giới («Tiếp Dẫn Tiên Quân», «Ma Tôn», «Bồ Tát», «Yêu Hoàng», «Minh Vương», «Thần Chủ»).
+- **Tiền đình.** Khi phần của một giới chưa ra, cửa giới đó vẫn chọn được. Người tu đứng ở tiền đình của giới; tu vi vẫn tăng theo chữ đọc và được ghi lại, để khi phần mới ra, mọi chữ đã đọc đều được tính.
 
 ## Đạo lộ: nhiều cách để thành đạo
 
@@ -247,8 +292,8 @@ Thêm hai loại lớn:
 | Tâm ma kiếp | Kết anh; tẩu hỏa nhập ma | đọc theo thứ tự, không bỏ dở | tâm cảnh, tâm pháp, Thanh Tâm Đan |
 | Ngộ đạo kiếp | Hóa Thần | đọc trọn sách dài, nhiều tác giả | thần thức |
 | Hỏa kiếp, Phong kiếp | Luyện Hư, Hợp Thể | buổi đọc dài, đọc ngày lễ | thuật pháp hợp hành |
-| Cửu cửu thiên kiếp | Độ Kiếp | chín đợt trong 15 ngày | mọi thứ đã có |
-| Thiên nhân ngũ suy | Chạm Tiên | kéo năm thước đo về ngưỡng | sự cân bằng cả đời tu |
+| Chín tầng kiếp | Độ Kiếp | lôi, pháp tắc, tâm ma, cửu cửu thiên kiếp | mọi thứ đã có |
+| Thiên nhân ngũ suy | Phi Thăng kỳ | kéo năm thước đo về ngưỡng | sự cân bằng cả đời tu |
 
 ## Đọc sinh ra gì
 
@@ -276,7 +321,7 @@ Bảng này là xương sống của bản nâng cấp: mọi tài nguyên phả
 
 - Tu vi, cảnh giới đã mở, chuỗi ngày, giờ đọc theo khung giờ: giữ nguyên. Từ giờ đọc cũ tính ngay linh căn, nên người chơi cũ thức tỉnh linh căn ngay lần mở đầu tiên.
 - Ai đã qua Hóa Thần (160 vạn): được đưa tới cửa phi thăng, với bốn tuần không gian tiết điểm rút còn một tuần.
-- Ai đã là Tiên nhân: dừng ở ngưỡng Tiên Môn, chờ phần Tiên lộ.
+- Ai đã là Tiên nhân: đưa về Phi Thăng kỳ với ngũ suy đã qua và Lục Giới Môn mở sẵn; chín phẩm Tiên nhân đã đạt giữ làm tiến độ của nhánh Tiên giới nếu chọn Tiên giới.
 - Pháp bảo, bộ, đạo hiệu, linh thạch, đan phù: giữ nguyên. Đan phù cũ quy đổi sang tên mới khi có tên tương ứng.
 - Căn cơ, tâm cảnh, thần thức, thể phách tính lại từ nhật ký đọc đã lưu.
 
@@ -292,11 +337,13 @@ Mỗi bước là một bản phát hành chơi được, có test chụp màn h
 | 2.3 | Tông môn, nhiệm vụ tuần, đối thủ; bí cảnh bản đồ, biến cố, trọng thương | Tông môn, Bí cảnh |
 | 2.4 | Đạo lộ; các kiểu kết đan, kết anh, hóa thần; luyện thể, luyện thần; kiêm tu, Song Anh | Đạo lộ |
 | 2.5 | Phi thăng; Linh giới, pháp tắc, Hợp Thể, Đại Thừa, đạo vực | Linh giới |
-| 2.6 | Cửu cửu thiên kiếp, Tiên Môn, thiên nhân ngũ suy; chế độ Chân Tu | Tiên Môn |
+| 2.6 | Độ Kiếp chín tầng, Phi Thăng kỳ, thiên nhân ngũ suy; chế độ Chân Tu | Độ Kiếp |
+| 2.7 | Lục Giới Môn: lời gọi, chọn giới, mang theo, màn kết phần một, tiền đình | Lục Giới |
+| 3.x | Mỗi giới một phần riêng (Tiên, Ma, Phật, Yêu, Minh, Thần), để ngỏ | theo giới |
 
 ### Nguyên tắc cân bằng
 
-- Người đọc **30 phút mỗi ngày** phải tới Nguyên Anh trong khoảng 3 tháng, phi thăng trong khoảng 8 tháng, chạm Tiên trong khoảng 4 năm. Đọc 60 phút thì nhanh gần gấp đôi, nhưng các cửa cần ngày (kiếp, ngưng đan, dược viên) vẫn giữ nhịp chung.
+- Người đọc **30 phút mỗi ngày** phải tới Nguyên Anh trong khoảng 3 tháng, phi thăng lên Linh giới trong khoảng 8 tháng, tới Phi Thăng kỳ và Lục Giới Môn trong khoảng 4 năm. Đọc 60 phút thì nhanh gần gấp đôi, nhưng các cửa cần ngày (kiếp, ngưng đan, dược viên) vẫn giữ nhịp chung.
 - Không cửa nào đòi hơn 60 phút một ngày. Không thử thách nào phạt một ngày ốm duy nhất mà không có cách cứu (phù, đan, ngày tha).
 - Mọi con số hiện cho người chơi thấy trước khi họ quyết định. Ngẫu nhiên chỉ nằm ở kỳ ngộ và biến cố, không bao giờ ở việc mất công sức.
 - Dữ liệu vẫn nằm trong một tệp JSON, có sao lưu; không cần mạng.

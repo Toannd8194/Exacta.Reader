@@ -41,6 +41,7 @@ class HomeActivity : AppCompatActivity() {
                     path?.toIntOrNull()?.let { putExtra(com.exacta.reader.ui.TabActivity.EXTRA_TAB, it) }
                 })
                 HomeView.Action.SETTINGS -> startActivity(Intent(this, SettingsActivity::class.java))
+                HomeView.Action.CONG_PHAP -> startActivity(Intent(this, CongPhapActivity::class.java))
                 HomeView.Action.PERMISSION -> askAllFiles()
             }
         }

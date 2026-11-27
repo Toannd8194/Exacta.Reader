@@ -1,5 +1,6 @@
 package com.exacta.reader.data
 
+import com.exacta.reader.game.PhapMon
 import com.exacta.reader.game.Realm
 import com.exacta.reader.game.Treasure
 import org.json.JSONArray
@@ -39,6 +40,8 @@ object TuLuyen {
     const val NGO_DAO_WORDS = 200_000L
     const val LONG_SITTING = 45 * 60L
     const val VERY_LONG_SITTING = 60 * 60L
+    const val TAM_SITTING = 30 * 60L
+    const val VONG_NGA_SITTING = 90 * 60L
 
     // --- State --------------------------------------------------------------------------------------
 
@@ -96,7 +99,7 @@ object TuLuyen {
     /** Căn cơ: 2 a day read 30 minutes (30 days), 10 a book read through (90 days, 4 at most), the Trúc Cơ's root. */
     fun canCo(): Int {
         val t = today()
-        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() -
+        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() -
             (if (recent(tauHoaDay)) 10 else 0) - (jumps30() - 5).coerceIn(0, 20)
         return v.coerceIn(0, 100)
     }
@@ -111,7 +114,7 @@ object TuLuyen {
         val t = today()
         val v = minOf(Store.streak(), 30) + 3 * minOf(10, long30()) + (30 - 2 * jumps30()).coerceAtLeast(0) +
             (if (finishedSince(t - 29) > 0) 10 else 0) - 10 * failDays.count { t - it < 30 } -
-            (if (recent(tauHoaDay)) 20 else 0) - minOf(15, 3 * abandoned())
+            (if (recent(tauHoaDay)) 20 else 0) - minOf(15, 3 * abandoned()) + DaoPhap.tamCanhBonus()
         return v.coerceIn(0, 100)
     }
 
@@ -120,11 +123,11 @@ object TuLuyen {
     fun authors(): Int = Store.books.values.filter { it.finishDay >= 0 }.map { it.author.trim().lowercase() }.filter { it.isNotEmpty() }.toSet().size
 
     /** Thần thức: 5 an author read through, 1 a book. */
-    fun thanThuc(): Int = 5 * authors() + Store.books.values.count { it.finishDay >= 0 }
+    fun thanThuc(): Int = 5 * authors() + Store.books.values.count { it.finishDay >= 0 } + if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
-    fun thePhach(): Int = (Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum()
+    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum()).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }
     fun theTier(v: Int = thePhach()) = THE_AT.indexOfLast { v >= it }
 
     // --- Realms and tiểu cảnh ----------------------------------------------------------------------
@@ -185,7 +188,9 @@ object TuLuyen {
     fun resting() = today() < restUntil
 
     /** Percent of the words read that become linh lực now. */
-    fun rate(): Int = (if (atCeiling()) 20 else if (stuck()) 50 else 100) * (if (injured()) 70 else 100) / 100
+    fun rate(): Int = (if (atCeiling()) ceilingRate() else if (stuck()) knotRate() else 100) * (if (injured()) 70 else 100) / 100
+    fun ceilingRate() = if (DaoPhap.effect(PhapMon.E_BINH_CANH)) 30 else 20
+    fun knotRate() = if (DaoPhap.effect(PhapMon.E_NUT_THAT)) 70 else 50
 
     /** Kim Đan phẩm speeds the way to Nguyên Anh: 2% a phẩm, Vô Hà 25%. */
     fun danBonus(): Int = if (Store.realmCap == 2 && danPham >= 0) (if (danPham >= 9) 25 else 2 * (danPham + 1)) else 0
@@ -193,13 +198,21 @@ object TuLuyen {
     /** The rate and whether at the ceiling, taken before a page's words are added. */
     fun state() = rate() to atCeiling()
 
-    /** Tu vi gained by `gain` words of reading: what the rules keep, and the áp chế at the ceiling. */
+    /**
+     * Tu vi gained by `gain` words of reading: what the rules keep (with the speed of the linh căn
+     * and the công pháp), and the áp chế at the ceiling.
+     */
     fun convert(gain: Long, state: Pair<Int, Boolean> = state()) {
         if (gain <= 0 || Store.realmCap !in 0..8) return
         val (pct, ceiling) = state
-        val kept = gain * pct / 100 * (100 + danBonus()) / 100
+        val kept = gain * pct / 100 * (100 + danBonus()) / 100 * DaoPhap.speed() / 100
         adj += kept - gain
-        if (ceiling) apChe += gain * 8 / 10
+        if (ceiling) apChe += gain * (if (DaoPhap.effect(PhapMon.E_AP_CHE)) 100 else 80) / 100
+    }
+
+    /** Tâm ma rises by `n`, less with Thanh Tâm Quyết and a công pháp that calms. */
+    fun stir(n: Int) {
+        tamMa = (tamMa + (n * DaoPhap.stirPercent() + 50) / 100).coerceAtMost(100)
     }
 
     /** Áp chế: 5% a tenth of the realm, 20% at most. */
@@ -252,6 +265,11 @@ object TuLuyen {
             }
         }
         if (Store.realmCap >= 1) list.add(Need("Đã vào viên mãn (căn cơ từ 60 khi tới)", subCap >= 3))
+        if (g >= 2) {
+            val p = PhapMon.phamFor(g)
+            val now = DaoPhap.activeDef()?.let { "${it.name}, ${PhapMon.PHAM[it.pham]} phẩm" } ?: "chưa vận"
+            list.add(Need("Công pháp ${PhapMon.PHAM[p]} phẩm trở lên (đang vận $now)", DaoPhap.canBreakWith(g)))
+        }
         if (trial && hasTrial(g)) list.add(Need("${trialName(g)}: ${trialRule(g)}", trialDone == g))
         return list
     }
@@ -283,6 +301,11 @@ object TuLuyen {
             "Tâm cảnh ${TAM_CANH_TIERS[tier]}" to tier * 5,
         )
         if (apCheBonus() > 0) list.add("Áp chế cảnh giới" to apCheBonus())
+        DaoPhap.activeDef()?.let { d ->
+            if (DaoPhap.breakPart() > 0) list.add("Công pháp ${PhapMon.PHAM[d.pham]} phẩm tầng ${DaoPhap.tang()}" to DaoPhap.breakPart())
+            if (d.effect == PhapMon.E_DOT_PHA) list.add("Đặc hiệu ${d.name}" to 5)
+        }
+        if (DaoPhap.phapTuong() > 0) list.add("Pháp Tướng Thiên Địa" to DaoPhap.phapTuong())
         if (pill) list.add("Phá Cảnh Đan" to 15)
         if (fails > 0) list.add("Kiên trì, $fails lần trước" to minOf(30, 10 * fails))
         if (tamMa > 1) list.add("Tâm ma $tamMa, chia đôi" to -(tamMa / 2))
@@ -296,11 +319,12 @@ object TuLuyen {
     fun startTrial(): Boolean {
         if (!canStartTrial()) return false
         Store.trialStart = today()
-        Store.trialBonus = 0
+        Store.trialBonus = if (DaoPhap.effect(PhapMon.E_KIEP_NGAY)) 1 else 0
         Store.trialSpare = 0
         attacks = 0
         trialBook = ""
-        Store.note("${trialName()} bắt đầu: ${trialRule()}")
+        DaoPhap.onTrialStart()
+        Store.note("${trialName()} bắt đầu: ${trialRule()}" + if (Store.trialBonus > 0) " · công pháp tính sẵn 1 ngày" else "")
         Store.touch()
         return true
     }
@@ -311,6 +335,7 @@ object TuLuyen {
         Store.trialStart = -1
         Store.trialBonus = 0
         Store.trialSpare = 0
+        DaoPhap.onTrialEnd()
         Store.note("Vượt ${trialName(g).lowercase()}: đột phá ${Realm.baseName(g)} được rồi")
         lastResult = "Vượt ${trialName(g).lowercase()} ngày ${dayText(today())}"
         Store.touch()
@@ -325,11 +350,13 @@ object TuLuyen {
         Store.failDay = t
         failDays.add(t)
         while (failDays.size > 20) failDays.removeAt(0)
-        tamMa = (tamMa + 15).coerceAtMost(100)
+        val before = tamMa
+        stir(15)
         restUntil = t + 2
         attacks = 0
-        lastResult = "$why ngày ${dayText(t)}: tâm ma +15, hồi khí 2 ngày"
-        Store.note("$why: tâm ma +15, nghỉ hai ngày rồi thử lại")
+        DaoPhap.onTrialEnd()
+        lastResult = "$why ngày ${dayText(t)}: tâm ma +${tamMa - before}, hồi khí 2 ngày"
+        Store.note("$why: tâm ma +${tamMa - before}, nghỉ hai ngày rồi thử lại")
         Store.touch()
     }
 
@@ -345,6 +372,7 @@ object TuLuyen {
         val rate = chance()
         val roll = rng.nextInt(100)
         val ok = roll < rate
+        DaoPhap.onRoll()
         if (ok) {
             val margin = rate - roll
             var extra = ""
@@ -376,11 +404,8 @@ object TuLuyen {
             Store.note("Đột phá thành công: ${Realm.baseName(g)}$extra · ${50 * g} linh thạch")
             advance()
         } else {
-            val kind = when {
-                tamMa >= 70 -> TAU_HOA
-                rate >= 50 -> HUT_KHI
-                else -> KINH_MACH
-            }
+            // The độn thuật and the công pháp soften the fall.
+            val f = DaoPhap.soften(failKind(rate))
             breakFails++
             fails++
             pill = false
@@ -388,23 +413,24 @@ object TuLuyen {
             Store.failDay = t
             failDays.add(t)
             while (failDays.size > 20) failDays.removeAt(0)
-            tamMa = (tamMa + 10).coerceAtMost(100)
-            restUntil = t + 2
-            val what = when (kind) {
+            stir(f.tamMa)
+            restUntil = t + f.restDays
+            val what = when (f.kind) {
                 HUT_KHI -> {
-                    Store.tuViLoss += Store.tuVi() / 50
-                    "Hụt khí: mất 2% linh lực"
+                    Store.tuViLoss += Store.tuVi() / f.lossDiv
+                    "Hụt khí: mất ${100 / f.lossDiv}% linh lực"
                 }
                 KINH_MACH -> {
-                    injuryUntil = t + 5
-                    "Kinh mạch tổn thương: 5 ngày tu luyện chỉ còn 70%"
+                    injuryUntil = t + f.injuryDays
+                    "Kinh mạch tổn thương: ${f.injuryDays} ngày tu luyện chỉ còn 70%"
                 }
                 else -> {
                     tauHoaDay = t
                     tamMaKiep = true
                     "Tẩu hỏa nhập ma: tâm cảnh −20, căn cơ −10 trong 30 ngày"
                 }
-            }
+            } + (if (f.restDays != 2) ", hồi khí ${f.restDays} ngày" else "") +
+                if (f.saved.isNotEmpty()) " (${f.saved.joinToString(", ")})" else ""
             lastResult = "Đột phá hỏng ngày ${dayText(t)} · $what"
             Store.note("Đột phá thất bại. $what")
         }
@@ -414,7 +440,7 @@ object TuLuyen {
     }
 
     fun failKind(rate: Int = chance()) = when {
-        tamMa >= 70 -> TAU_HOA
+        tamMa >= DaoPhap.tauHoaAt() -> TAU_HOA
         rate >= 50 -> HUT_KHI
         else -> KINH_MACH
     }
@@ -432,7 +458,7 @@ object TuLuyen {
         }
         if (lastTick >= t - 1) return
         for (d in lastTick + 1..t - 1) {
-            if (!read(d) && read(d - 1)) tamMa = (tamMa + 10).coerceAtMost(100)
+            if (!read(d) && read(d - 1) && !DaoPhap.calmBreak(d)) stir(10)
             if (Store.minutes(d) >= 30) tamMa = (tamMa - 1).coerceAtLeast(0)
         }
         lastTick = t - 1
@@ -448,7 +474,7 @@ object TuLuyen {
     private fun lightningTrial() = Store.inTrial() && gate() == 3
 
     private fun attack(why: String) {
-        if (!lightningTrial()) return
+        if (!lightningTrial() || DaoPhap.block()) return
         attacks++
         if (attacks >= 3) trialFailed("Tâm ma kiếp thất bại")
         else Store.note("Tâm ma tấn công ($why): $attacks/3")
@@ -464,6 +490,12 @@ object TuLuyen {
             calm(3)
         }
         if (before < VERY_LONG_SITTING && session >= VERY_LONG_SITTING) dayVeryLong[d] = (dayVeryLong[d] ?: 0) + 1
+        if (before < TAM_SITTING && session >= TAM_SITTING) DaoPhap.onSitting30()
+        if (before < VONG_NGA_SITTING && session >= VONG_NGA_SITTING && DaoPhap.tamWorks(PhapMon.TP_VONG_NGA)) {
+            // Vong Ngã Chân Quyết: a sitting of 90 minutes counts twice for thể phách and tâm cảnh.
+            dayLong[d] = (dayLong[d] ?: 0) + 1
+            dayVeryLong[d] = (dayVeryLong[d] ?: 0) + 1
+        }
         if (lightningTrial()) {
             if (trialBook.isEmpty()) trialBook = book.path
             else if (trialBook != book.path) {
@@ -478,7 +510,7 @@ object TuLuyen {
         val d = today()
         val n = (dayJumps[d] ?: 0) + 1
         dayJumps[d] = n
-        if (n > 3) tamMa = (tamMa + 2).coerceAtMost(100)
+        if (n > 3 && !DaoPhap.quietJump()) stir(2)
         attack("nhảy chương")
         Store.touch()
     }

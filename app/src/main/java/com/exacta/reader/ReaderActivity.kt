@@ -364,9 +364,8 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         Store.moveTo(book, p, pageTurn)
         pageTurn = false
         book.locator = locator.toJSON().toString()
-        val tang = Realm.tangOf(book.percent)
-        if (tang == lastTang + 1 && Store.showNotices) showNotice("Công pháp đột phá ${Realm.tangName(tang)}")
-        lastTang = maxOf(lastTang, tang)
+        // 2.1: the tầng of a book are ngộ tính now; tầng 4 and 7 say so through the notes.
+        lastTang = maxOf(lastTang, Realm.tangOf(book.percent))
         chapterTitle = locator.title ?: tocTitle(tocCurrent()) ?: chapterTitle
         Store.takeNote().takeIf { it.isNotEmpty() && Store.showNotices }?.let { showNotice(it) }
         if (noticePages > 0) noticePages--

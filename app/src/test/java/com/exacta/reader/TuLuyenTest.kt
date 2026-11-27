@@ -1,6 +1,7 @@
 package com.exacta.reader
 
 import com.exacta.reader.data.Book
+import com.exacta.reader.data.DaoPhap
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.Realm
@@ -36,7 +37,9 @@ class TuLuyenTest {
         Store.totalWords = 0; Store.totalSeconds = 0; Store.bonusTuVi = 0; Store.tuViLoss = 0; Store.setsDone = 0
         Store.realmCap = 0; Store.realmSeen = 0; Store.trialStart = -1; Store.trialPassed = 0; Store.failCount = 0
         Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0
+        Store.hourSeconds.fill(0)
         TuLuyen.reset()
+        DaoPhap.reset()
         TuLuyen.started = true
         TuLuyen.lastTick = today - 1
         TuLuyen.rng = roll(0)
@@ -148,6 +151,8 @@ class TuLuyenTest {
         TuLuyen.subCap = 3
         Store.totalWords = 300_000
         days(30, 30)
+        assertFalse(TuLuyen.canStartTrial())       // 2.1: Kim Đan asks for a công pháp of Huyền phẩm
+        DaoPhap.gainCong(6)
         assertTrue(TuLuyen.canStartTrial())
         assertFalse(TuLuyen.canBreak())
         assertTrue(TuLuyen.startTrial())
@@ -176,6 +181,7 @@ class TuLuyenTest {
         TuLuyen.subCap = 3
         Store.totalWords = 600_000
         days(30, 40)
+        DaoPhap.gainCong(13)                   // Địa phẩm for Nguyên Anh
         assertTrue(TuLuyen.startTrial())
         val other = Store.book("/t/other.epub").apply { words = 500_000 }
         TuLuyen.onSeconds(book, 60, 60)

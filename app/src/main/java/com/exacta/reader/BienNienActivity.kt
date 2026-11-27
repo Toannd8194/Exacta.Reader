@@ -118,6 +118,8 @@ class BienNienActivity : TabActivity() {
                 "Đồng hồ theo canh giờ và khắc, thời gian còn lại tính bằng canh giờ; Mục lục trọn trang, mười mục một trang, chọn theo khoảng; tùy chọn dạng thẻ."),
             Era("2.0", "Ngũ Khí Triều Nguyên",
                 "Người tu có năm thước đo và tâm ma; mỗi cảnh giới bốn tiểu cảnh, bình cảnh, áp chế; đột phá tự bấm, tỉ lệ hiện rõ; Trúc Cơ quan, ngưng đan, lôi kiếp kèm tâm ma kiếp, ngộ đạo."),
+            Era("2.1", "Vạn Pháp Quy Nguyên",
+                "Linh căn thức tỉnh từ giờ đọc; công pháp chín tầng mở bằng ngộ tính, cửa ải đòi phẩm công pháp; tâm pháp, thuật pháp tự ra tay; Tàng Kinh Các; vẽ lại khoáng thạch, cảnh giới, khung Âm Dương."),
         )
     }
 }

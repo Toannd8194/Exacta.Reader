@@ -3,6 +3,7 @@ package com.exacta.reader.data
 import android.content.Context
 import com.exacta.reader.game.DaoHieu
 import com.exacta.reader.game.Lunar
+import com.exacta.reader.game.PhapMon
 import com.exacta.reader.game.Realm
 import com.exacta.reader.game.Treasure
 import org.json.JSONArray
@@ -228,6 +229,7 @@ object Store {
             dirty = true
         }
         if (!TuLuyen.started) TuLuyen.migrate()
+        if (!DaoPhap.started) DaoPhap.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -284,6 +286,7 @@ object Store {
             it.optJSONArray("sealed")?.let { a -> for (i in 0 until a.length()) sealedDays.add(a.getLong(i)) }
         }
         o.optJSONObject("tuLuyen")?.let { TuLuyen.read(it) }
+        o.optJSONObject("daoPhap")?.let { DaoPhap.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -350,6 +353,7 @@ object Store {
             put("tienTe", JSONObject().put("lt", linhThach).put("ltEarned", linhThachEarned).put("ltWords", ltWords)
                 .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes).put("merge", mergeCount))
             put("tuLuyen", TuLuyen.toJson())
+            put("daoPhap", DaoPhap.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -398,12 +402,14 @@ object Store {
         bonusMinutes.clear(); sealedDays.clear()
         linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0; mergeCount = 0
         TuLuyen.reset()
+        DaoPhap.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
             realmSeen = Realm.level(totalWords)
         }
         if (!TuLuyen.started) TuLuyen.migrate()
+        if (!DaoPhap.started) DaoPhap.migrate()
         dirty = true
         save()
         return true
@@ -477,12 +483,16 @@ object Store {
         }
         val tang = Realm.tangOf(book.percent)
         if (tang > book.tang) {
-            if (tang == book.tang + 1 && book.tang > 0) tangCount++
+            if (tang == book.tang + 1 && book.tang > 0) {
+                tangCount++
+                DaoPhap.onBookTang(book, tang)
+            }
             book.tang = tang
         }
         if (progression >= FINISH && book.finishDay < 0) {
             book.finishDay = today()
             TuLuyen.onFinish()
+            DaoPhap.onFinish(book)
             if (!book.forged && book.words > 0) {
                 book.forged = true
                 val tier = Treasure.tierForBook(book.words)
@@ -515,14 +525,16 @@ object Store {
         val state = TuLuyen.state()
         totalWords += words
         TuLuyen.convert(tuViRaw() - before, state)
+        DaoPhap.onWords(words)
         // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
         var burn = if (setActive(6) && feastDay()) words * 2 else words
+        if (DaoPhap.effect(PhapMon.E_LO_LUYEN)) burn = burn * 6 / 5
         if (fireWords > 0) {
             fireWords = (fireWords - words).coerceAtLeast(0)
             burn *= 2
         }
         if (beQuanTarget > 0) burn = burn * 3 / 2
-        ltWords += words
+        ltWords += if (DaoPhap.effect(PhapMon.E_LINH_THACH)) words * 6 / 5 else words
         while (ltWords >= 10_000) {
             ltWords -= 10_000
             gainLinhThach(5L * feastMultiplier())
@@ -659,7 +671,7 @@ object Store {
         beQuanMinutes += m
         beQuanTarget = 0
         beQuanSeconds = 0
-        val lt = beQuanReward(m) * feastMultiplier()
+        val lt = beQuanReward(m) * feastMultiplier() * (if (DaoPhap.tamWorks(PhapMon.TP_TINH_TOA)) 13 else 10) / 10
         gainLinhThach(lt)
         note("Bế quan viên mãn $m phút: nhận $lt linh thạch")
         checkTitles()
@@ -782,7 +794,8 @@ object Store {
     // --- Kỳ ngộ -------------------------------------------------------------------------------------------
 
     private fun kyNgo(book: Book) {
-        val chance = (if (setActive(10)) 180 else 120) * (if (seekWords > 0) 3 else 1) * (if (beQuanTarget > 0) 2 else 1)
+        val chance = (if (setActive(10)) 180 else 120) * (if (seekWords > 0) 3 else 1) * (if (beQuanTarget > 0) 2 else 1) *
+            (if (DaoPhap.effect(PhapMon.E_KY_NGO)) 13 else 10) / 10
         if (Random.nextInt(1000) >= chance) return
         kyNgoCount++
         val sleeping = beasts.filter { it.spirit.isEmpty() }
@@ -809,6 +822,7 @@ object Store {
                 unseen++
                 "khí linh của ${b.name} thức tỉnh: «${b.spirit}»"
             }
+            r < 50 && DaoPhap.started -> "tàn hồn truyền thừa, nhận " + DaoPhap.dropScroll()
             else -> {
                 val i = rollItem()
                 items[i]++
@@ -1150,7 +1164,7 @@ object Store {
         val today = today()
         if (trialStart < 0) return 0 to false
         var run = 0
-        var forgiven = (if (setActive(4)) 1 else 0) + trialSpare
+        var forgiven = (if (setActive(4)) 1 else 0) + trialSpare + DaoPhap.trialSpare()
         for (d in trialStart..today) {
             if (trialMet(d)) run++
             else if (d != trialStart && d != today) {
@@ -1173,6 +1187,7 @@ object Store {
             else if (days >= trialNeed()) TuLuyen.trialPassed()
         }
         TuLuyen.advance()
+        DaoPhap.check()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level
@@ -1183,6 +1198,7 @@ object Store {
     // --- Bí cảnh ------------------------------------------------------------------------------------
 
     const val BI_CANH_MINUTES = 30
+    const val BI_CANH_SCROLL = 35
     fun biCanhNeed() = if (setActive(2)) 4 else 5
 
     fun weekStart(day: Long): Long = LocalDate.ofEpochDay(day).with(DayOfWeek.MONDAY).toEpochDay()
@@ -1201,7 +1217,10 @@ object Store {
         val lift = if (setActive(14)) 1 else 0
         giveOre((maxOf(Treasure.rollTier(), 1) + lift).coerceAtMost(Treasure.TIERS - 1), "Qua bí cảnh tuần")  // never below Huyền
         if (setActive(5)) giveOre(maxOf(Treasure.rollTier(), 1), "Phong Thần Bảo Lục")
-        gainLinhThach(20)
+        val extra = DaoPhap.onBiCanh()
+        if (extra > 0) note("Thuật pháp công kích diệt yêu thú: thêm $extra linh thạch")
+        gainLinhThach(20 + extra)
+        if (DaoPhap.started && Random.nextInt(100) < BI_CANH_SCROLL) note("Bí cảnh: " + DaoPhap.dropScroll())
         touch()
     }
 

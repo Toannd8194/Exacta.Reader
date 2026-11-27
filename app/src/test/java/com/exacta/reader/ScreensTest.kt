@@ -11,9 +11,11 @@ import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import com.exacta.reader.data.Beast
+import com.exacta.reader.data.DaoPhap
 import com.exacta.reader.data.Ore
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TuLuyen
+import com.exacta.reader.game.PhapMon
 import com.exacta.reader.game.Treasure
 import com.exacta.reader.ui.HomeView
 import com.exacta.reader.ui.ReaderSheet
@@ -132,6 +134,20 @@ class ScreensTest {
         TuLuyen.dayVeryLong[today - 3] = 1
         TuLuyen.coPham = 2
         TuLuyen.danPham = 5
+        // 2.1: evenings and some dawns; the move from 2.0, then a few more scrolls.
+        Store.hourSeconds.fill(0)
+        Store.hourSeconds[19] = 30 * 3600L; Store.hourSeconds[21] = 12 * 3600L; Store.hourSeconds[6] = 14 * 3600L
+        Store.hourSeconds[14] = 9 * 3600L; Store.hourSeconds[10] = 6 * 3600L
+        DaoPhap.migrate()
+        DaoPhap.offerWeek = -1
+        DaoPhap.ngo = 6
+        DaoPhap.cong[DaoPhap.active]!!.words = 6 * PhapMon.TANG_WORDS[1]
+        listOf(6, 11, 12, 3).forEach { DaoPhap.gainCong(it) }
+        DaoPhap.tam[PhapMon.TP_THANH_TAM] = 14
+        DaoPhap.gainTam(PhapMon.TP_VONG_NGA)
+        listOf(PhapMon.T_KIM_CANG, PhapMon.T_THIEN_NHAN, PhapMon.T_HOA_DAN, PhapMon.T_PHONG_DON).forEach { DaoPhap.gainThuat(it) }
+        DaoPhap.thuat[PhapMon.T_THO_DON]?.uses = 9
+        DaoPhap.thuat[PhapMon.T_KIM_CANG]?.uses = 4
     }
 
     private fun cover(f: File, title: String, i: Int) {
@@ -230,6 +246,23 @@ class ScreensTest {
     @Test fun nienKy() = tabs(NienKyActivity::class.java, "nienky")
     @Test fun settings() = tabs(SettingsActivity::class.java, "settings")
     @Test fun bienNien() = tabs(BienNienActivity::class.java, "biennien")
+    @Test fun congPhap() {
+        tabs(CongPhapActivity::class.java, "congphap")
+        val a = Robolectric.buildActivity(CongPhapActivity::class.java).setup().get()
+        idle()
+        a.selectTab(1)
+        a.page = 1
+        a.refresh()
+        idle()
+        shoot(root(a), "congphap_1_p2")
+        // Before the awakening.
+        DaoPhap.migrate()
+        Store.hourSeconds.fill(0)
+        DaoPhap.reset(); DaoPhap.migrate()
+        a.selectTab(0)
+        idle()
+        shoot(root(a), "congphap_0_early")
+    }
 
     /** The second pages of Thân and Đột phá, and the breakthrough ready and far off. */
     @Test

@@ -30,7 +30,7 @@ import kotlin.random.Random
  */
 @SuppressLint("ViewConstructor")
 class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY }
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP }
 
     var book: Book? = null
     var needsPermission = false
@@ -407,7 +407,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             }
         }
         // The screens as words along the bottom.
-        val items = listOf(Action.LIBRARY to "Thư viện", Action.TU_VI to "Tu vi", Action.PHAP_BAO to "Pháp bảo",
+        val items = listOf(Action.LIBRARY to "Thư viện", Action.TU_VI to "Tu vi", Action.CONG_PHAP to "Công pháp", Action.PHAP_BAO to "Pháp bảo",
             Action.DAO_HIEU to "Đạo hiệu", Action.NIEN_KY to "Niên kỷ", Action.SETTINGS to "Cài đặt")
         val rowY = a.bottom - 60 * u
         c.drawRect(a.left, rowY - 16 * u, a.right, rowY - 15 * u, k.gray)
@@ -424,7 +424,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
         val bookRect = RectF(a.left, dock.top - g - 170 * u, a.right, dock.top - g)
         drawBookRow(c, k, bookRect); bookTarget(bookRect)
         libraryButton(c, k, bookRect)
@@ -556,6 +556,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = 10 * u
         val items = listOf(
+            Triple(Action.CONG_PHAP, "congphap", "Công pháp"),
             Triple(Action.NIEN_KY, "nienky", "Niên kỷ"),
             Triple(Action.SETTINGS, "settings", "Cài đặt"),
         )
@@ -916,6 +917,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             Action.SETTINGS to ("settings" to "Cài đặt"),
             Action.TU_VI to ("tuvi" to "Tu vi"),
             Action.LIBRARY to ("library" to "Thư viện"),
+            Action.CONG_PHAP to ("congphap" to "Công pháp"),
         )
         val g = Ink.GAP * u
         val cw = (r.width() - (actions.size - 1) * g) / actions.size

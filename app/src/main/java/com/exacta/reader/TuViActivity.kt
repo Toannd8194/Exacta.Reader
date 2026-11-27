@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.RectF
 import android.os.Bundle
+import com.exacta.reader.data.DaoPhap
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.DaoHieu
@@ -88,7 +89,15 @@ class TuViActivity : TabActivity() {
         val nextR = RectF(a.left, y - 6 * u, a.right, y + sl + 6 * u)
         k.centered(c, next, a.left, a.width(), y, k.smallBold)
         if (Store.realmCap < 9) hits.add(nextR) { selectTab(2) }
-        y += sl + 18 * u
+        y += sl + 14 * u
+
+        // 2.1: the công pháp running and the linh căn, a tap from here.
+        val cp = RectF(a.left, y, a.right, y + 52 * u)
+        val cpText = (DaoPhap.activeDef()?.let { "${it.name} tầng ${DaoPhap.tang()}" } ?: "Chưa vận công pháp") +
+            " · ${DaoPhap.shortName()} · ngộ tính ${DaoPhap.ngo} ›"
+        k.button(c, cp, k.fit(cpText, cp.width() - 24 * u, k.smallBold), k.smallBold)
+        hits.add(cp) { startActivity(Intent(this, CongPhapActivity::class.java)) }
+        y = cp.bottom + 16 * u
 
         // The ladder of ten realms fills the rest.
         y = k.section(c, a.left, y, a.width(), "CẢNH GIỚI")
@@ -159,7 +168,7 @@ class TuViActivity : TabActivity() {
                 Store.realmCap >= 9 -> "Tiên nhân: mỗi chữ lật trang đều thành tiên lực."
                 TuLuyen.atCeiling() -> "Bình cảnh: chữ đọc chỉ 20% thành linh lực, phần còn lại ép thành áp chế ${apChePercent()}% cảnh giới (+${TuLuyen.apCheBonus()}% đột phá, tối đa 20%)."
                 TuLuyen.stuck() -> "Nút thắt: cần căn cơ ${TuLuyen.SUB_NEED[TuLuyen.subCap + 1]} để vào ${TuLuyen.TIEU[TuLuyen.subCap + 1]}; tới lúc đó chỉ 50% chữ thành linh lực."
-                else -> "Mỗi chữ lật trang thành linh lực, tốc độ ${TuLuyen.rate()}%" + (if (TuLuyen.danBonus() > 0) ", kim đan cộng ${TuLuyen.danBonus()}%." else ".")
+                else -> "Mỗi chữ lật trang thành linh lực, tốc độ ${TuLuyen.rate() * DaoPhap.speed() / 100}% (linh căn, công pháp)" + (if (TuLuyen.danBonus() > 0) ", kim đan cộng ${TuLuyen.danBonus()}%." else ".")
             } + if (TuLuyen.injured()) " Kinh mạch tổn thương còn ${TuLuyen.injuryUntil - today} ngày: chỉ 70%." else ""
             measure(c, k, row(0), "Linh lực", TuLuyen.name(), "${Realm.van(Store.tuVi())} vạn", (bar.cells / (bar.groups * 3)).toFloat(), rateWhy)
 
@@ -523,7 +532,7 @@ class TuViActivity : TabActivity() {
             "Lần đọc dài nhất" to HomeView.duration(Store.bestSession),
             "Sách đã mở" to "${Store.books.values.count { it.lastOpened > 0 }} cuốn",
             "Đọc xong" to "$finished cuốn",
-            "Tầng công pháp" to "${Store.tangCount} lần",
+            "Ngộ tính" to "${DaoPhap.ngo} (đã nhận ${DaoPhap.ngoEarned})",
             "Tốc độ" to if (wpm > 0) "$wpm từ/phút" else "đọc thêm",
             "Đột phá" to "${TuLuyen.breaks} lần · hỏng ${TuLuyen.breakFails}",
             "Bí cảnh" to "${Store.biCanhCount} lần",
