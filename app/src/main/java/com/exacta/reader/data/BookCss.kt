@@ -104,7 +104,9 @@ object BookCss {
         val each = { rule: String -> TEXT.split(", ").joinToString(", ") { rule.replace("&", it) } }
         val sb = StringBuilder("<style id=\"exacta-reader\">")
         // Line height on every text element, following Readium's variable.
-        sb.append(each(":root[style*=\"--USER__lineHeight\"] &")).append(" { line-height: var(--USER__lineHeight) !important; }")
+        // The :not(#…) parts weigh like ids, so the rule wins over a book's own id or !important rules.
+        sb.append(":root:not(#x1):not(#x2)[style*=\"--USER__lineHeight\"] body, :root:not(#x1):not(#x2)[style*=\"--USER__lineHeight\"] body *")
+            .append(" { line-height: var(--USER__lineHeight) !important; }")
         // The weight stroke, carried by --USER__wordSpacing; the spacing itself stays normal.
         sb.append(each(":root[style*=\"--USER__wordSpacing\"] &"))
             .append(" { word-spacing: normal !important; -webkit-text-stroke: var(--USER__wordSpacing) currentColor; }")

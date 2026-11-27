@@ -19,7 +19,7 @@ import java.time.LocalDate
 class TuViActivity : TabActivity() {
     override fun title() = "Tu Vi"
     override fun right() = Realm.name(Store.level())
-    override fun tabs() = listOf("Cảnh giới", "Độ kiếp", "Thống kê", "Kinh Các")
+    override fun tabs() = listOf("Cảnh giới", "Thiên kiếp", "Bí cảnh", "Thống kê", "Kinh Các")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Store.checkRealm()
@@ -28,8 +28,9 @@ class TuViActivity : TabActivity() {
 
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int = when (tab) {
         0 -> realm(c, k, area, hits)
-        1 -> trials(c, k, area)
-        2 -> stats(c, k, area)
+        1 -> trials(c, k, area, gates = true)
+        2 -> trials(c, k, area, gates = false)
+        3 -> stats(c, k, area)
         else -> kinhCac(c, k, area, page)
     }
 
@@ -92,7 +93,14 @@ class TuViActivity : TabActivity() {
         return 1
     }
 
-    private fun trials(c: Canvas, k: Ink, a: RectF): Int {
+    /** Thiên kiếp with the nine gates (gates = true), or the week's bí cảnh. */
+    private fun trials(c: Canvas, k: Ink, a0: RectF, gates: Boolean): Int {
+        // Each tab shows one card; the other is drawn off the page.
+        val a = if (gates) RectF(a0.left, a0.top, a0.right, a0.bottom + 2000 * k.u) else RectF(a0.left, a0.top - 2000 * k.u, a0.right, a0.bottom)
+        if (!gates) {
+            biCanhPage(c, k, a0)
+            return 1
+        }
         val u = k.u
         val small = k.small
         val sb = k.smallBold
@@ -142,7 +150,41 @@ class TuViActivity : TabActivity() {
         val tally = "Đã vượt ${Store.trialPassed} lần · thất bại ${Store.failCount} lần" + if (Store.setActive(4)) " · Đạo Môn Tứ Bảo tha 1 ngày" else ""
         k.text(c, k.fit(tally, tw, small), tx, top.bottom - pad - sl, small)
 
-        // Bí cảnh tuần, at the bottom.
+        // Between them, the nine gates and what each asks, in two columns.
+        y = k.section(c, a.left, top.bottom + 18 * u, a.width(), "CỬA ẢI THIÊN KIẾP")
+        val gap = 10 * u
+        val colW = (a.width() - gap) / 2
+        val rowH = ((a0.bottom - y) / 5).coerceIn(2 * sl + 8 * u, 96 * u)
+        for (r in 1..9) {
+            val col = (r - 1) / 5
+            val row = (r - 1) % 5
+            val passed = Store.realmCap >= r
+            val now = Store.inTrial() && Store.nextGate() == r
+            val cell = RectF(a.left + col * (colW + gap), y + row * rowH, a.left + col * (colW + gap) + colW, y + row * rowH + rowH - 6 * u)
+            if (now) k.card(c, cell, selected = true) else c.drawRect(cell.left, cell.bottom + 2 * u, cell.right, cell.bottom + 3 * u, k.gray)
+            val ic = minOf(cell.height() - 8 * u, 34 * u)
+            k.realmIcon(c, r, cell.left + 8 * u, cell.centerY() - ic / 2, ic)
+            val tx2 = cell.left + ic + 20 * u
+            val tw2 = cell.right - 8 * u - tx2
+            val ty2 = cell.centerY() - sl
+            k.text(c, k.fit(Realm.baseName(r), tw2, if (passed || now) sb else small), tx2, ty2, if (passed || now) sb else small)
+            val state = when { passed -> "đã vượt"; now -> "đang độ kiếp"; else -> "chưa tới" }
+            k.text(c, k.fit("${TRIAL_DAYS[r - 1]} ngày × ${TRIAL_MINUTES[r - 1]} phút · $state", tw2, small), tx2, ty2 + sl, small)
+        }
+        return 1
+    }
+
+    private fun biCanhPage(c: Canvas, k: Ink, a: RectF) {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val pad = 18 * u
+        val iconS = 52 * u
+        val tx = a.left + pad + iconS + 18 * u
+        val tw = a.right - pad - tx
+        var y: Float
+        // Bí cảnh tuần.
         val today = Store.today()
         val need = Store.biCanhNeed()
         val status = if (Store.biCanhDone()) "Tuần này đã qua bí cảnh, nhận khoáng thạch." else
@@ -150,7 +192,7 @@ class TuViActivity : TabActivity() {
         val statusLines = k.wrap(status, tw, small, 3)
         val cellH = 66 * u
         val botH = pad + k.lineH(k.ui12Bold) + 4 * u + statusLines.size * sl + 14 * u + cellH + 12 * u + sl + pad
-        val bot = RectF(a.left, a.bottom - botH, a.right, a.bottom)
+        val bot = RectF(a.left, a.top, a.right, a.top + botH)
         k.card(c, bot)
         k.icon(c, "bicanh", bot.left + pad, bot.top + pad, iconS)
         k.text(c, "Bí cảnh tuần", tx, bot.top + pad, k.ui12Bold)
@@ -180,24 +222,25 @@ class TuViActivity : TabActivity() {
         }
         k.text(c, "Tuần này ${Store.biCanhDays()}/$need ngày · đã qua ${Store.biCanhCount} lần", bot.left + pad, bot.bottom - pad - sl, sb)
 
-        // Between them, the nine gates and what each asks.
-        y = k.section(c, a.left, top.bottom + 22 * u, a.width(), "CỬA ẢI THIÊN KIẾP")
-        val rowH = ((bot.top - 18 * u - y) / 9).coerceAtMost(56 * u)
-        for (r in 1..9) {
-            val ry = y + (r - 1) * rowH
-            val passed = Store.realmCap >= r
-            val now = Store.inTrial() && Store.nextGate() == r
-            val row = RectF(a.left, ry, a.right, ry + rowH - 4 * u)
-            if (now) k.card(c, row, selected = true)
-            val ic = minOf(row.height() - 6 * u, 32 * u)
-            k.realmIcon(c, r, row.left + 10 * u, row.centerY() - ic / 2, ic)
-            val p = if (passed || now) k.smallBold else small
-            k.text(c, Realm.baseName(r), row.left + ic + 24 * u, row.centerY() - sl / 2, p)
-            val ask = "${TRIAL_DAYS[r - 1]} ngày × ${TRIAL_MINUTES[r - 1]} phút"
-            k.text(c, ask, row.left + row.width() * 0.45f, row.centerY() - sl / 2, small)
-            k.right(c, when { passed -> "Đã vượt"; now -> "Đang độ kiếp"; else -> "Chưa tới" }, row.right - 12 * u, row.centerY() - sl / 2, p)
+
+        // How it works, and what the sets add.
+        y = k.section(c, a.left, bot.bottom + 24 * u, a.width(), "LUẬT BÍ CẢNH")
+        val rules = listOf(
+            "Mỗi tuần tính từ thứ Hai đến Chủ nhật; ngày nào đọc đủ ${Store.BI_CANH_MINUTES} phút là một ngày bí cảnh.",
+            "Đủ ${Store.biCanhNeed()} ngày trong tuần: nhận ngay một khoáng thạch Huyền phẩm trở lên vào lò luyện.",
+            "Thương Kích Liệt Trận: chỉ cần 4 ngày" + if (Store.setActive(2)) " (đang có)." else ".",
+            "Phong Thần Bảo Lục: thêm một khoáng thạch" + if (Store.setActive(5)) " (đang có)." else ".",
+            "Qua bí cảnh 10 lần đắc đạo hiệu Bí Cảnh Thám Hiểm.",
+        )
+        for (r in rules) {
+            for (l in k.wrap(r, a.width() - 24 * u, small, 3)) {
+                if (y + sl > a.bottom) break
+                k.text(c, l, a.left + 20 * u, y, small)
+                y += sl
+            }
+            k.diamond(c, a.left + 6 * u, y - sl * 0.5f - (sl * (k.wrap(r, a.width() - 24 * u, small, 3).size - 1)), 4 * u)
+            y += 10 * u
         }
-        return 1
     }
 
     private val TRIAL_MINUTES = intArrayOf(30, 30, 35, 40, 45, 45, 50, 55, 60)

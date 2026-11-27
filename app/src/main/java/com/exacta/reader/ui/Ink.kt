@@ -388,8 +388,9 @@ class Ink(private val context: Context, width: Int) {
                 dm.densityDpi in 180..480 -> dm.densityDpi.toFloat()
                 else -> 300f
             }
-            var u = dpi / 215f * com.exacta.reader.data.Store.uiScale.toFloat()
-            if (width > 0) u = u.coerceAtMost(width / 400f)  // keep at least the firmware's room
+            // 1.2: the firmware's sizes read small at arm's length on a 6" screen.
+            var u = dpi / 215f * 1.2f * com.exacta.reader.data.Store.uiScale.toFloat()
+            if (width > 0) u = u.coerceAtMost(width / 380f)  // keep about the firmware's room
             return u.coerceAtLeast(0.6f)
         }
 

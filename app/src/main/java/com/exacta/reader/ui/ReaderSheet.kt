@@ -37,6 +37,8 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
 
     var tab = 1
     private var tocPage = -1
+    private var fontMenu = false
+    private var fontPage = 0
     private var morePage = 0
     private var ink: Ink? = null
     private val hits = Hits()
@@ -54,6 +56,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
     /** Called when the sheet opens: the contents page shows the current chapter. */
     fun opened() {
         tocPage = -1
+        fontMenu = false
         invalidate()
     }
 
@@ -76,28 +79,29 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         val label = if (dragging) "Tới ${(dragP * 100).toInt()}%" else host.progressLabel()
         k.centered(c, label, m, w - 2 * m, y, k.smallBold)
         y += k.lineH(k.smallBold) + 6 * u
-        val bh = 44 * u
-        val prev = RectF(m, y, m + 64 * u, y + bh)
-        val next = RectF(w - m - 64 * u, y, w - m, y + bh)
-        k.button(c, prev, "‹", k.paint(26f, bold = true))
-        k.button(c, next, "›", k.paint(26f, bold = true))
+        val bh = 58 * u
+        val cbw = 150 * u
+        val prev = RectF(m, y, m + cbw, y + bh)
+        val next = RectF(w - m - cbw, y, w - m, y + bh)
+        k.button(c, prev, "‹ Chương", k.ui10Bold)
+        k.button(c, next, "Chương ›", k.ui10Bold)
         hits.add(prev) { host.chapter(-1) }
         hits.add(next) { host.chapter(+1) }
-        val tx0 = prev.right + 22 * u
-        val tx1 = next.left - 22 * u
+        val tx0 = prev.right + 26 * u
+        val tx1 = next.left - 26 * u
         val ty = y + bh / 2
         track = RectF(tx0 - 10 * u, y - 6 * u, tx1 + 10 * u, y + bh + 6 * u)
         c.drawRoundRect(tx0, ty - 1.5f * u, tx1, ty + 1.5f * u, u, u, k.gray)
         val kx = tx0 + (tx1 - tx0) * p.toFloat().coerceIn(0f, 1f)
         c.drawRoundRect(tx0, ty - 2 * u, kx, ty + 2 * u, 2 * u, 2 * u, k.fill)
-        c.drawCircle(kx, ty, 11 * u, k.fill)
-        c.drawCircle(kx, ty, 5 * u, k.white)
+        c.drawCircle(kx, ty, 14 * u, k.fill)
+        c.drawCircle(kx, ty, 6 * u, k.white)
         y += bh + 12 * u
         c.drawRect(m, y, w - m, y + u, k.gray)
         y += 12 * u
 
         // The tabs along the bottom.
-        val tabH = 78 * u
+        val tabH = 82 * u
         val tabTop = h - tabH - 6 * u
         c.drawRect(m, tabTop - 8 * u, w - m, tabTop - 7 * u, k.gray)
         val names = listOf("toc" to "Mục lục", "font" to "Chữ", "page" to "Trang", "more" to "Khác")
@@ -115,6 +119,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
                 if (tab != i) {
                     tab = i
                     morePage = 0
+                    fontMenu = false
                     invalidate()
                 }
             }
@@ -156,7 +161,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         val u = k.u
         val lw = labelW(k)
         k.text(c, label, r.left, r.centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
-        val bw = 96 * u
+        val bw = 110 * u
         val minus = RectF(r.left + lw, r.top, r.left + lw + bw, r.bottom)
         val plus = RectF(r.right - bw, r.top, r.right, r.bottom)
         val mid = RectF(minus.right + 10 * u, r.top, plus.left - 10 * u, r.bottom)
@@ -171,7 +176,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
 
     private fun rows(k: Ink, panel: RectF, n: Int): List<RectF> {
         val u = k.u
-        val rowH = minOf(56 * u, (panel.height() - (n - 1) * 10 * u) / n)
+        val rowH = minOf(60 * u, (panel.height() - (n - 1) * 10 * u) / n)
         val gap = if (n > 1) minOf(26 * u, (panel.height() - n * rowH) / (n - 1)) else 0f
         val top = panel.top + maxOf(0f, (panel.height() - n * rowH - (n - 1) * gap) / 2)
         return (0 until n).map { RectF(panel.left, top + it * (rowH + gap), panel.right, top + it * (rowH + gap) + rowH) }
@@ -185,14 +190,27 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
 
     private fun letters(c: Canvas, k: Ink, panel: RectF) {
         val u = k.u
-        val r = rows(k, panel, 4)
-        // Font: ‹ name ›, through the built-in fonts and those added.
         val fonts = host.fonts()
-        val at = fonts.indexOfFirst { it.first == Store.fontFamily }.coerceAtLeast(0)
-        stepper(c, k, r[0], "Font", fonts.getOrNull(at)?.second ?: Store.fontFamily, { d ->
-            Store.fontFamily = fonts[(at + d + fonts.size) % fonts.size].first
-            host.applyPrefs(false)
-        })
+        if (fontMenu) {
+            fontList(c, k, panel, fonts)
+            return
+        }
+        val r = rows(k, panel, 3)
+        // Font: the name in a box that drops the list down; "Thêm" beside it.
+        val lw = labelW(k)
+        k.text(c, "Font", r[0].left, r[0].centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
+        val addW = 130 * u
+        val box = RectF(r[0].left + lw, r[0].top, r[0].right - addW - 10 * u, r[0].bottom)
+        val add = RectF(box.right + 10 * u, r[0].top, r[0].right, r[0].bottom)
+        val name = fonts.firstOrNull { it.first == Store.fontFamily }?.second ?: Store.fontFamily
+        k.button(c, box, "$name  ▾", k.ui10Bold)
+        k.button(c, add, "+ Thêm", k.smallBold)
+        hits.add(box) {
+            fontMenu = true
+            fontPage = 0
+            invalidate()
+        }
+        hits.add(add) { host.addFont() }
         stepper(c, k, r[1], "Cỡ chữ", pct(Store.fontSize), { d ->
             Store.fontSize = step(Store.fontSize, d, 0.05, 0.5, 3.0)
             host.applyPrefs(false)
@@ -204,13 +222,40 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             Store.textWeight = (Store.textWeight + d).coerceIn(0, 5)
             host.applyPrefs(false)
         }) {
-            Store.textWeight = 1
+            Store.textWeight = 3
             host.applyPrefs(false)
         }
-        val add = RectF(r[3].left + labelW(k), r[3].top, r[3].right, r[3].bottom)
-        k.text(c, "Thêm font", r[3].left, r[3].centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
-        k.button(c, add, "Chọn tệp TTF/OTF…  (hoặc chép vào ExactaReader/fonts)", k.small)
-        hits.add(add) { host.addFont() }
+    }
+
+    /** The fonts dropped down over the panel, a page at a time; the current one shaded. */
+    private fun fontList(c: Canvas, k: Ink, panel: RectF, fonts: List<Pair<String, String>>) {
+        val u = k.u
+        val head = RectF(panel.left, panel.top, panel.right, panel.top + 44 * u)
+        k.text(c, "Chọn font", head.left, head.centerY() - k.lineH(k.ui10Bold) / 2, k.ui10Bold)
+        val close = RectF(head.right - 120 * u, head.top, head.right, head.bottom)
+        k.button(c, close, "Đóng", k.smallBold)
+        hits.add(close) { fontMenu = false; invalidate() }
+        val listTop = head.bottom + 10 * u
+        val pagerH = 48 * u
+        val rowH = 50 * u
+        val per = ((panel.bottom - listTop - pagerH - 8 * u) / rowH).toInt().coerceAtLeast(1)
+        val pages = (fonts.size + per - 1) / per
+        fontPage = fontPage.coerceIn(0, pages - 1)
+        var y = listTop
+        for ((id, name) in fonts.drop(fontPage * per).take(per)) {
+            val r = RectF(panel.left, y, panel.right, y + rowH - 6 * u)
+            val on = id == Store.fontFamily
+            if (on) k.card(c, r, selected = true) else c.drawRect(r.left, r.bottom + 2 * u, r.right, r.bottom + 3 * u, k.gray)
+            k.text(c, (if (on) "✓  " else "    ") + name, r.left + 14 * u, r.centerY() - k.lineH(k.ui10) / 2, if (on) k.ui10Bold else k.ui10)
+            hits.add(r) {
+                Store.fontFamily = id
+                fontMenu = false
+                host.applyPrefs(false)
+                invalidate()
+            }
+            y += rowH
+        }
+        if (pages > 1) pager(c, k, panel, fontPage, pages) { fontPage = it }
     }
 
     private fun page(c: Canvas, k: Ink, panel: RectF) {
@@ -219,7 +264,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             Store.lineHeight = step(Store.lineHeight, d, 0.1, 1.0, 2.6)
             host.applyPrefs(false)
         }) {
-            Store.lineHeight = 1.6
+            Store.lineHeight = 1.7
             host.applyPrefs(false)
         }
         stepper(c, k, r[1], "Lề hai bên", pct(Store.margins), { d ->
@@ -249,38 +294,62 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
 
     private fun more(c: Canvas, k: Ink, panel: RectF) {
         val u = k.u
-        val footers = listOf("Chân trang: đầy đủ", "Chân trang: chỉ %", "Chân trang: ẩn")
-        val refresh = listOf(0, 4, 8, 12, 20)
-        val items = listOf<Pair<String, () -> Unit>>(
-            "‹ Về Home" to { host.go("home") },
-            "Thư viện" to { host.go("library") },
-            (if (Store.swapTaps) "Lật tới: chạm trái" else "Lật tới: chạm phải") to { Store.swapTaps = !Store.swapTaps; host.applyPrefs(false) },
-            footers[Store.footerMode.coerceIn(0, 2)] to { Store.footerMode = (Store.footerMode + 1) % 3; host.applyPrefs(false) },
-            (if (Store.showHeader) "Tên sách trên đầu: hiện" else "Tên sách trên đầu: ẩn") to { Store.showHeader = !Store.showHeader; host.applyPrefs(false) },
-            (if (Store.hyphens) "Ngắt từ cuối dòng: bật" else "Ngắt từ cuối dòng: tắt") to { Store.hyphens = !Store.hyphens; host.applyPrefs(false) },
-            (if (Store.refreshEvery > 0) "Làm sạch mỗi ${Store.refreshEvery} trang" else "Tự làm sạch: tắt") to {
-                Store.refreshEvery = refresh[(refresh.indexOf(Store.refreshEvery) + 1) % refresh.size]
-                host.applyPrefs(false)
-            },
-            "Làm sạch màn hình ngay" to { host.refreshScreen() },
-            (if (Store.showNotices) "Báo tin tu tiên: bật" else "Báo tin tu tiên: tắt") to { Store.showNotices = !Store.showNotices; host.applyPrefs(false) },
-            "Tu vi" to { host.go("tuvi") },
+        // Where to go, as four buttons with icons.
+        val actions = listOf<Triple<String, String, () -> Unit>>(
+            Triple("home", "Home") { host.go("home") },
+            Triple("library", "Thư viện") { host.go("library") },
+            Triple("tuvi", "Tu vi") { host.go("tuvi") },
+            Triple("refresh", "Làm sạch") { host.refreshScreen() },
         )
-        val gap = 12 * u
-        val bw = (panel.width() - gap) / 2
-        val rowsPer = ((panel.height() + gap) / (60 * u + gap)).toInt().coerceIn(1, 5)
-        val per = rowsPer * 2
-        val pages = (items.size + per - 1) / per
+        val gap = 10 * u
+        val aw = (panel.width() - 3 * gap) / 4
+        val ah = 62 * u
+        for ((i, a) in actions.withIndex()) {
+            val r = RectF(panel.left + i * (aw + gap), panel.top, panel.left + i * (aw + gap) + aw, panel.top + ah)
+            k.button(c, r, "", k.small)
+            val icon = 28 * u
+            val total = icon + 4 * u + k.lineH(k.smallBold)
+            val iy = r.top + (ah - total) / 2
+            k.icon(c, a.first, r.centerX() - icon / 2, iy, icon)
+            k.centered(c, a.second, r.left, r.width(), iy + icon + 4 * u, k.smallBold)
+            hits.add(r) { a.third() }
+        }
+
+        // The options as a list: the name, the value on the right; a tap moves to the next value.
+        val footers = listOf("Đầy đủ", "Chỉ %", "Ẩn")
+        val refresh = listOf(0, 4, 8, 12, 20)
+        val options = listOf<Triple<String, String, () -> Unit>>(
+            Triple("Chạm để lật tới", if (Store.swapTaps) "Bên trái" else "Bên phải") { Store.swapTaps = !Store.swapTaps },
+            Triple("Chân trang", footers[Store.footerMode.coerceIn(0, 2)]) { Store.footerMode = (Store.footerMode + 1) % 3 },
+            Triple("Tên sách trên đầu trang", if (Store.showHeader) "Hiện" else "Ẩn") { Store.showHeader = !Store.showHeader },
+            Triple("Ngắt từ cuối dòng", if (Store.hyphens) "Bật" else "Tắt") { Store.hyphens = !Store.hyphens },
+            Triple("Tự làm sạch màn hình", if (Store.refreshEvery > 0) "Mỗi ${Store.refreshEvery} trang" else "Tắt") {
+                Store.refreshEvery = refresh[(refresh.indexOf(Store.refreshEvery) + 1) % refresh.size]
+            },
+            Triple("Báo tin tu tiên ở chân trang", if (Store.showNotices) "Bật" else "Tắt") { Store.showNotices = !Store.showNotices },
+        )
+        val top = panel.top + ah + 10 * u
+        val pagerH = 48 * u
+        val rowH = 39 * u
+        var per = ((panel.bottom - top) / rowH).toInt().coerceAtLeast(1)
+        if (per < options.size) per = ((panel.bottom - top - pagerH - 6 * u) / rowH).toInt().coerceAtLeast(1)
+        val pages = (options.size + per - 1) / per
         morePage = morePage.coerceIn(0, pages - 1)
-        val pagerH = if (pages > 1) 48 * u + gap else 0f
-        val bh = minOf(70 * u, (panel.height() - pagerH - (rowsPer - 1) * gap) / rowsPer)
-        for ((i, pair) in items.drop(morePage * per).take(per).withIndex()) {
-            val r = RectF(panel.left + (i % 2) * (bw + gap), panel.top + (i / 2) * (bh + gap), panel.left + (i % 2) * (bw + gap) + bw, panel.top + (i / 2) * (bh + gap) + bh)
-            k.button(c, r, pair.first, k.smallBold)
+        var y = top
+        for (o in options.drop(morePage * per).take(per)) {
+            val r = RectF(panel.left, y, panel.right, y + rowH)
+            k.text(c, k.fit(o.first, r.width() * 0.6f, k.small), r.left + 6 * u, r.centerY() - k.lineH(k.small) / 2, k.small)
+            val vw = k.smallBold.measureText(o.second) + 40 * u
+            val pill = RectF(r.right - vw, r.top + 6 * u, r.right, r.bottom - 6 * u)
+            c.drawRoundRect(pill, pill.height() / 2, pill.height() / 2, k.gray)
+            k.centered(c, o.second, pill.left, pill.width(), pill.centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
+            c.drawRect(r.left, r.bottom - u, r.right, r.bottom, k.gray)
             hits.add(r) {
-                pair.second()
+                o.third()
+                host.applyPrefs(false)
                 invalidate()
             }
+            y += rowH
         }
         if (pages > 1) pager(c, k, panel, morePage, pages) { morePage = it }
     }

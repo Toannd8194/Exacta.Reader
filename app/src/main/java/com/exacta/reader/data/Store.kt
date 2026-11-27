@@ -58,10 +58,14 @@ data class Beast(val seed: Long, val tier: Int, val bornDay: Long, val book: Str
     val name get() = Treasure.shortName(seed, tier)
 }
 
-/** An ore in the forge: words read (any book) forge it. */
-data class Ore(val tier: Int, var words: Long = 0) {
+/**
+ * A slot of the forge: an ore that words read (any book) forge, or a book (`book` = its path) that
+ * forges a treasure of its length's grade when read to the end.
+ */
+data class Ore(val tier: Int, var words: Long = 0, val book: String = "") {
+    val isBook get() = book.isNotEmpty()
     val need get() = Store.forgeNeed(tier)
-    val percent get() = (words * 100 / need).toInt().coerceIn(0, 100)
+    val percent get() = if (isBook) (Store.books[book]?.percent ?: 0) else (words * 100 / need).toInt().coerceIn(0, 100)
 }
 
 /**
@@ -78,7 +82,7 @@ data class Ore(val tier: Int, var words: Long = 0) {
 object Store {
     const val FORGE_SLOTS = 3
     /** Readium's font size for the reader's 100%. */
-    const val BASE_SIZE = 1.3
+    const val BASE_SIZE = 1.56
     private lateinit var file: File
     val books = LinkedHashMap<String, Book>()
     val daySeconds = HashMap<Long, Long>()
@@ -128,7 +132,7 @@ object Store {
     // Reader preferences.
     /** Shown as a %: 100% is the base size, which is 130% of Readium's. */
     var fontSize = 1.0
-    var lineHeight = 1.6
+    var lineHeight = 1.7
     var margins = 1.0
     var fontFamily = "Bitter"   // "Original", "Bitter", "serif", "sans-serif"
     var justify = true
@@ -136,7 +140,7 @@ object Store {
     var uiScale = 1.0
     var birthDay = 0
     var birthMonth = 0
-    var textWeight = 1          // 0 Mảnh, 1 Thường, 2 Hơi đậm, 3 Đậm, 4 Rất đậm
+    var textWeight = 3          // 0 Mảnh … 5 Rất đậm; 3 Đậm vừa by default
     var footerMode = 0          // 0 chương · %, 1 chỉ %, 2 ẩn
     var homeStyle = 0           // see HomeView.STYLES
     var showHeader = true       // the book's title above the page
@@ -183,7 +187,7 @@ object Store {
         }
         totalWords = o.optLong("totalWords"); totalSeconds = o.optLong("totalSeconds"); giftsAwarded = o.optLong("gifts")
         o.optJSONArray("bag")?.let { for (i in 0 until minOf(it.length(), bag.size)) bag[i] = it.getInt(i) }
-        o.optJSONArray("forge")?.let { a -> for (i in 0 until a.length()) a.getJSONArray(i).let { forge.add(Ore(it.getInt(0), it.getLong(1))) } }
+        o.optJSONArray("forge")?.let { a -> for (i in 0 until a.length()) a.getJSONArray(i).let { forge.add(Ore(it.getInt(0), it.getLong(1), it.optString(2, ""))) } }
         o.optJSONArray("beasts")?.let { a ->
             for (i in 0 until a.length()) a.getJSONObject(i).let {
                 beasts.add(Beast(it.getLong("seed"), it.getInt("tier"), it.optLong("born", -1), it.optString("book")))
@@ -216,8 +220,9 @@ object Store {
             idleMinutes = it.optInt("idleMinutes", idleMinutes)
             paraSpacing = if (it.has("paraSpacing")) it.optDouble("paraSpacing") else null
             refreshEvery = it.optInt("refreshEvery", refreshEvery)
-            // Before 0.5 the size was Readium's own: keep the same letters on the new 130% base.
-            if (!it.optBoolean("sizeBase130")) fontSize = Math.round(fontSize / BASE_SIZE * 20) / 20.0
+            // Keep the letters the reader chose when the base moved: Readium's own before 0.5, 1.3 in 0.5.
+            val oldBase = if (it.optBoolean("sizeBase156")) BASE_SIZE else if (it.optBoolean("sizeBase130")) 1.3 else 1.0
+            if (oldBase != BASE_SIZE) fontSize = Math.round(fontSize * oldBase / BASE_SIZE * 20) / 20.0
             textWeight = textWeight.coerceIn(0, 5)
         }
     }
@@ -237,7 +242,7 @@ object Store {
             })
             put("totalWords", totalWords); put("totalSeconds", totalSeconds); put("gifts", giftsAwarded)
             put("bag", JSONArray().apply { bag.forEach { put(it) } })
-            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words)) } })
+            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words).apply { if (it.isBook) put(it.book) }) } })
             put("beasts", JSONArray().apply {
                 beasts.forEach { put(JSONObject().put("seed", it.seed).put("tier", it.tier).put("born", it.bornDay).put("book", it.book)) }
             })
@@ -257,7 +262,7 @@ object Store {
                 .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
                 .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
                 .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes)
-                .put("refreshEvery", refreshEvery).put("sizeBase130", true)
+                .put("refreshEvery", refreshEvery).put("sizeBase156", true)
                 .apply { paraSpacing?.let { v -> put("paraSpacing", v) } })
         }
         val tmp = File(file.parentFile, file.name + ".tmp")
@@ -341,11 +346,16 @@ object Store {
      * The reader is now at `progression` (0..1). Moving forward a little credits the words between;
      * a jump forward (contents, slider) only moves the mark.
      */
-    fun moveTo(book: Book, progression: Double) {
+    fun moveTo(book: Book, progression: Double, pageTurn: Boolean = false) {
         book.progress = progression
         val step = progression - book.maxProgress
         if (step > 0) {
-            if (book.words > 0 && step <= MAX_STEP) credit(book, (step * book.words).toLong())
+            // Only reading counts: a page turned (or swiped, a page's worth) forward, at most a full page.
+            // Jumps by the contents, the chapter buttons or the slider only move the mark.
+            if (book.words > 0) {
+                val words = (step * book.words).toLong()
+                if (pageTurn || words <= PAGE_SWIPE) credit(book, minOf(words, PAGE_MAX))
+            }
             book.maxProgress = progression
         }
         val tang = Realm.tangOf(book.percent)
@@ -358,7 +368,16 @@ object Store {
             if (!book.forged && book.words > 0) {
                 book.forged = true
                 val tier = Treasure.tierForBook(book.words)
-                hatch(tier, book.title)
+                val slot = forge.firstOrNull { it.book == book.path }
+                if (slot != null) {
+                    // A book in the forge becomes a treasure of its length's grade.
+                    forge.remove(slot)
+                    hatch(tier, book.title)
+                    fillForge()
+                } else {
+                    // Read outside the forge: an ore of the same grade.
+                    giveOre(tier, "Đọc xong «${book.title}»")
+                }
                 if (setActive(7)) giveOre(Treasure.rollTier(), "Giang Hồ Kỳ Binh")
             }
             checkTitles()
@@ -366,7 +385,8 @@ object Store {
         touch()
     }
 
-    private const val MAX_STEP = 0.05
+    private const val PAGE_MAX = 450L     // words credited for one page at most
+    private const val PAGE_SWIPE = 600L   // a move this small without a tap is a swiped page
     private const val FINISH = 0.95
 
     private fun credit(book: Book, words: Long) {
@@ -379,6 +399,7 @@ object Store {
         val burn = if (setActive(6) && feastDay()) words * 2 else words
         val done = ArrayList<Ore>()
         for (ore in forge) {
+            if (ore.isBook) continue
             ore.words += burn
             if (ore.words >= ore.need) done.add(ore)
         }
@@ -441,6 +462,30 @@ object Store {
             giveOre(2, "Thưởng bộ pháp bảo")
             touch()
         }
+    }
+
+    /** Puts a book being read into an empty slot; false when the forge is full or it is there. */
+    fun placeBook(book: Book): Boolean {
+        if (forge.size >= FORGE_SLOTS || forge.any { it.book == book.path } || book.finishDay >= 0) return false
+        forge.add(Ore(Treasure.tierForBook(book.words.coerceAtLeast(0)), 0, book.path))
+        touch()
+        return true
+    }
+
+    /** Takes a slot out: a book leaves, an ore goes back to the bag. */
+    fun takeOut(slot: Ore) {
+        if (!forge.remove(slot)) return
+        if (!slot.isBook) bag[slot.tier]++
+        touch()
+    }
+
+    /** Puts an ore of the bag into an empty slot. */
+    fun placeOre(tier: Int): Boolean {
+        if (forge.size >= FORGE_SLOTS || bag[tier] <= 0) return false
+        bag[tier]--
+        forge.add(Ore(tier))
+        touch()
+        return true
     }
 
     /** Ores wait in the bag while the forge is full; the best one goes in first. */

@@ -4,7 +4,24 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.5.apk`](dist/Exacta-Reader-0.5.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Exacta-Reader-0.6.apk`](dist/Exacta-Reader-0.6.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 0.6
+
+- **Sửa gốc lỗi giãn dòng**: Readium 3.0 bỏ qua hàm biến đổi truyền lúc tạo `PublicationOpener`, nên CSS của app chưa
+  từng vào được chương (giãn dòng và nét đậm cho font khác Bitter không ăn). Giờ CSS được gắn ngay khi mở sách
+  (`Library.open`), có test kiểm tra; quy tắc giãn dòng mạnh hơn cả CSS gắn id hay `!important` của sách.
+  Mỗi lần mở sách và mỗi lần chỉnh, app ghi khoảng cách dòng thực tế vào `exacta-log.txt`.
+- **Đếm chữ đúng hơn**: chỉ lật trang mới được cộng chữ, tối đa 450 chữ một trang; nhảy chương, mục lục, thanh tua chỉ
+  dời mốc (trước đây với sách rất dài, nhảy một chương cũng bị tính là đã đọc).
+- **Lò luyện nhận sách**: chạm ô trống trong Pháp bảo › Lò luyện để đặt sách đang đọc (hoặc khoáng thạch). Sách trong lò
+  đọc xong luyện thành pháp bảo theo độ dày; đọc xong ngoài lò nhận một khoáng thạch cùng phẩm.
+- **Bảng chỉnh khi đọc**: nút chương to "‹ Chương / Chương ›"; font là ô tên font xổ danh sách, nút "+ Thêm" bên cạnh;
+  tab Khác gồm 4 nút có icon (Home, Thư viện, Tu vi, Làm sạch) và danh sách tuỳ chọn.
+- **Mặc định**: cỡ chữ 100% lớn bằng 120% bản 0.5; độ đậm mặc định Đậm vừa; giãn dòng 1,7; giao diện lớn thêm 20%.
+- **Home**: ô sách cao hơn, nút Thư viện ở góc phải ô sách, thanh dưới chỉ còn các màn chưa có lối vào (mỗi nút một
+  khung); tên cảnh giới to hơn; icon lò luyện khí mới (cửa lò có lửa) khi chưa có pháp bảo.
+- Tu vi tách tab Thiên kiếp (kèm bảng 9 cửa ải) và Bí cảnh (kèm luật).
 
 ## Bản 0.5
 

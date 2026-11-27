@@ -41,7 +41,12 @@ object Library {
             ExactaApp.log("retrieve ${file.name}: $it")
             return null
         }
-        return app.publicationOpener.open(asset, allowUserInteraction = false).getOrElse {
+        // The app's CSS goes into every chapter here (the opener's own callback is not applied by Readium 3.0).
+        return app.publicationOpener.open(
+            asset,
+            allowUserInteraction = false,
+            onCreatePublication = { container = BookCss.wrap(container) },
+        ).getOrElse {
             ExactaApp.log("open ${file.name}: $it")
             null
         }

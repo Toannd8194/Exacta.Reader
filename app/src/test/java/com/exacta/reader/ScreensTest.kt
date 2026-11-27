@@ -136,6 +136,34 @@ class ScreensTest {
 
     private fun root(a: Activity): View = (a.findViewById<ViewGroup>(android.R.id.content)).getChildAt(0)
 
+    /** A small EPUB opened the way the app opens books: every chapter must carry the app's CSS. */
+    @Test
+    fun cssInjected() {
+        val f = File(RuntimeEnvironment.getApplication().cacheDir, "t.epub")
+        java.util.zip.ZipOutputStream(f.outputStream()).use { z ->
+            fun put(name: String, text: String, store: Boolean = false) {
+                val e = java.util.zip.ZipEntry(name)
+                val bytes = text.toByteArray()
+                if (store) {
+                    e.method = java.util.zip.ZipEntry.STORED
+                    e.size = bytes.size.toLong()
+                    e.crc = java.util.zip.CRC32().apply { update(bytes) }.value
+                }
+                z.putNextEntry(e); z.write(bytes); z.closeEntry()
+            }
+            put("mimetype", "application/epub+zip", store = true)
+            put("META-INF/container.xml", """<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/c.opf" media-type="application/oebps-package+xml"/></rootfiles></container>""")
+            put("OEBPS/c.opf", """<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">x</dc:identifier><dc:title>Thử</dc:title><dc:language>vi</dc:language></metadata><manifest><item id="c1" href="Text/c1.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="c1"/></spine></package>""")
+            put("OEBPS/Text/c1.xhtml", """<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>c</title></head><body><p>Một hai ba bốn năm.</p></body></html>""")
+        }
+        val html = kotlinx.coroutines.runBlocking {
+            val pub = com.exacta.reader.data.Library.open(f) ?: error("not opened")
+            val link = pub.readingOrder.first()
+            String(pub.get(link)!!.read().getOrNull()!!)
+        }
+        org.junit.Assert.assertTrue("CSS missing: $html", html.contains("exacta-reader") && html.contains("--USER__lineHeight"))
+    }
+
     @Test
     fun homeEmpty() {
         Store.beasts.clear()
@@ -195,7 +223,7 @@ class ScreensTest {
         }
         for (t in 0..3) {
             val sheet = ReaderSheet(a, host).apply { tab = t }
-            val sh = (h * 0.56f).toInt()
+            val sh = (h * 0.64f).toInt()
             sheet.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(sh, View.MeasureSpec.EXACTLY))
             sheet.layout(0, 0, w, sh)
             val bmp = Bitmap.createBitmap(w, sh, Bitmap.Config.ARGB_8888)

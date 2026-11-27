@@ -121,7 +121,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         }
         topBar = buildTopBar()
         sheet = ReaderSheet(this, this).apply { visibility = View.GONE }
-        val sheetH = (resources.displayMetrics.heightPixels * 0.56f).toInt()
+        val sheetH = (resources.displayMetrics.heightPixels * 0.64f).toInt()
         val page = FrameLayout(this).apply {
             addView(container, FrameLayout.LayoutParams(-1, -1))
             addView(topBar, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
@@ -306,19 +306,43 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     }
 
     private var turns = 0
+    private var pageTurn = false
 
     private fun turn(forward: Boolean) {
         val nav = navigator ?: return
+        pageTurn = forward
         if (forward) nav.goForward(animated = false) else nav.goBackward(animated = false)
         turns++
         if (Store.refreshEvery > 0 && turns % Store.refreshEvery == 0) container.postDelayed({ refreshScreen() }, 250)
     }
 
+    /** What the page really got: logged once per book and after each change (no USB debugging here). */
+    private fun probe(why: String) {
+        val nav = navigator ?: return
+        container.postDelayed({
+            lifecycleScope.launch {
+                val js = "(function(){var p=document.querySelector('p');var r=document.documentElement;" +
+                    "return 'css='+!!document.getElementById('exacta-reader')+' lh='+(p?getComputedStyle(p).lineHeight:'-')+" +
+                    "' fs='+(p?getComputedStyle(p).fontSize:'-')+' ff='+(p?getComputedStyle(p).fontFamily:'-')+" +
+                    "' var='+getComputedStyle(r).getPropertyValue('--USER__lineHeight')+' adv='+getComputedStyle(r).getPropertyValue('--USER__advancedSettings')})()"
+                val r = runCatching { nav.evaluateJavascript(js) }.getOrNull()
+                ExactaApp.log("page [$why] ${book.title}: $r · lineHeight ${Store.lineHeight}")
+            }
+        }, 800)
+    }
+
+    private var probed = false
+
     private fun onMoved(locator: Locator) {
         input()
+        if (!probed) {
+            probed = true
+            probe("open")
+        }
         lastLocator = locator
         val p = locator.locations.totalProgression ?: return
-        Store.moveTo(book, p)
+        Store.moveTo(book, p, pageTurn)
+        pageTurn = false
         book.locator = locator.toJSON().toString()
         val tang = Realm.tangOf(book.percent)
         if (tang == lastTang + 1 && Store.showNotices) showNotice("Công pháp đột phá ${Realm.tangName(tang)}")
@@ -428,6 +452,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         header.visibility = if (Store.showHeader) View.VISIBLE else View.INVISIBLE
         val pub = publication ?: return
         if (rebuild) buildNavigator(pub, lastLocator) else navigator?.submitPreferences(preferences())
+        probe("prefs")
     }
 
     override fun go(where: String) {

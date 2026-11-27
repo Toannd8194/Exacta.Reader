@@ -27,11 +27,8 @@ class ExactaApp : Application() {
         instance = this
         val httpClient = DefaultHttpClient()
         assetRetriever = AssetRetriever(contentResolver, httpClient)
-        // Every chapter gets the app's CSS (line spacing, weight) as it is read from the book.
-        publicationOpener = PublicationOpener(
-            DefaultPublicationParser(this, httpClient, assetRetriever, pdfFactory = null),
-            emptyList(),
-        ) { container = com.exacta.reader.data.BookCss.wrap(container) }
+        // The app's CSS goes into the chapters in Library.open.
+        publicationOpener = PublicationOpener(DefaultPublicationParser(this, httpClient, assetRetriever, pdfFactory = null))
         com.exacta.reader.data.Store.load(this)
         com.exacta.reader.data.BookCss.init(this)
         val previous = Thread.getDefaultUncaughtExceptionHandler()
@@ -82,5 +79,5 @@ class ExactaApp : Application() {
 }
 
 object BuildConfigInfo {
-    const val VERSION = "0.5"
+    const val VERSION = "0.6"
 }
