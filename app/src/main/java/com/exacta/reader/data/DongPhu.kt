@@ -143,7 +143,7 @@ object DongPhu {
     fun chance(r: Int): Int {
         val rec = RECIPES[r]
         val age = picks(r)?.sumOf { i -> (herbs[i].second - rec.herbs.first { it.first == herbs[i].first }.second) / 100 * 3 } ?: 0
-        return (60 + 8 * (cap() - rec.cap) + minOf(15, age) + (if (TongMon.perk(TongMon.BACH_THAO)) 10 else 0)).coerceIn(20, 98)
+        return (60 + 8 * (cap() - rec.cap) + minOf(15, age) + (if (TongMon.perk(TongMon.BACH_THAO)) 10 else 0) + DaoLo.brewBonus()).coerceIn(20, 98)
     }
 
     fun startBrew(r: Int): Boolean {
@@ -209,6 +209,7 @@ object DongPhu {
             Store.note(lastResult)
             if (cap() > before) Store.note("Đan đạo lên ${DanDao.CAP[cap() - 1]} luyện đan sư")
             Store.fortune(com.exacta.reader.game.KyNgo.T_PILL, pham)
+            DaoLo.onPill()
             Store.gainLinhThach(5L * rec.cap)
         } else {
             failed++
@@ -284,7 +285,7 @@ object DongPhu {
     fun poison(n: Int) {
         if (n <= 0 || !started) return
         val before = danDoc
-        danDoc = (danDoc + n).coerceAtMost(100)
+        danDoc = (danDoc + n * DaoLo.docPercent() / 100).coerceAtMost(100)
         if (before <= DOC_HIGH && danDoc > DOC_HIGH) Store.note("Đan độc quá $DOC_HIGH: đan giảm công hiệu, căn cơ −10")
     }
 

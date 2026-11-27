@@ -34,12 +34,13 @@ class DaoPhapTest {
         Store.bag.fill(0); Store.items.fill(0); Store.bonusMinutes.clear(); Store.sealedDays.clear(); Store.titleDays.clear()
         Store.totalWords = 0; Store.totalSeconds = 0; Store.bonusTuVi = 0; Store.tuViLoss = 0; Store.setsDone = 0
         Store.realmCap = 0; Store.realmSeen = 0; Store.trialStart = -1; Store.trialPassed = 0; Store.failCount = 0
-        Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0
+        Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0; Store.kyNgoTarget = Long.MAX_VALUE / 2
         Store.hourSeconds.fill(0)
         Store.luckRng = object : Random() { override fun nextBits(bitCount: Int) = 0; override fun nextInt(until: Int) = until - 1 }
         com.exacta.reader.data.DongPhu.reset()
         com.exacta.reader.data.TongMon.reset()
         com.exacta.reader.data.BiCanh.reset()
+        com.exacta.reader.data.DaoLo.reset()
         TuLuyen.reset()
         TuLuyen.started = true
         TuLuyen.lastTick = today - 1
@@ -148,6 +149,7 @@ class DaoPhapTest {
         assertFalse(DaoPhap.canBreakWith(2))  // owned, not running
         DaoPhap.run(8)
         assertTrue(DaoPhap.canBreakWith(2))
+        com.exacta.reader.data.DaoLo.choose(com.exacta.reader.data.DaoLo.PHAP)
         assertTrue(TuLuyen.canStartTrial())
         assertTrue(TuLuyen.parts().any { it.first.startsWith("Công pháp Huyền") && it.second == 2 })
     }

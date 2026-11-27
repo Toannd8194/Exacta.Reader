@@ -36,7 +36,7 @@ class TongMonTest {
         Store.bag.fill(0); Store.items.fill(0); Store.bonusMinutes.clear(); Store.sealedDays.clear(); Store.titleDays.clear()
         Store.totalWords = 0; Store.totalSeconds = 0; Store.bonusTuVi = 0; Store.tuViLoss = 0; Store.setsDone = 0
         Store.realmCap = 0; Store.realmSeen = 0; Store.trialStart = -1; Store.trialPassed = 0; Store.failCount = 0
-        Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0
+        Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0; Store.kyNgoTarget = Long.MAX_VALUE / 2
         Store.biCanhWeek = -1; Store.biCanhCount = 0; Store.biCanhBonusWeek = -1; Store.biCanhBonusDays = 0
         Store.hourSeconds.fill(0)
         Store.luckRng = object : Random() { override fun nextBits(bitCount: Int) = 0; override fun nextInt(until: Int) = until - 1 }
@@ -49,6 +49,7 @@ class TongMonTest {
         TongMon.reset()
         TongMon.started = true
         BiCanh.reset()
+        com.exacta.reader.data.DaoLo.reset()
         BiCanh.started = true
         BiCanh.rng = roll(0)
     }
@@ -204,18 +205,27 @@ class TongMonTest {
     }
 
     @Test
-    fun lụcGiớiMônAtPhiThăng() {
+    fun lụcGiớiByTheLifeOfCultivation() {
         Store.realmCap = 8
         TuLuyen.subCap = 3
         Store.totalWords = TuLuyen.floor(9)
         assertEquals("Phi Thăng đại viên mãn", TuLuyen.name())
-        assertTrue(TuLuyen.canChooseGioi())
-        assertTrue(TuLuyen.needs().any { !it.met && it.text.startsWith("Chọn một trong sáu giới") })
-        assertTrue(TuLuyen.chooseGioi(1))
-        assertFalse(TuLuyen.chooseGioi(2))     // once
-        assertTrue(TuLuyen.parts().any { it.first.startsWith("Cửa tối của Ma giới") && it.second == -10 })
+        // Hỏa root, Kiếm tu, two failed breakthroughs: Huyết Nguyệt Trầm Uyên answers.
+        DaoPhap.started = true
+        DaoPhap.roots.add(com.exacta.reader.game.PhapMon.HOA)
+        com.exacta.reader.data.DaoLo.way = com.exacta.reader.data.DaoLo.KIEM
+        TuLuyen.breakFails = 2
+        // Hỏa 30, Kiếm tu 20, đời tu 10, Bính Hỏa Đan 10, Kiếm Ý Thông Thiên 10, less nghiệp lực.
+        val score = TuLuyen.gioiScore(1)
+        assertEquals(80 + com.exacta.reader.data.DaoLo.karmaPart(1), score)
+        assertEquals(1, TuLuyen.destined())
+        assertTrue(TuLuyen.gioiClear())
+        assertTrue(TuLuyen.needs().any { it.met && it.text.startsWith("Lục Giới cảm ứng rõ") })
+        // Kiếm Lư adds 10 more.
+        TongMon.sect = TongMon.KIEM_LU
+        assertEquals(score + 10, TuLuyen.gioiScore(1))
         Store.realmCap = 9
-        assertTrue(TuLuyen.name().startsWith("Ma Tiên"))
+        assertTrue(TuLuyen.name().startsWith("Nghịch Tiên"))
     }
 
     @Test

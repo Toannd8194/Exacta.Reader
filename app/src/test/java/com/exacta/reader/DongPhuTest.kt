@@ -34,7 +34,7 @@ class DongPhuTest {
         Store.bag.fill(0); Store.items.fill(0); Store.bonusMinutes.clear(); Store.sealedDays.clear(); Store.titleDays.clear()
         Store.totalWords = 0; Store.totalSeconds = 0; Store.bonusTuVi = 0; Store.tuViLoss = 0; Store.setsDone = 0
         Store.realmCap = 0; Store.realmSeen = 0; Store.trialStart = -1; Store.trialPassed = 0; Store.failCount = 0
-        Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0
+        Store.trialBonus = 0; Store.trialSpare = 0; Store.giftsAwarded = 0; Store.linhThach = 0; Store.kyNgoWords = 0; Store.kyNgoTarget = Long.MAX_VALUE / 2
         Store.hourSeconds.fill(0)
         Store.luckRng = object : Random() { override fun nextBits(bitCount: Int) = 0; override fun nextInt(until: Int) = until - 1 }
         TuLuyen.reset()
@@ -44,6 +44,7 @@ class DongPhuTest {
         DaoPhap.reset()
         com.exacta.reader.data.TongMon.reset()
         com.exacta.reader.data.BiCanh.reset()
+        com.exacta.reader.data.DaoLo.reset()
         DongPhu.migrate()
         DongPhu.rng = roll(0)
     }

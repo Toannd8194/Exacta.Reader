@@ -524,8 +524,92 @@ def icon_tongmon():
     return p.image(128)
 
 
+def icon_daolo():
+    """Đạo lộ: one road winding up from below, splitting into three, under a peak and a star."""
+    p = Pen(128)
+    p.poly([(38, 50), (64, 16), (90, 50)], BLACK)
+    p.cut(pts=[(50, 45), (64, 27), (78, 45)])
+    sparkle(p, 64, 8, 8)
+    p.line([(64, 124), (54, 110), (72, 96), (64, 84)], BLACK, 9)
+    p.line([(64, 84), (38, 70), (26, 54)], BLACK, 6)
+    p.line([(64, 84), (64, 56)], BLACK, 6)
+    p.line([(64, 84), (90, 70), (102, 54)], BLACK, 6)
+    for x in (26, 102):
+        p.circle(x, 54, 7, BLACK)
+    return p.image(128)
+
+
+def icon_dao_phap():
+    """Pháp tu: an orb of linh lực in a ring, rays of a spell around it."""
+    p = Pen(128)
+    p.ring(64, 64, 34, 7, BLACK)
+    p.circle(64, 64, 15, BLACK)
+    p.cut(circle=(58, 58, 5))
+    for a in range(0, 360, 45):
+        t = math.radians(a + 22.5)
+        p.line([(64 + 45 * math.cos(t), 64 + 45 * math.sin(t)), (64 + 58 * math.cos(t), 64 + 58 * math.sin(t))], BLACK, 6)
+    return p.image(128)
+
+
+def icon_dao_the():
+    """Thể tu: a breastplate of the body, a spine and ribs of iron."""
+    p = Pen(128)
+    body = [(28, 26), (50, 16), (64, 26), (78, 16), (100, 26), (108, 58), (94, 106), (64, 122), (34, 106), (20, 58)]
+    p.poly(body, BLACK)
+    p.cut(pts=[(34, 34), (52, 26), (64, 34), (76, 26), (94, 34), (100, 58), (88, 98), (64, 112), (40, 98), (28, 58)])
+    p.poly([(60, 34), (68, 34), (68, 110), (60, 110)], BLACK)
+    for i, y in enumerate((48, 64, 80)):
+        w = 28 - i * 4
+        p.poly([(64 - w - 6, y), (58, y), (58, y + 8), (64 - w - 2, y + 8)], BLACK)
+        p.poly([(70, y), (64 + w + 6, y), (64 + w + 2, y + 8), (70, y + 8)], BLACK)
+    return p.image(128)
+
+
+def icon_dao_than():
+    """Thần tu: the eye of the mind open, rays of thần thức above it."""
+    p = Pen(128)
+    top = arcpts(64, 118, 70, 222, 318, 30)
+    bot = arcpts(64, 10, 70, 42, 138, 30)
+    p.poly(top + bot, BLACK)
+    p.cut(pts=arcpts(64, 122, 64, 226, 314, 30) + arcpts(64, 6, 64, 46, 134, 30))
+    p.circle(64, 64, 17, BLACK)
+    p.cut(circle=(64, 64, 6))
+    for a in (-150, -120, -90, -60, -30):
+        t = math.radians(a)
+        p.line([(64 + 40 * math.cos(t), 56 + 40 * math.sin(t)), (64 + 54 * math.cos(t), 56 + 54 * math.sin(t))], BLACK, 5)
+    return p.image(128)
+
+
+def icon_dao_kiem():
+    """Kiếm tu: a straight sword, point up, a guard and a tassel."""
+    p = Pen(128)
+    p.poly([(64, 4), (74, 20), (72, 86), (56, 86), (54, 20)], BLACK)
+    p.cut(pts=[(64, 14), (66, 22), (65, 80), (63, 80), (62, 22)])
+    p.poly([(36, 86), (92, 86), (86, 96), (42, 96)], BLACK)
+    p.poly([(59, 96), (69, 96), (69, 114), (59, 114)], BLACK)
+    p.circle(64, 118, 7, BLACK)
+    p.line([(64, 118), (80, 126)], BLACK, 3)
+    return p.image(128)
+
+
+def icon_dao_bach():
+    """Bách nghệ: a đan đỉnh on three legs, two handles, the smoke of a pill rising."""
+    p = Pen(128)
+    p.poly([(26, 56), (102, 56), (98, 90), (82, 104), (46, 104), (30, 90)], BLACK)
+    p.poly([(20, 50), (108, 50), (108, 58), (20, 58)], BLACK)
+    for x in (16, 112):
+        p.ring(x, 66, 9, 5, BLACK)
+    for x0, x1 in ((44, 38), (64, 64), (84, 90)):
+        p.line([(x0, 104), (x1, 120)], BLACK, 6)
+    p.poly([(52, 70), (76, 70), (76, 78), (52, 78)], WHITE)
+    p.line([(54, 44), (48, 32), (58, 22), (52, 10)], BLACK, 5)
+    p.line([(76, 44), (82, 32), (72, 22), (78, 10)], BLACK, 5)
+    return p.image(128)
+
+
 ICONS = {'congphap': icon_congphap, 'dongphu': icon_dongphu, 'phapbao': icon_phapbao, 'daohieu': icon_daohieu,
-         'nienky': icon_nienky, 'tongmon': icon_tongmon}
+         'nienky': icon_nienky, 'tongmon': icon_tongmon, 'daolo': icon_daolo, 'dao_phap': icon_dao_phap,
+         'dao_the': icon_dao_the, 'dao_than': icon_dao_than, 'dao_kiem': icon_dao_kiem, 'dao_bach': icon_dao_bach}
 
 # --- Âm Dương phẩm frames (pixel art, 128 logical × 2) ---------------------------------------------
 
@@ -627,6 +711,12 @@ def main():
     if "--icons" in sys.argv:
         for name, f in ICONS.items():
             f().save(os.path.join(RES, f"ic_{name}.png"))
+        sheet = Image.new("RGB", (len(ICONS) * 140, 140), "white")
+        for i, f in enumerate(ICONS.values()):
+            im = f()
+            sheet.paste(im, (i * 140 + 6, 6), im)
+        os.makedirs(os.path.join(ROOT, "build"), exist_ok=True)
+        sheet.save(os.path.join(ROOT, "build", "icons.png"))
         print("icons")
         return
     ores = [f() for f in ORES]

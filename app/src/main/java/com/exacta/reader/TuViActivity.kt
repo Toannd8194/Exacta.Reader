@@ -233,7 +233,7 @@ class TuViActivity : TabActivity() {
 
         val trucCo = if (TuLuyen.coPham >= 0) "Trúc Cơ ${TuLuyen.TRUC_CO_PHAM[TuLuyen.coPham].lowercase()}: căn cơ gốc +${TuLuyen.baseCanCo()} suốt đời tu." else
             "Trúc Cơ chưa có phẩm: căn cơ và áp chế lúc phá Trúc Cơ quan quyết định phẩm (hạ, trung, thượng, hoàn mỹ)."
-        val kimDan = if (TuLuyen.danPham >= 0) " Kim Đan ${TuLuyen.DAN_PHAM[TuLuyen.danPham].lowercase()}: tu tới Nguyên Anh nhanh thêm ${if (TuLuyen.danPham >= 9) 25 else 2 * (TuLuyen.danPham + 1)}%." else
+        val kimDan = if (TuLuyen.danPham >= 0) " ${com.exacta.reader.data.DaoLo.form(2) ?: "Kim Đan"} ${TuLuyen.DAN_PHAM[TuLuyen.danPham].lowercase()}: tu tới Nguyên Anh nhanh thêm ${if (TuLuyen.danPham >= 9) 25 else 2 * (TuLuyen.danPham + 1)}%." else
             " Kim Đan: phẩm theo độ dư của lần ngưng đan, từ cửu phẩm tới nhất phẩm, hiếm khi Vô Hà."
         measure(c, k, row(2), "Đạo cơ", if (TuLuyen.coPham >= 0) "đã đặt nền" else "chưa đặt", "", -1f, trucCo + kimDan)
 
@@ -265,9 +265,12 @@ class TuViActivity : TabActivity() {
             k.card(c, r)
             k.realmIcon(c, 9, r.left + pad, r.top + pad, 80 * u)
             k.text(c, "Đã phi thăng", r.left + 2 * pad + 80 * u, r.top + pad, k.ui12Bold)
-            k.text(c, k.fit("${TuLuyen.tienKind()} không còn cửa ải. Đường sau Lục Giới để dành cho chương sau.", r.width() - 3 * pad - 80 * u, small),
-                r.left + 2 * pad + 80 * u, r.top + pad + k.lineH(k.ui12Bold) + 6 * u, small)
-            if (TuLuyen.canChooseGioi()) gioiPicker(c, k, RectF(a.left, r.bottom + 18 * u, a.right, a.bottom), hits)
+            val tw = r.width() - 3 * pad - 80 * u
+            var ty = r.top + pad + k.lineH(k.ui12Bold) + 6 * u
+            for (l in k.wrap("${TuLuyen.tienKind()} của ${TuLuyen.GIOI[TuLuyen.gioiNow()]}. Không còn cửa ải; đường sau Lục Giới để dành cho chương sau.", tw, small, 2)) {
+                k.text(c, l, r.left + 2 * pad + 80 * u, ty, small)
+                ty += sl
+            }
             return 1
         }
 
@@ -315,12 +318,6 @@ class TuViActivity : TabActivity() {
             }
         }
         y += 12 * u
-
-        // At Phi Thăng: the six realms come before the chance.
-        if (TuLuyen.canChooseGioi()) {
-            gioiPicker(c, k, RectF(a.left, y + 12 * u, a.right, a.bottom), hits)
-            return 2
-        }
 
         // The chance, part by part.
         y = k.section(c, a.left, y, a.width(), "TỈ LỆ ĐỘT PHÁ")
@@ -405,6 +402,10 @@ class TuViActivity : TabActivity() {
                     refresh()
                 }
             }
+            g == 2 && com.exacta.reader.data.DaoLo.canChoose() -> {
+                k.button(c, main, "Chọn đạo lộ trước khi ngưng đan ›", k.ui10Bold)
+                hits.add(main) { startActivity(Intent(this, DaoLoActivity::class.java)) }
+            }
             else -> {
                 val why = TuLuyen.blockers().firstOrNull() ?: TuLuyen.needs().firstOrNull { !it.met }?.let { "Chưa đủ điều kiện" } ?: "Chưa thể đột phá"
                 k.button(c, main, why, sb, enabled = false)
@@ -422,96 +423,84 @@ class TuViActivity : TabActivity() {
         return 2
     }
 
-    /** Lục Giới Môn: six doors, each with its calling; one is chosen, once. */
-    private fun gioiPicker(c: Canvas, k: Ink, a: RectF, hits: Hits) {
-        val u = k.u
-        val small = k.small
-        val sl = k.lineH(small)
-        var y = k.section(c, a.left, a.top, a.width(), "LỤC GIỚI MÔN · CHỌN NƠI PHI THĂNG")
-        val gap = 10 * u
-        val cw = (a.width() - gap) / 2
-        val ch = ((a.bottom - y - 2 * gap) / 3).coerceAtMost(150 * u)
-        for (i in TuLuyen.GIOI.indices) {
-            val x = a.left + (i % 2) * (cw + gap)
-            val cy = y + (i / 2) * (ch + gap)
-            val r = RectF(x, cy, x + cw, cy + ch)
-            val called = TuLuyen.calling(i)
-            k.card(c, r, selected = called)
-            val pad = 12 * u
-            // The realm and its immortal on one line, the door on the right; the calling under them.
-            val tag = if (called) "lời gọi +10%" else "cửa tối −10%"
-            k.right(c, tag, r.right - pad, r.top + pad + (k.lineH(k.ui10Bold) - k.lineH(k.smallBold)) / 2, k.smallBold)
-            k.line(c, "${TuLuyen.GIOI[i]} · ${TuLuyen.TIEN_KIND[i]}", r.left + pad, r.top + pad,
-                r.width() - 2 * pad - k.smallBold.measureText(tag) - 10 * u, k.ui10Bold)
-            var ty = r.top + pad + k.lineH(k.ui10Bold) + 4 * u
-            for (l in k.wrap(TuLuyen.GIOI_CALL[i], r.width() - 2 * pad, small, ((r.bottom - pad - ty) / sl).toInt().coerceAtLeast(1))) {
-                k.text(c, l, r.left + pad, ty, small)
-                ty += sl
-            }
-            hits.add(r) { gioiDialog(i) }
-        }
-    }
-
-    private fun gioiDialog(i: Int) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Hướng về ${TuLuyen.GIOI[i]}?")
-            .setMessage(TuLuyen.GIOI_TEXT[i] + "\n\nLời gọi: " + TuLuyen.GIOI_CALL[i] + (if (TuLuyen.calling(i)) " (đã có)." else " (chưa có: qua cửa tối, đột phá −10%).") +
-                "\n\nMột đời tu chỉ chọn một giới.")
-            .setPositiveButton("Hướng về ${TuLuyen.GIOI[i]}") { _, _ ->
-                if (TuLuyen.chooseGioi(i)) result = "Đã hướng về ${TuLuyen.GIOI[i]}"
-                refresh()
-            }
-            .setNegativeButton("Nghĩ thêm", null)
-            .show()
-    }
-
-    /** Page 2 of Đột phá: the nine gates and what each asks, and what a failure costs. */
+    /**
+     * Page 2 of Đột phá: the road as a row of marks, the gate ahead in full and the one after it in a
+     * line, and what a failure costs. The gates far ahead are not spelled out.
+     */
     private fun gates(c: Canvas, k: Ink, a: RectF): Int {
         val u = k.u
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
-        var y = k.section(c, a.left, a.top, a.width(), "CỬU ĐẠO CỬA ẢI")
-        val asks = listOf(
-            "",
-            "căn cơ từ 30 · phẩm Trúc Cơ theo căn cơ",
-            "ngưng đan ${Store.trialNeed(2)} ngày, buổi liền ${Store.trialMinutes(2)} phút",
-            "lôi kiếp ${Store.trialNeed(3)} ngày × ${Store.trialMinutes(3)} phút, tâm ma kiếp",
-            "thần thức Lục trọng, ngộ đạo 3 cuốn",
-        ) + (5..9).map { "thiên kiếp ${Store.trialNeed(it)} ngày × ${Store.trialMinutes(it)} phút" }
-        val rowH = ((a.bottom - y) * 0.62f / 9).coerceIn(2 * sl + 6 * u, 84 * u)
-        for (g in 1..9) {
-            val passed = Store.realmCap >= g
-            val now = Store.realmCap + 1 == g
-            val cell = RectF(a.left, y, a.right, y + rowH - 6 * u)
-            if (now) k.card(c, cell, selected = true) else c.drawRect(cell.left, cell.bottom + 2 * u, cell.right, cell.bottom + 3 * u, k.gray)
-            val ic = minOf(cell.height() - 8 * u, 36 * u)
-            k.realmIcon(c, g, cell.left + 8 * u, cell.centerY() - ic / 2, ic)
-            val tx = cell.left + ic + 22 * u
-            val tw = cell.right - 10 * u - tx
-            val state = when { passed -> "đã vượt"; now -> "cửa kế tiếp"; else -> "chưa tới" }
-            val p = if (passed || now) sb else small
-            k.text(c, k.fit("${Treasure.GATES[g]} · vào ${Realm.baseName(g)} · nền ${TuLuyen.BASE[g]}%", tw - 130 * u, p), tx, cell.centerY() - sl, p)
-            k.right(c, state, cell.right - 10 * u, cell.centerY() - sl, p)
-            k.text(c, k.fit(asks[g], tw, small), tx, cell.centerY(), small)
-            y += rowH
+        val passed = Store.realmCap.coerceIn(0, 9)
+        var y = k.section(c, a.left, a.top, a.width(), "ĐƯỜNG TU · ĐÃ VƯỢT $passed/9 CỬA ẢI")
+
+        // The ten realms as marks: those passed dark, the next ringed, the rest pale.
+        val n = 10
+        val gap = 8 * u
+        val s = minOf(56 * u, (a.width() - (n - 1) * gap) / n)
+        val x0 = a.left + (a.width() - n * s - (n - 1) * gap) / 2
+        for (r in 0 until n) {
+            val x = x0 + r * (s + gap)
+            k.realmIcon(c, r, x, y + 6 * u, s)
+            if (r > passed + 1 || (r == passed + 1 && passed >= 9)) c.drawRect(x - u, y + 5 * u, x + s + u, y + 7 * u + s, k.paint(1f).apply { color = android.graphics.Color.argb(185, 255, 255, 255) })
+            if (r == passed + 1) c.drawRoundRect(RectF(x - 4 * u, y + 2 * u, x + s + 4 * u, y + 10 * u + s), 8 * u, 8 * u, k.stroke(2.4f))
         }
-        y = k.section(c, a.left, y + 14 * u, a.width(), "KHI ĐỘT PHÁ HỎNG")
-        val rules = listOf(
-            "Hụt khí (tỉ lệ từ 50%): mất 2% linh lực, hồi khí 2 ngày.",
-            "Kinh mạch tổn thương (tỉ lệ dưới 50%): 5 ngày tu luyện chỉ còn 70%.",
-            "Tẩu hỏa nhập ma (tâm ma từ 70): tâm cảnh −20, căn cơ −10 trong 30 ngày, đột phá lại khi tâm ma dưới 50.",
-            "Mỗi lần hỏng: tâm ma +10, lần sau thêm 10% (tối đa 30%). Không mức nào làm rớt cảnh giới đã mở.",
-        )
-        for (r in rules) {
-            val ls = k.wrap(r, a.width() - 24 * u, small, 2)
-            if (y + ls.size * sl > a.bottom) break
-            k.diamond(c, a.left + 6 * u, y + sl * 0.5f, 4 * u)
-            for (l in ls) {
-                k.text(c, l, a.left + 20 * u, y, small)
+        y += s + 30 * u
+
+        val asks = { g: Int ->
+            when (g) {
+                1 -> "Căn cơ từ 30. Căn cơ lúc đột phá định phẩm Trúc Cơ, theo suốt đời tu."
+                2 -> "Chọn đạo lộ, rồi ngưng đan ${Store.trialNeed(2)} ngày, mỗi ngày một buổi liền ${Store.trialMinutes(2)} phút."
+                3 -> "Lôi kiếp ${Store.trialNeed(3)} ngày × ${Store.trialMinutes(3)} phút, kèm tâm ma kiếp: đọc một cuốn tới nơi tới chốn."
+                4 -> "Thần thức Lục trọng và ngộ đạo ba lần: ba cuốn từ 20 vạn chữ, mỗi cuốn đọc trọn trong 30 ngày."
+                9 -> "Lục Giới cảm ứng rõ một giới, rồi thiên kiếp ${Store.trialNeed(9)} ngày × ${Store.trialMinutes(9)} phút."
+                else -> "Thiên kiếp ${Store.trialNeed(g)} ngày × ${Store.trialMinutes(g)} phút."
+            }
+        }
+        if (passed >= 9) {
+            y = k.section(c, a.left, y, a.width(), "ĐÃ QUA CHÍN CỬA ẢI")
+            for (l in k.wrap("${TuLuyen.tienKind()} của ${TuLuyen.GIOI[TuLuyen.gioiNow()]}. Đường sau Lục Giới để dành cho chương sau.", a.width(), small, 3)) {
+                k.text(c, l, a.left, y, small)
                 y += sl
             }
-            y += 6 * u
+        } else {
+            val g = passed + 1
+            val pad = 18 * u
+            val ic = 64 * u
+            val lines = k.wrap(asks(g), a.width() - 2 * pad - ic - 16 * u, small, 3)
+            val card = RectF(a.left, y, a.right, y + 2 * pad + maxOf(ic, k.lineH(k.ui12Bold) + 4 * u + sl + 6 * u + lines.size * sl))
+            k.card(c, card, selected = true)
+            k.realmIcon(c, g, card.left + pad, card.top + pad, ic)
+            val tx = card.left + pad + ic + 16 * u
+            val tw = card.right - pad - tx
+            k.line(c, "Cửa ải ${Treasure.GATES[g]}", tx, card.top + pad, tw, k.ui12Bold)
+            var ty = card.top + pad + k.lineH(k.ui12Bold) + 4 * u
+            k.line(c, "Vào ${Realm.baseName(g)} · nền ${TuLuyen.BASE[g]}%", tx, ty, tw, sb)
+            ty += sl + 6 * u
+            for (l in lines) {
+                k.text(c, l, tx, ty, small)
+                ty += sl
+            }
+            y = card.bottom + 14 * u
+            if (g < 9) {
+                k.line(c, "Sau đó: ${Treasure.GATES[g + 1]}, vào ${Realm.baseName(g + 1)}", a.left, y, a.width(), small)
+                y += sl + 18 * u
+            }
+        }
+
+        y = k.section(c, a.left, y, a.width(), "KHI ĐỘT PHÁ HỎNG")
+        val rules = listOf(
+            "Tỉ lệ từ 50%: hụt khí, mất 2% linh lực, nghỉ 2 ngày.",
+            "Tỉ lệ dưới 50%: kinh mạch tổn thương, 5 ngày chỉ tu 70%.",
+            "Tâm ma từ 70: tẩu hỏa nhập ma, tâm cảnh và căn cơ giảm 30 ngày.",
+            "Không bao giờ rớt cảnh giới; lần sau thêm 10%.",
+        )
+        for (r in rules) {
+            if (y + sl > a.bottom) break
+            k.diamond(c, a.left + 6 * u, y + sl * 0.5f, 4 * u)
+            k.line(c, r, a.left + 20 * u, y, a.width() - 20 * u, small)
+            y += sl + 6 * u
         }
         return 2
     }

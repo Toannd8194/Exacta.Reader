@@ -262,7 +262,7 @@ class CongPhapActivity : TabActivity() {
 
         // The speed of cultivation.
         y = k.section(c, a.left, y, a.width(), "TỐC ĐỘ TU LUYỆN")
-        val parts = DaoPhap.speedParts() + listOfNotNull(TuLuyen.danBonus().takeIf { it > 0 }?.let { "Kim Đan ${TuLuyen.DAN_PHAM[TuLuyen.danPham].lowercase()}" to it })
+        val parts = DaoPhap.speedParts() + listOfNotNull(TuLuyen.danBonus().takeIf { it > 0 }?.let { "${com.exacta.reader.data.DaoLo.form(2) ?: "Kim Đan"} ${TuLuyen.DAN_PHAM[TuLuyen.danPham].lowercase()}" to it })
         for ((label, v) in parts) {
             k.pair(c, label, if (v >= 0) "+$v%" else "−${-v}%", a.left, y, a.width())
             y += sl + 4 * u

@@ -106,7 +106,7 @@ object TuLuyen {
     /** Căn cơ: 2 a day read 30 minutes (30 days), 10 a book read through (90 days, 4 at most), the Trúc Cơ's root. */
     fun canCo(): Int {
         val t = today()
-        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() - DongPhu.canCoPenalty() -
+        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() + DaoLo.canCoBonus() - DongPhu.canCoPenalty() -
             (if (recent(tauHoaDay)) 10 else 0) - (jumps30() - 5).coerceIn(0, 20)
         return v.coerceIn(0, 100)
     }
@@ -130,11 +130,11 @@ object TuLuyen {
     fun authors(): Int = Store.books.values.filter { it.finishDay >= 0 }.map { it.author.trim().lowercase() }.filter { it.isNotEmpty() }.toSet().size
 
     /** Thần thức: 5 an author read through, 1 a book. */
-    fun thanThuc(): Int = 5 * authors() + Store.books.values.count { it.finishDay >= 0 } + if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0
+    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + (if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0)) * DaoLo.thanPercent() / 100
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
-    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }
+    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }.let { it * DaoLo.thePercent() / 100 }
     fun theTier(v: Int = thePhach()) = THE_AT.indexOfLast { v >= it }
 
     // --- Realms and tiểu cảnh ----------------------------------------------------------------------
@@ -161,50 +161,107 @@ object TuLuyen {
 
     // --- Lục Giới Môn: from Phi Thăng, one of six realms and one of six kinds of immortal ---------
 
-    val GIOI = arrayOf("Tiên giới", "Ma giới", "Phật giới", "Yêu giới", "Minh giới", "Thần giới")
-    val TIEN_KIND = arrayOf("Thiên Tiên", "Ma Tiên", "Phật Tiên", "Yêu Tiên", "Quỷ Tiên", "Thần Tiên")
-    val GIOI_CALL = arrayOf(
-        "năm thước đo cân bằng: căn cơ từ 60, tâm cảnh Thanh Minh, thần thức Ngũ trọng, thể phách Thiết Cốt",
-        "đã ba lần đột phá hỏng mà vẫn đứng dậy, hoặc từng luyện Đạo Tâm Chủng Ma",
-        "tâm cảnh Vô Cấu, hoặc từng có chuỗi ngày đọc tròn một năm",
-        "thể phách Kim Thân trở lên",
-        "ba cuốn bỏ dở từ ba tháng trở lên rồi quay lại đọc xong",
-        "thần thức Cửu trọng, hoặc đã đọc trọn sách của 30 tác giả",
-    )
+    val GIOI = arrayOf("Cửu Tiêu Vân Khuyết", "Huyết Nguyệt Trầm Uyên", "Bát Nhã Liên Đài", "Hồng Hoang Cổ Địa", "Vong Xuyên Bỉ Ngạn", "Thư Hải Vô Nhai")
+    val TIEN_KIND = arrayOf("Thiên Tiên", "Nghịch Tiên", "Thiền Tiên", "Chiến Tiên", "Minh Tiên", "Văn Tiên")
     val GIOI_TEXT = arrayOf(
-        "Tiên quang tiếp dẫn, mây lành rải lối: thành Thiên Tiên, chín phẩm tiên lực.",
-        "Ma khí cuồn cuộn, tâm ma hóa sức: thành Ma Tiên, càng nghịch càng mạnh.",
-        "Kim quang Phật quốc, hoa sen nở dưới chân: thành Phật Tiên, lấy công đức làm tu vi.",
-        "Vạn yêu triều bái, huyết mạch thức tỉnh: thành Yêu Tiên, nhục thân bất hoại.",
-        "U Minh mở cửa, luân hồi trong tay: thành Quỷ Tiên, nhớ trọn các đời tu.",
-        "Thần quốc dựng trên tín niệm: thành Thần Tiên, thần thức bao trùm một phương.",
+        "Chín tầng mây dựng cung khuyết, tiên quang tiếp dẫn người đi đường chính: thành Thiên Tiên, chín phẩm tiên lực.",
+        "Trăng máu treo trên vực sâu, chỉ kẻ từng ngã rồi tự đứng dậy mới thấy lối: thành Nghịch Tiên, tâm ma hóa sức.",
+        "Đài sen trí tuệ nở giữa hư không, lòng không vướng bụi mới ngồi được: thành Thiền Tiên, lấy công đức làm tu vi.",
+        "Đất hoang thuở trời đất mới mở, chỉ nhục thân cứng như sắt mới đứng vững: thành Chiến Tiên, thân bất hoại.",
+        "Bên kia sông quên lãng, những gì bỏ dở đều chờ người quay lại: thành Minh Tiên, nhớ trọn các đời tu.",
+        "Biển sách không bờ, mỗi tác giả là một vì sao: thành Văn Tiên, thần thức bao trùm một phương.",
     )
-    var gioi = -1
+    var gioi = -1             // the realm ascended to, fixed at the breakthrough into Tiên nhân
+
+    // Lục Giới cảm ứng: not chosen. Each realm answers what the whole life of cultivation has been,
+    // and the strongest answer is where the cultivator ascends.
+    //   A. Linh căn (ngũ hành and the dị linh căn): the strongest root 30, then 18, 12, 8, 6.
+    //   B. Công pháp đang vận: its attribute 20, đại thành (tầng 9) +5.
+    //   C. Tâm pháp nhập môn: 8 each (Đạo Tâm Chủng Ma 15).
+    //   D. Đạo lộ: the main way 20, the way of kiêm tu 10.
+    //   E. Đời tu: what each realm asks of the five measures and the reading, up to 25.
+    //   F. Tông môn: the sect that leads to it +10.
+    /** The attributes of each realm: hành of the linh căn and of the công pháp. */
+    val GIOI_ATTR = arrayOf(
+        intArrayOf(PhapMon.KIM, PhapMon.LOI), intArrayOf(PhapMon.HOA, PhapMon.KIEM), intArrayOf(PhapMon.THO, PhapMon.PHONG),
+        intArrayOf(PhapMon.MOC, 9), intArrayOf(PhapMon.THUY, PhapMon.BANG), intArrayOf(10),
+    )
+    /** The tâm pháp that lean to each realm. */
+    val GIOI_TAM = arrayOf(
+        intArrayOf(PhapMon.TP_TINH_TOA), intArrayOf(PhapMon.TP_CHUNG_MA), intArrayOf(PhapMon.TP_THANH_TAM, PhapMon.TP_VONG_NGA),
+        intArrayOf(PhapMon.TP_DUONG_KHI), intArrayOf(PhapMon.TP_BANG_TAM, PhapMon.TP_DINH_HON), intArrayOf(),
+    )
+    /** The đạo lộ (main 20, kiêm 10) and the sect (+10) of each realm. */
+    val GIOI_WAY = intArrayOf(DaoLo.PHAP, DaoLo.KIEM, -1, DaoLo.THE, DaoLo.BACH, DaoLo.THAN)
+    val GIOI_SECT = intArrayOf(TongMon.VAN_QUYEN, TongMon.KIEM_LU, TongMon.MINH_TAM, TongMon.THIET_COT, TongMon.BACH_THAO, -1)
+    /** What the life of cultivation must show, in words (E). */
+    val GIOI_LIFE = arrayOf(
+        "năm thước đo cân bằng: căn cơ 60, tâm cảnh Thanh Minh, thần thức Ngũ trọng, thể phách Thiết Cốt, tâm ma dưới 20; 5 điểm mỗi điều",
+        "ngã rồi đứng dậy: 5 điểm mỗi lần đột phá hỏng (tối đa 15), từng tẩu hỏa nhập ma 10",
+        "lòng tĩnh: 5 điểm mỗi bậc tâm cảnh, chuỗi ngày đọc dài nhất từ 100 ngày thêm 5",
+        "nhục thân: 4 điểm mỗi bậc thể phách",
+        "quay lại sách cũ: 8 điểm mỗi cuốn bỏ dở từ ba tháng rồi đọc xong",
+        "đọc rộng: 3 điểm mỗi trọng thần thức; ngũ hành tạp linh căn thêm 15",
+    )
+    private val ROOT_W = intArrayOf(30, 18, 12, 8, 6)
 
     private fun lateFinished() = Store.books.values.count { it.finishDay >= 0 && it.firstDay >= 0 && it.finishDay - it.firstDay >= 90 }
 
-    /** The calling of a realm: the life of cultivation that leads to it. */
-    fun calling(i: Int): Boolean = when (i) {
-        0 -> canCo() >= 60 && tamCanhTier() >= 2 && trong() >= 4 && theTier() >= 2
-        1 -> breakFails >= 3 || PhapMon.TP_CHUNG_MA in DaoPhap.tam
-        2 -> tamCanhTier() >= 4 || Store.bestStreak() >= 365
-        3 -> theTier() >= 4
-        4 -> lateFinished() >= 3
-        else -> trong() >= 8 || authors() >= 30
+    /** The answer of realm i, part by part. */
+    fun gioiParts(i: Int): List<Pair<String, Int>> {
+        val list = ArrayList<Pair<String, Int>>()
+        val attrs = GIOI_ATTR[i]
+        // A. Linh căn: the dị linh căn first, then the roots strongest first.
+        val roots = (if (DaoPhap.di >= 0) listOf(DaoPhap.di) else emptyList()) + DaoPhap.roots
+        var root = 0
+        for ((n, r) in roots.withIndex()) if (r in attrs) root += ROOT_W[minOf(n, ROOT_W.size - 1)]
+        if (root > 0) list.add("Linh căn ${roots.filter { it in attrs }.joinToString(", ") { PhapMon.attrName(it) }}" to root)
+        // B. Công pháp.
+        DaoPhap.activeDef()?.let { d ->
+            if (d.attr in attrs) list.add("Công pháp ${d.name}" + (if (DaoPhap.tang() >= 9) ", đại thành" else "") to 20 + if (DaoPhap.tang() >= 9) 5 else 0)
+        }
+        // C. Tâm pháp.
+        for (t in GIOI_TAM[i]) if (DaoPhap.tamLevel(t) >= 1) list.add("Tâm pháp ${PhapMon.TAM_PHAP[t].name}" to if (t == PhapMon.TP_CHUNG_MA) 15 else 8)
+        // D. Đạo lộ.
+        val w = GIOI_WAY[i]
+        if (w >= 0 && DaoLo.way == w) list.add("Đạo lộ ${DaoLo.WAYS[w].name}" to 20)
+        if (w >= 0 && DaoLo.way2 == w) list.add("Kiêm tu ${DaoLo.WAYS[w].name}" to 10)
+        // E. Đời tu.
+        val life = when (i) {
+            0 -> 5 * listOf(canCo() >= 60, tamCanhTier() >= 2, trong() >= 4, theTier() >= 2, tamMa < 20).count { it }
+            1 -> minOf(15, 5 * breakFails) + (if (tauHoaDay >= 0) 10 else 0)
+            2 -> 5 * tamCanhTier() + (if (Store.bestStreak() >= 100) 5 else 0)
+            3 -> 4 * theTier()
+            4 -> minOf(24, 8 * lateFinished())
+            else -> 3 * trong() + (if (DaoPhap.roots.size >= 5) 15 else 0)
+        }.coerceAtMost(25 + if (i == 5) 15 else 0)
+        if (life > 0) list.add("Đời tu" to life)
+        // G. Kim Đan and Hóa Thần lean to a realm.
+        if (Store.realmCap >= 2 && DaoLo.DANS[DaoLo.danNow()].gioi == i) list.add(DaoLo.DANS[DaoLo.danNow()].name to 10)
+        if (Store.realmCap >= 4 && DaoLo.THANS[DaoLo.thanNow()].gioi == i) list.add(DaoLo.THANS[DaoLo.thanNow()].name to 10)
+        // H. Nghiệp lực, from Phi Thăng.
+        DaoLo.karmaPart(i).takeIf { it != 0 }?.let { list.add("Nghiệp lực ${DaoLo.karma()}" to it) }
+        // F. Tông môn.
+        if (GIOI_SECT[i] >= 0 && TongMon.sect == GIOI_SECT[i]) list.add(TongMon.SECTS[GIOI_SECT[i]].name to 10)
+        return list
     }
 
-    /** The realm to ascend to is chosen at Phi Thăng (or by an immortal who never chose); once. */
-    fun canChooseGioi() = gioi < 0 && Store.realmCap >= 8
+    fun gioiScore(i: Int) = gioiParts(i).sumOf { it.second }
 
-    fun chooseGioi(i: Int): Boolean {
-        if (!canChooseGioi() || i !in GIOI.indices) return false
-        gioi = i
-        Store.note("Lục Giới Môn: hướng về ${GIOI[i]}" + if (calling(i)) ", lời gọi vang lên" else ", qua cửa tối")
-        Store.touch()
-        return true
+    /** The realm that answers most (the first of equals). */
+    fun destined(): Int = GIOI.indices.maxByOrNull { gioiScore(it) * 10 - it } ?: 0
+
+    /** The answer is clear when the first realm leads the second by 5 or more. */
+    const val GIOI_LEAD = 5
+    fun gioiLead(): Int {
+        val s = GIOI.indices.map { gioiScore(it) }.sortedDescending()
+        return s[0] - s[1]
     }
+    fun gioiClear() = gioiLead() >= GIOI_LEAD
 
-    fun tienKind() = if (gioi >= 0) TIEN_KIND[gioi] else "Tiên nhân"
+    /** The realm ascended to, or the one that answers now. */
+    fun gioiNow() = if (gioi >= 0) gioi else destined()
+    fun tienKind() = if (Store.realmCap >= 9) TIEN_KIND[gioiNow()] else "Tiên nhân"
 
     /** "Luyện Khí trung kỳ", "Kim Đan hậu kỳ", "Nguyên Anh đại viên mãn", "Tiên nhân tam phẩm". */
     fun name(): String {
@@ -250,7 +307,7 @@ object TuLuyen {
     fun minorResting() = today() < minorRest
 
     /** Light: 60% and a third of căn cơ, the tâm cảnh, less a third of tâm ma; 30 – 98%. */
-    fun minorChance() = (60 + canCo() / 3 + 5 * tamCanhTier() - tamMa / 3 + 10 * minorFails).coerceIn(30, 98)
+    fun minorChance() = (60 + canCo() / 3 + 5 * tamCanhTier() + DaoLo.minorPart() - tamMa / 3 + 10 * minorFails).coerceIn(30, 98)
 
     /** Tries the small breakthrough: true held, false failed (tâm ma +3, again tomorrow), null not now. */
     fun minorBreak(): Boolean? {
@@ -303,7 +360,7 @@ object TuLuyen {
 
     /** Tâm ma rises by `n`, less with Thanh Tâm Quyết and a công pháp that calms. */
     fun stir(n: Int) {
-        tamMa = (tamMa + (n * DaoPhap.stirPercent() + 50) / 100).coerceAtMost(100)
+        tamMa = (tamMa + (n * DaoPhap.stirPercent() * DaoLo.stirPercent() / 100 + 50) / 100).coerceAtMost(100)
     }
 
     /** Áp chế: 5% a tenth of the realm, 20% at most. */
@@ -349,6 +406,7 @@ object TuLuyen {
         list.add(Need("$where: ${Realm.van(minOf(t, top))}/${top / 10_000} vạn", t >= top))
         when (g) {
             1 -> list.add(Need("Căn cơ từ 30, đang ${canCo()}", canCo() >= 30))
+            2 -> list.add(Need(if (DaoLo.way >= 0) "Đạo lộ: ${DaoLo.WAYS[DaoLo.way].name}" else "Chọn đạo lộ ở màn Đạo lộ", DaoLo.way >= 0))
             4 -> {
                 list.add(Need("Thần thức Lục trọng, đang ${TRONG[trong()]}", trong() >= 5))
                 val n = ngoDao().size
@@ -356,7 +414,7 @@ object TuLuyen {
             }
         }
         if (Store.realmCap >= 1) list.add(Need("Đã vào đại viên mãn (căn cơ từ 60 khi tới)", subCap >= 3))
-        if (g == 9) list.add(Need(if (gioi >= 0) "Hướng về ${GIOI[gioi]}" else "Chọn một trong sáu giới ở Lục Giới Môn", gioi >= 0))
+        if (g == 9) list.add(Need("Lục Giới cảm ứng rõ: ${GIOI[destined()]} hơn giới kế tiếp từ $GIOI_LEAD điểm (đang ${gioiLead()})", gioiClear()))
         if (g >= 2) {
             val p = PhapMon.phamFor(g)
             val now = DaoPhap.activeDef()?.let { "${it.name}, ${PhapMon.PHAM[it.pham]} phẩm" } ?: "chưa vận"
@@ -400,9 +458,10 @@ object TuLuyen {
         if (DaoPhap.phapTuong() > 0) list.add("Pháp Tướng Thiên Địa" to DaoPhap.phapTuong())
         if (DongPhu.breakBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.breakBonus())
         if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
+        list.addAll(DaoLo.breakParts(g))
         if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])
         if (DongPhu.danDoc >= 4) list.add("Đan độc ${DongPhu.danDoc}, chia bốn" to -(DongPhu.danDoc / 4))
-        if (g == 9 && gioi >= 0) list.add((if (calling(gioi)) "Lời gọi của ${GIOI[gioi]}" else "Cửa tối của ${GIOI[gioi]}") to (if (calling(gioi)) 10 else -10))
+        if (g == 9) list.add("Cảm ứng ${GIOI[destined()]}, chia mười" to minOf(10, gioiScore(destined()) / 10))
         if (pill) list.add("Phá Cảnh Đan" to 15)
         if (fails > 0) list.add("Kiên trì, $fails lần trước" to minOf(30, 10 * fails))
         if (tamMa > 1) list.add("Tâm ma $tamMa, chia đôi" to -(tamMa / 2))
@@ -482,8 +541,19 @@ object TuLuyen {
                 }
                 2 -> {
                     danPham = if (margin >= 70 && canCo() >= 90) 9 else (margin * 9 / rate).coerceIn(0, 8)
-                    extra = if (danPham == 9) " · Vô Hà Kim Đan" else " · Kim Đan ${DAN_PHAM[danPham].lowercase()}"
+                    DaoLo.onBreak(2)
+                    val f = DaoLo.DANS[DaoLo.dan].name
+                    extra = if (danPham == 9) " · Vô Hà $f" else " · $f ${DAN_PHAM[danPham].lowercase()}"
                 }
+            }
+            if (g == 4) {
+                DaoLo.onBreak(4)
+                extra = " · ${DaoLo.THANS[DaoLo.than].name}"
+            }
+            if (g == 3) extra = " · ${DaoLo.anhName()}"
+            if (g == 9) {
+                gioi = destined()
+                extra = " · phi thăng ${GIOI[gioi]}, thành ${TIEN_KIND[gioi]}"
             }
             Store.realmCap = g
             capDays[g] = t
@@ -494,6 +564,13 @@ object TuLuyen {
             trialDone = -1
             attacks = 0
             trialBook = ""
+            if (DaoLo.crit(g)) {
+                // Kiếm tu: kiếm ý chí mạng, straight into trung kỳ.
+                subCap = 1
+                val short = quarter(g, 1) - Store.tuVi()
+                if (short > 0) Store.bonusTuVi += short
+                extra += " · kiếm ý chí mạng, vào thẳng trung kỳ"
+            }
             breaks++
             Store.trialPassed++
             if (Store.failCount > 0) Store.passedAfterFail = true
@@ -588,7 +665,10 @@ object TuLuyen {
             dayLong[d] = (dayLong[d] ?: 0) + 1
             calm(3)
         }
-        if (before < VERY_LONG_SITTING && session >= VERY_LONG_SITTING) dayVeryLong[d] = (dayVeryLong[d] ?: 0) + 1
+        if (before < VERY_LONG_SITTING && session >= VERY_LONG_SITTING) {
+            dayVeryLong[d] = (dayVeryLong[d] ?: 0) + 1
+            DaoLo.onLongSitting()
+        }
         if (before < TAM_SITTING && session >= TAM_SITTING) DaoPhap.onSitting30()
         if (before < VONG_NGA_SITTING && session >= VONG_NGA_SITTING && DaoPhap.tamWorks(PhapMon.TP_VONG_NGA)) {
             // Vong Ngã Chân Quyết: a sitting of 90 minutes counts twice for thể phách and tâm cảnh.

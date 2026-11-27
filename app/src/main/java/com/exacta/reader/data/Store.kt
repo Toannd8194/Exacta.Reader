@@ -241,6 +241,7 @@ object Store {
         if (!DongPhu.started) DongPhu.migrate()
         if (!TongMon.started) TongMon.migrate()
         if (!BiCanh.started) BiCanh.migrate()
+        if (!DaoLo.started) DaoLo.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -313,6 +314,7 @@ object Store {
         o.optJSONObject("dongPhu")?.let { DongPhu.read(it) }
         o.optJSONObject("tongMon")?.let { TongMon.read(it) }
         o.optJSONObject("biCanh2")?.let { BiCanh.read(it) }
+        o.optJSONObject("daoLo")?.let { DaoLo.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -388,6 +390,7 @@ object Store {
             put("dongPhu", DongPhu.toJson())
             put("tongMon", TongMon.toJson())
             put("biCanh2", BiCanh.toJson())
+            put("daoLo", DaoLo.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -441,6 +444,7 @@ object Store {
         DongPhu.reset()
         TongMon.reset()
         BiCanh.reset()
+        DaoLo.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -451,6 +455,7 @@ object Store {
         if (!DongPhu.started) DongPhu.migrate()
         if (!TongMon.started) TongMon.migrate()
         if (!BiCanh.started) BiCanh.migrate()
+        if (!DaoLo.started) DaoLo.migrate()
         dirty = true
         save()
         return true
@@ -565,6 +570,7 @@ object Store {
             book.finishDay = today()
             TuLuyen.onFinish()
             DaoPhap.onFinish(book)
+            DaoLo.onFinish(book)
             fortune(KyNgo.T_FINISH, 0)
             TongMon.onFinish()
             if (book.firstDay >= 0 && book.finishDay - book.firstDay < 3) fortune(KyNgo.T_FINISH, 1)
@@ -1220,6 +1226,7 @@ object Store {
         beasts.add(beast)
         unseen++
         fortune(KyNgo.T_FORGE)
+        DaoLo.onForge()
         note("Pháp bảo xuất thế: ${beast.name} (${Treasure.TIER_NAMES[tier]})")
         checkSets()
     }
@@ -1334,10 +1341,12 @@ object Store {
     /** Days of the trial of gate `g`: ngưng đan 3, the others as in 1.0; 0 for the gates without one. */
     fun trialNeed(g: Int = nextGate()) = when {
         !TuLuyen.hasTrial(g) -> 0
-        g == 2 -> 3
+        g == 2 -> DaoLo.danDays()
+        g == 3 -> (TRIAL_DAYS[2] - DaoLo.loiDays()).coerceAtLeast(2)
+        g == 6 -> (TRIAL_DAYS[5] + DaoLo.hopDays()).coerceAtLeast(2)
         else -> TRIAL_DAYS[(g - 1).coerceIn(0, 8)]
     }
-    fun trialMinutes(g: Int = nextGate()) = if (g == 2) 45 else TRIAL_MINUTES[(g - 1).coerceIn(0, 8)] - if (setActive(13)) 5 else 0
+    fun trialMinutes(g: Int = nextGate()) = if (g == 2) DaoLo.danMinutes() else TRIAL_MINUTES[(g - 1).coerceIn(0, 8)] - if (setActive(13)) 5 else 0
     /** A day of the trial is met: ngưng đan by one sitting, the others by the day's minutes. */
     fun trialMet(day: Long) = if (nextGate() == 2) TuLuyen.bestMinutes(day) >= trialMinutes() else minutes(day) >= trialMinutes()
     fun minutes(day: Long) = (daySeconds[day] ?: 0) / 60 + (bonusMinutes[day] ?: 0)
@@ -1381,6 +1390,7 @@ object Store {
         DongPhu.tick()
         TongMon.check()
         BiCanh.check()
+        DaoLo.settle()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level

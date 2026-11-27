@@ -4,9 +4,9 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.3.1.apk`](dist/Van-Quyen-Tien-Do-2.3.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.4.apk`](dist/Van-Quyen-Tien-Do-2.4.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
-Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.3.1): [`dist/Van-Quyen-Tien-Do-2.3.1-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.3.1-Cam-nang.pdf).
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.4): [`dist/Van-Quyen-Tien-Do-2.4-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.4-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
 pháp, 72 pháp bảo, 18 bộ, 18 đan dược và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
 
@@ -15,7 +15,28 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, Đ
 [`docs/Chien-luoc-nang-cap-tu-tien.pdf`](docs/Chien-luoc-nang-cap-tu-tien.pdf) (`python tools/md_pdf.py <tệp .md>`).
 Bản 2.0, 2.1, 2.2 là ba bước đầu của lộ trình; các bước 2.3 – 2.7 còn đó. Từ 2.1, bản thiết kế có thêm chương Độ Kiếp
 (giai đoạn đặc biệt chín tầng kiếp) và chương Phi Thăng kỳ: cảnh giới cuối của Linh giới, nơi Lục Giới Môn mở và người
-tu chọn một trong sáu đại thiên thế giới (Tiên, Ma, Phật, Yêu, Minh, Thần). Phần sau cửa để ngỏ cho các bản 3.x.
+tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả đời tu và nghiệp lực. Phần sau cửa để ngỏ cho các bản 3.x.
+
+## Bản 2.4 · Ngũ Lộ Đồng Quy
+
+- **Đạo lộ** (màn mới, nút Đạo lộ ở Home): năm đường Pháp tu, Thể tu, Thần tu, Kiếm tu, Bách nghệ, chọn một lần ở Trúc Cơ,
+  trước khi ngưng đan. Mỗi đường sống bằng một cách đọc riêng (chữ đọc, buổi liền 60 phút, sách đọc trọn và tác giả mới, đọc
+  trọn nhanh và chuỗi ngày, lò đan và pháp bảo), có kỳ ngưng đan riêng, một cái mạnh và một cái yếu thật.
+- **Mười hai Kim Đan**: ngũ hành (Canh Kim, Ất Mộc, Nhâm Thủy, Bính Hỏa, Mậu Thổ), biến dị (Tử Lôi, Huyền Băng, Thanh
+  Phong), Âm Dương (Thái Dương, Thái Âm), Sinh Tử (Trường Sinh, Tịch Diệt), kết ra theo linh căn, công pháp, giờ đọc ngày
+  đêm, căn cơ và những lần ngã. **Nguyên Anh kế thừa đan**: mang tên đan («Tử Lôi Kiếm Anh»), tỉ lệ kết anh riêng, tốc
+  độ của đan tăng thêm một nửa.
+- **Sáu Hóa Thần** theo đạo lộ (Song Anh thành Song Thần Đồng Tu), mỗi loại một lợi một hại đè lên cửa **Hợp Thể** (tỉ lệ,
+  số ngày thiên kiếp) và **Độ Kiếp**.
+- **Luyện thể, luyện thần**: bảy bậc thể giúp qua lôi kiếp, thiên kiếp; chín trọng thần giúp phá tiểu cảnh. **Kiêm tu**
+  từ Nguyên Anh; **Song Anh** cho người kiêm Thể và Thần.
+- **Lục Giới** không còn tự chọn, sáu giới có tên mới: Cửu Tiêu Vân Khuyết, Huyết Nguyệt Trầm Uyên, Bát Nhã Liên Đài, Hồng
+  Hoang Cổ Địa, Vong Xuyên Bỉ Ngạn, Thư Hải Vô Nhai. **Lục Giới cảm ứng** chấm điểm cả đời tu: linh căn, công pháp, tâm pháp,
+  đạo lộ, Kim Đan, Hóa Thần, đời tu, tông môn, và từ Phi Thăng là **Nghiệp lực** (thiện nghiệp, ác nghiệp của cả đời tu).
+  Giới cao điểm nhất tiếp dẫn; cửa Lục Giới Môn đòi cảm ứng rõ.
+- Tu vi › Đột phá trang 2 gọn lại: đường tu thành một hàng dấu, chỉ cửa ải trước mắt và cửa kế tiếp.
+- Home kiểu Bìa lớn và Kệ sách: dải cảnh giới có lời chào và tiết khí kèm lời bình. Hàng nút có thêm Đạo lộ.
+- versionCode 240.
 
 ## Bản 2.3.1 · Lục Giới Phân Đồ
 
@@ -176,6 +197,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.2.1 | Kim Khung Ngọc Khuyết | khung Home theo % và cảnh giới, hết cắt chữ, nút Thư viện vuông, 4 kiểu Home |
   | 2.3 | Bái Nhập Sơn Môn | tông môn, bí cảnh bản đồ, 72 kỳ ngộ, tiểu đột phá, cảnh giới theo kỳ |
   | 2.3.1 | Lục Giới Phân Đồ | Phi Thăng, Lục Giới Môn, sáu loại tiên nhân, Home gọn lại |
+  | 2.4 | Ngũ Lộ Đồng Quy | Đạo lộ, mười hai Kim Đan, sáu Hóa Thần, Song Anh, Lục Giới cảm ứng, nghiệp lực |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

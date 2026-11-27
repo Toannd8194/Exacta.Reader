@@ -355,6 +355,15 @@ class ScreensTest {
 
     @Test fun tongMon() = tabs(TongMonActivity::class.java, "tongmon")
 
+    @Test fun daoLo() {
+        val d = com.exacta.reader.data.DaoLo
+        d.reset(); d.started = true
+        tabs(DaoLoActivity::class.java, "daolo")
+        d.way = d.THE; d.wayDay = Store.today() - 120; d.way2 = d.THAN; d.way2Day = Store.today() - 20; d.earned = 37_000
+        tabs(DaoLoActivity::class.java, "daolo_chosen")
+        d.reset(); d.started = true
+    }
+
     @Test fun biCanh() {
         tabs(BiCanhActivity::class.java, "bicanh")
         // The fork, and a sect not chosen yet.

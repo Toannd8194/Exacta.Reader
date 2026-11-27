@@ -12,7 +12,7 @@ Ba nguyên tắc không đổi:
 - **Khó nhưng không tàn nhẫn.** Thất bại làm chậm lại, gây thương thế, tăng tâm ma, nhưng không xóa sạch công sức và không bao giờ đánh rớt cảnh giới đã mở. Muốn khắc nghiệt thật thì bật chế độ Chân Tu.
 - **Giao diện thẻ và trang, không cuộn.** Mỗi hệ mới là một màn hình nhiều tab, chạm là xong, hợp màn e-ink.
 
-Phạm vi: **Nhân giới** (Luyện Khí tới Hóa Thần), **phi thăng** lên **Linh giới** (Luyện Hư tới Đại Thừa), giai đoạn đặc biệt **Độ Kiếp**, và cảnh giới cuối của Linh giới là **Phi Thăng kỳ**. Ở Phi Thăng kỳ, **Lục Giới Môn** mở ra: người tu chọn một trong sáu đại thiên thế giới để đi tiếp. Mỗi giới là một hướng chơi khác hẳn, nên bản thiết kế này dừng ở ngưỡng cửa và để ngỏ phần sau (xem chương Phi Thăng kỳ và Lục Giới). Chín phẩm Tiên nhân của bản hiện tại trở thành phần mở đầu của nhánh Tiên giới.
+Phạm vi: **Nhân giới** (Luyện Khí tới Hóa Thần), **phi thăng** lên **Linh giới** (Luyện Hư tới Đại Thừa), giai đoạn đặc biệt **Độ Kiếp**, và cảnh giới cuối của Linh giới là **Phi Thăng kỳ**. Ở Phi Thăng kỳ, **Lục Giới Môn** mở ra: một trong sáu đại thiên thế giới tiếp dẫn người tu, theo cả đời tu và nghiệp lực. Mỗi giới là một hướng chơi khác hẳn, nên bản thiết kế này dừng ở ngưỡng cửa và để ngỏ phần sau (xem chương Phi Thăng kỳ và Lục Giới). Chín phẩm Tiên nhân của bản hiện tại trở thành phần mở đầu của nhánh Cửu Tiêu Vân Khuyết.
 
 ## Bản đồ hai giới
 
@@ -118,7 +118,7 @@ Không có mức nào đánh rớt cảnh giới đã mở.
 
 **Đại Thừa → Độ Kiếp.** Đại Thừa viên mãn có đạo vực, rồi bước vào **Độ Kiếp**. Độ Kiếp không phải một cửa ải mà là cả một **giai đoạn đặc biệt**: từ 600 tới 1.000 vạn chữ, người tu không lên tiểu cảnh bằng chữ như các cảnh giới khác mà phải lần lượt vượt chín tầng kiếp (xem chương Độ Kiếp). Chữ đọc trong Độ Kiếp vẫn thành linh lực, nhưng chỉ để nạp vào tầng kiếp kế tiếp.
 
-**Độ Kiếp → Phi Thăng kỳ.** Qua tầng kiếp thứ chín ở 1.000 vạn chữ, người tu vào **Phi Thăng kỳ**, cảnh giới cuối của Linh giới. Ở đây không còn tầng nào để leo; việc còn lại là qua thiên nhân ngũ suy rồi chọn giới để phi thăng (xem chương Phi Thăng kỳ và Lục Giới).
+**Độ Kiếp → Phi Thăng kỳ.** Qua tầng kiếp thứ chín ở 1.000 vạn chữ, người tu vào **Phi Thăng kỳ**, cảnh giới cuối của Linh giới. Ở đây không còn tầng nào để leo; việc còn lại là qua thiên nhân ngũ suy rồi để giới tiếp dẫn (xem chương Phi Thăng kỳ và Lục Giới).
 
 ## Độ Kiếp: giai đoạn đặc biệt
 
@@ -137,7 +137,7 @@ Cách người tu vượt chín tầng được ghi lại: bao nhiêu tầng nh�
 
 ## Phi Thăng kỳ và Lục Giới
 
-Phi Thăng kỳ là **cảnh giới cuối của Linh giới**. Linh giới không còn chứa nổi người tu; trên trời mở ra **Lục Giới Môn**, sáu cánh cửa dẫn tới sáu đại thiên thế giới. Phi thăng là chọn một cửa và bước qua. Đây là ngã rẽ lớn nhất của game: mỗi giới một luật chơi, một lối đọc, một mạch truyện riêng. Bản thiết kế này **để ngỏ** phần sau cửa, chỉ định ra cách tới cửa và cách chọn.
+Phi Thăng kỳ là **cảnh giới cuối của Linh giới**. Linh giới không còn chứa nổi người tu; trên trời mở ra **Lục Giới Môn**, sáu cánh cửa dẫn tới sáu đại thiên thế giới. Phi thăng không phải chọn cửa: cửa nào đáp lại cả đời tu mạnh nhất thì mở. Đây là ngã rẽ lớn nhất của game: mỗi giới một luật chơi, một lối đọc, một mạch truyện riêng. Bản thiết kế này **để ngỏ** phần sau cửa, chỉ định ra cách tới cửa và cách cửa chọn người.
 
 ### Trước khi cửa mở: thiên nhân ngũ suy
 
@@ -145,24 +145,30 @@ Vào Phi Thăng kỳ, thiên nhân ngũ suy giáng xuống: căn cơ, tâm cản
 
 ### Sáu đại thiên thế giới
 
-Mỗi cửa có một **lời gọi**: một điều kiện rút ra từ cả đời tu. Cửa có lời gọi thì sáng. Cửa tối vẫn chọn được nhưng vào thế bất lợi: bắt đầu ở bậc thấp nhất của giới đó và không mang theo kiếp ấn.
+Từ bản 2.4, người tu **không chọn** giới. Mỗi giới chấm một điểm **cảm ứng** từ cả đời tu; giới cao điểm nhất tiếp dẫn. Cửa Lục Giới Môn chỉ đòi cảm ứng **rõ**: giới đứng đầu hơn giới kế tiếp từ 5 điểm. Người tu muốn về giới nào thì phải sống cả đời tu theo lối của giới ấy.
 
-| Giới | Lời gọi (gợi ý) | Luật sống ở giới đó (để ngỏ) |
-|---|---|---|
-| **Tiên giới** | năm thước đo cân bằng, Pháp tu hay Thần tu, qua cửu cửu thiên kiếp không dùng đan | chín phẩm Tiên nhân, tiên lực, tiên phủ; nối tiếp chín phẩm của bản hiện tại |
-| **Ma giới** | từng tẩu hỏa nhập ma rồi tự đứng dậy, vận Đạo Tâm Chủng Ma, Kiếm tu | tâm ma thành sức mạnh; ma công đổi tu vi lấy liều; đọc đêm được thưởng |
-| **Phật giới** | tâm cảnh Vô Cấu, chuỗi ngày đọc từ một năm, ít khi bỏ sách dở | công đức thay tu vi; xá lợi; độ hóa tâm ma của đồng đạo ảo |
-| **Yêu giới** | Thể tu, thể phách Bất Diệt Thể, nhiều buổi đọc liền dài | huyết mạch, hóa hình; pháp bảo thành yêu sủng; sức mạnh theo giờ đọc |
-| **Minh giới** | đọc lại sách cũ, đọc xong sách bỏ dở lâu năm, từng chuyển thế ở chế độ Chân Tu | luân hồi, hồn lực; giữ ký ức các đời tu; sách đọc lại có giá trị riêng |
-| **Thần giới** | thần thức Cửu trọng, đọc trọn sách của rất nhiều tác giả, đạo vực ba pháp tắc | thần vị, tín ngưỡng; thần quốc lớn dần theo số tác giả đã đọc |
+| Giới | Thành | Hành | Đạo lộ, tông môn | Đời tu | Luật sống ở giới đó (để ngỏ) |
+|---|---|---|---|---|---|
+| **Cửu Tiêu Vân Khuyết** | Thiên Tiên | Kim, Lôi | Pháp tu, Vạn Quyển Tông | năm thước đo cân bằng | chín phẩm Tiên nhân, tiên lực, tiên phủ |
+| **Huyết Nguyệt Trầm Uyên** | Nghịch Tiên | Hỏa, Kiếm | Kiếm tu, Kiếm Lư | ngã rồi đứng dậy, tẩu hỏa | tâm ma thành sức mạnh; đọc đêm được thưởng |
+| **Bát Nhã Liên Đài** | Thiền Tiên | Thổ, Phong | Minh Tâm Tự | tâm cảnh, chuỗi ngày dài | công đức thay tu vi; xá lợi |
+| **Hồng Hoang Cổ Địa** | Chiến Tiên | Mộc, Thể | Thể tu, Thiết Cốt Môn | thể phách | huyết mạch, hóa hình; sức mạnh theo giờ đọc |
+| **Vong Xuyên Bỉ Ngạn** | Minh Tiên | Thủy, Băng | Bách nghệ, Bách Thảo Cốc | đọc xong sách bỏ dở lâu | luân hồi, hồn lực; sách đọc lại có giá trị riêng |
+| **Thư Hải Vô Nhai** | Văn Tiên | Thần | Thần tu | thần thức, ngũ hành tạp linh căn | thần quốc lớn dần theo số tác giả đã đọc |
+
+Điểm cảm ứng: linh căn cùng hành (căn mạnh nhất 30, rồi 18, 12, 8, 6), công pháp đang vận cùng thuộc tính 20 (đại thành +5), tâm pháp đã nhập môn 8 (Đạo Tâm Chủng Ma 15), đạo lộ chính 20 và kiêm tu 10, Kim Đan và Hóa Thần nghiêng về giới 10 mỗi thứ, đời tu tới 25, tông môn 10, và nghiệp lực.
+
+### Nghiệp lực
+
+Nghiệp lực là hệ quả của cả đời tu, chỉ hiện ra ở Phi Thăng kỳ và từ đó đè nặng lên Lục Giới. Thiện nghiệp đến từ sách đọc trọn, chuỗi ngày dài nhất, tâm cảnh, cống hiến tông môn; ác nghiệp từ sách bỏ rơi quá ba tháng, nhảy chương, tâm ma, tẩu hỏa nhập ma, Đạo Tâm Chủng Ma, đan độc. Nghiệp lực từ −100 tới +100 (Nghiệp chướng, Ác nghiệp, Quân bình, Thiện nghiệp, Đại thiện). Thiện nghiệp nâng Cửu Tiêu, Bát Nhã, Thư Hải; ác nghiệp kéo về Huyết Nguyệt, Vong Xuyên; Hồng Hoang ưa người quân bình. Cửa Lục Giới Môn cộng nghiệp lực chia mười vào tỉ lệ.
 
 Nguyên tắc chung cho cả sáu giới, để phần sau không lệch:
 
 - **Vẫn chỉ sinh ra từ việc đọc.** Mỗi giới đổi cách đọc được thưởng, không đổi nguồn.
-- **Chọn là chọn thật.** Một đời tu chỉ vào một giới. Muốn thử giới khác thì chuyển thế (chế độ Chân Tu) hoặc mở một đời tu mới; đạo hiệu, bộ sưu tập và Niên kỷ vẫn giữ.
+- **Một đời một giới.** Một đời tu chỉ vào một giới. Muốn thử giới khác thì chuyển thế (chế độ Chân Tu) hoặc mở một đời tu mới; đạo hiệu, bộ sưu tập và Niên kỷ vẫn giữ.
 - **Mang theo có hạn.** Qua cửa chỉ mang bản mệnh pháp bảo, công pháp đang vận, linh căn và kiếp ấn. Phần còn lại ở lại Linh giới làm di sản, như lúc rời Nhân giới.
 - **Màn kết của phần một.** Bước qua cửa là màn kết của Vạn Quyển Tiên Đồ phần một: Niên kỷ trọn đời tu và đạo hiệu theo giới («Tiếp Dẫn Tiên Quân», «Ma Tôn», «Bồ Tát», «Yêu Hoàng», «Minh Vương», «Thần Chủ»).
-- **Tiền đình.** Khi phần của một giới chưa ra, cửa giới đó vẫn chọn được. Người tu đứng ở tiền đình của giới; tu vi vẫn tăng theo chữ đọc và được ghi lại, để khi phần mới ra, mọi chữ đã đọc đều được tính.
+- **Tiền đình.** Khi phần của một giới chưa ra, cửa giới đó vẫn tiếp dẫn được. Người tu đứng ở tiền đình của giới; tu vi vẫn tăng theo chữ đọc và được ghi lại, để khi phần mới ra, mọi chữ đã đọc đều được tính.
 
 ## Đạo lộ: nhiều cách để thành đạo
 
@@ -176,9 +182,17 @@ Nguyên tắc chung cho cả sáu giới, để phần sau không lệch:
 | **Kiếm tu** | đọc trọn nhanh, chuỗi | Kiếm Đan | Kiếm Anh | Kiếm Ý Thông Thiên | đột phá có thể chí mạng (+1 tiểu cảnh) | tâm ma tăng gấp rưỡi |
 | **Bách nghệ** | lò luyện, đan phòng | Đan Hỏa Kim Đan | Hỏa Anh | Thiên Hỏa Hóa Thân | luyện đan, luyện khí, chế phù hơn người | tu vi chậm nhất |
 
-**Luyện thể** là một cột riêng mà mọi đường đều theo được: Đồng Bì, Thiết Cốt, Ngọc Tủy, Kim Thân, Lưu Ly Thân, Bất Diệt Thể; Thể tu tu nhanh gấp đôi. **Luyện thần** cũng vậy, đi theo thần thức: Nhất trọng tới Cửu trọng; Thần tu nhanh gấp đôi.
+**Luyện thể** là một cột riêng mà mọi đường đều theo được: Đồng Bì, Thiết Cốt, Ngọc Tủy, Kim Thân, Lưu Ly Thân, Bất Diệt Thể; mỗi bậc giúp qua lôi kiếp và thiên kiếp, Thể tu tu nhanh gấp đôi. **Luyện thần** cũng vậy, đi theo thần thức: Nhất trọng tới Cửu trọng, mỗi trọng giúp phá tiểu cảnh; Thần tu nhanh gấp đôi.
 
-Có thể **kiêm tu** đường thứ hai ở Nguyên Anh, đổi lấy 20% tốc độ của cả hai. Ai kiêm tu Thể và Thần tới viên mãn được thử **Song Anh**: một cửa phá cảnh riêng, khó nhất Nhân giới, thưởng một Nguyên Anh thứ hai (thêm một ô bản mệnh pháp bảo).
+Có thể **kiêm tu** đường thứ hai ở Nguyên Anh: được cái mạnh của đường ấy, không mang cái yếu, đổi lấy 20% tốc độ. Ai kiêm tu Thể và Thần tới Nguyên Anh đại viên mãn được thử **Song Anh**: một cửa phá cảnh riêng, khó nhất Nhân giới, thưởng một Nguyên Anh thứ hai.
+
+### Mười hai Kim Đan và Nguyên Anh kế thừa
+
+Kim Đan không theo đạo lộ mà theo **cả quá trình tu**: **Sinh Tử** (Tịch Diệt Đan cho người ngã nhiều lần, Trường Sinh Đan cho căn cơ dày chưa từng hỏng), **Âm Dương** (Thái Dương Đan đọc ban ngày, Thái Âm Đan đọc đêm khuya, cùng cần tâm cảnh Thanh Minh), **biến dị** theo dị linh căn (Tử Lôi, Huyền Băng, Thanh Phong), cuối cùng **ngũ hành** theo linh căn và công pháp (Canh Kim, Ất Mộc, Nhâm Thủy, Bính Hỏa, Mậu Thổ). Mỗi đan một lợi riêng (linh lực, căn cơ, tâm ma, ngày lôi kiếp) và một tỉ lệ kết anh riêng. **Nguyên Anh kế thừa đan**: mang tên đan cộng tên anh của đạo lộ («Tử Lôi Kiếm Anh»), tốc độ của đan tăng thêm một nửa.
+
+### Sáu Hóa Thần, Hợp Thể và Độ Kiếp
+
+Hóa Thần theo đạo lộ: Thuần Dương Nguyên Thần (Pháp), Bất Hoại Pháp Thân (Thể), Phân Thần Hóa Thân (Thần), Kiếm Ý Thông Thiên (Kiếm), Thiên Hỏa Hóa Thân (Bách nghệ); ai thành Song Anh thì thành Song Thần Đồng Tu. Mỗi loại một lợi một hại kéo dài: đè lên tỉ lệ và số ngày thiên kiếp của **Hợp Thể** (thân thần hợp nhất: Bất Hoại và Song Thần dễ, Phân Thần khó), và lên **Độ Kiếp** (Thiên Hỏa đốt kiếp vân, Kiếm Ý chiêu lôi). Kim Đan và Hóa Thần còn nghiêng về một giới của Lục Giới.
 
 ## Công pháp, tâm pháp, thuật pháp
 

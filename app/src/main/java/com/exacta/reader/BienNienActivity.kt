@@ -127,7 +127,9 @@ class BienNienActivity : TabActivity() {
             Era("2.3", "Bái Nhập Sơn Môn",
                 "Năm tông môn, nhiệm vụ, đối thủ, đại bỉ; bí cảnh thành bản đồ biến cố; 72 kỳ ngộ theo độ hiếm; tiểu đột phá; cảnh giới gọi theo kỳ."),
             Era("2.3.1", "Lục Giới Phân Đồ",
-                "Phi Thăng thành cảnh giới, Độ Kiếp là chặng đặc biệt; Lục Giới Môn chọn một trong sáu giới, thành một trong sáu loại tiên nhân; Home gọn lại, đạo hiệu lên thanh trên, tiết khí kèm lời bình."),
+                "Phi Thăng thành cảnh giới, Độ Kiếp là chặng đặc biệt; sáu giới, sáu loại tiên nhân; Home gọn lại, đạo hiệu lên thanh trên, tiết khí kèm lời bình."),
+            Era("2.4", "Ngũ Lộ Đồng Quy",
+                "Năm đạo lộ; mười hai Kim Đan, Nguyên Anh kế thừa đan; sáu Hóa Thần đè lên Hợp Thể, Độ Kiếp; luyện thể, luyện thần, kiêm tu, Song Anh; Lục Giới do đời tu và nghiệp lực quyết định."),
         )
     }
 }

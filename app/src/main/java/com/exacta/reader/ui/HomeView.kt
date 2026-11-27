@@ -30,7 +30,7 @@ import kotlin.random.Random
  */
 @SuppressLint("ViewConstructor")
 class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU, TONG_MON, BI_CANH }
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU, TONG_MON, BI_CANH, DAO_LO }
 
     var book: Book? = null
     var needsPermission = false
@@ -235,9 +235,9 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         }
     }
 
-    /** Six even buttons: Công pháp, Động phủ, Tông môn, Đạo hiệu, Niên kỷ, Cài đặt. */
+    /** Seven even buttons: Công pháp, Đạo lộ, Động phủ, Tông môn, Đạo hiệu, Niên kỷ, Cài đặt. */
     private fun drawBottomRow(c: Canvas, k: Ink, r: RectF) {
-        drawDock(c, k, r, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.TONG_MON, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, r, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
     }
 
 
@@ -246,8 +246,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
-        val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        val strip = RectF(a.left, dock.top - g - 168 * u, a.right, dock.top - g)
         drawStrip(c, k, strip); on(strip, Action.TU_VI)
         val hero = RectF(a.left, a.top, a.right, strip.top - g)
         bookFrame(c, k, hero)
@@ -288,8 +288,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
-        val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        val strip = RectF(a.left, dock.top - g - 168 * u, a.right, dock.top - g)
         drawStrip(c, k, strip); on(strip, Action.TU_VI)
         val bookRect = RectF(a.left, a.top, a.right, a.top + (a.height() * 0.3f).coerceIn(220 * u, 320 * u))
         drawBook(c, k, bookRect); bookTarget(bookRect); libraryButton(c, k, bookRect)
@@ -333,7 +333,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val g = Ink.GAP * u
         val dock = RectF(a.left, a.bottom - DOCK_H * u, a.right, a.bottom)
-        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, dock, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.PHAP_BAO, Action.NIEN_KY, Action.SETTINGS))
         val bookRect = RectF(a.left, dock.top - g - 170 * u, a.right, dock.top - g)
         drawBookRow(c, k, bookRect); bookTarget(bookRect)
         libraryButton(c, k, bookRect)
@@ -402,21 +402,37 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         return if (Store.dailyGoal > 0 && min < Store.dailyGoal) "$min/${Store.dailyGoal} phút" else duration(sec)
     }
 
-    /** The realm in one strip: logo, name, words, then the day's numbers. */
+    /**
+     * The realm in a strip: the greeting on top; the logo, name and tu vi with the day's numbers;
+     * the tiết khí and its counsel at the bottom.
+     */
     private fun drawStrip(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
         realmFrame(c, k, r)
         val level = Store.level()
         val pad = 26 * u
-        val icon = minOf(56 * u, r.height() - 2 * pad)
-        k.realmIcon(c, Realm.realmOf(level), r.left + pad, r.centerY() - icon / 2, icon)
+        val dark = k.paint(Ink.SMALL, color = Ink.DARK)
+        val sl = k.lineH(k.small)
+        val today = LocalDate.now()
+        val lunar = Lunar.fromSolar(today.dayOfMonth, today.monthValue, today.year)
+        val w = r.width() - 2 * pad
+        // The greeting.
+        k.centered(c, occasion(today, lunar) ?: greeting(), r.left + pad, w, r.top + pad - 6 * u, dark)
+        // The tiết khí and its counsel.
+        val ti = Lunar.solarTerm(today.dayOfMonth, today.monthValue, today.year)
+        val term = "Tiết ${Lunar.termName(ti)} · ${Texts.TERM_ADVICE[ti]}"
+        k.centered(c, term, r.left + pad, w, r.bottom - pad - sl + 6 * u, k.shrink(term, w, dark, 0.7f))
+        // The realm in the middle.
+        val mid = (r.top + pad - 6 * u + sl + r.bottom - pad - sl + 6 * u) / 2
+        val icon = 50 * u
+        k.realmIcon(c, Realm.realmOf(level), r.left + pad, mid - icon / 2, icon)
         val tx = r.left + pad + icon + 14 * u
         val left = r.width() * 0.42f
         val nw = left - icon - 2 * pad + 20 * u
         val np = if (k.ui10Bold.measureText(TuLuyen.name()) <= nw) k.ui10Bold else k.smallBold
-        k.text(c, k.fit(TuLuyen.name(), nw, np), tx, r.centerY() - k.lineH(np), np)
-        k.text(c, "${Realm.van(Store.tuVi())} vạn từ", tx, r.centerY() + 2 * u, k.small)
-        stats(c, k, r.left + left, r.centerY() - k.lineH(k.small), r.width() - left - pad)
+        k.text(c, k.fit(TuLuyen.name(), nw, np), tx, mid - k.lineH(np), np)
+        k.text(c, "${Realm.van(Store.tuVi())} vạn từ", tx, mid + 2 * u, k.small)
+        stats(c, k, r.left + left, mid - k.lineH(k.small), r.width() - left - pad)
     }
 
     /** The book in one row: a small cover, the title, the tầng. */
@@ -714,6 +730,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             Action.CONG_PHAP to ("congphap" to "Công pháp"),
             Action.DONG_PHU to ("dongphu" to "Động phủ"),
             Action.TONG_MON to ("tongmon" to "Tông môn"),
+            Action.DAO_LO to ("daolo" to "Đạo lộ"),
             Action.BI_CANH to ("bicanh" to "Bí cảnh"),
         )
         val g = Ink.GAP * u
@@ -729,7 +746,9 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
                 val lp = k.smallBold
                 val top = cell.centerY() - (ic + 4 * u + k.lineH(lp)) / 2
                 k.icon(c, name, cell.centerX() - ic / 2, top, ic)
-                val lq = k.shrink(label, cell.width() - 6 * u, lp, 0.68f)
+                // One size for every label of the row: the longest decides.
+                val longest = actions.map { all.getValue(it).second }.maxByOrNull { lp.measureText(it) } ?: label
+                val lq = k.shrink(longest, cell.width() - 6 * u, lp, 0.68f)
                 k.centered(c, label, cell.left, cell.width(), top + ic + 4 * u, lq)
                 if (action == Action.NIEN_KY && due != 0 && Store.nienKySeen != due) c.drawCircle(cell.centerX() + ic / 2 + 4 * u, top + 3 * u, 5 * u, k.fill)
                 on(cell, action)
