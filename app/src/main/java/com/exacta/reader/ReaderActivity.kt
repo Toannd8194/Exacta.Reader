@@ -176,6 +176,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
 
     override fun onPause() {
         account()
+        if (::book.isInitialized) Store.endSession((lastInput - sessionStart) / 1000)
         ticker.removeCallbacks(tick)
         Store.save()
         super.onPause()
@@ -211,6 +212,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         val now = SystemClock.uptimeMillis()
         if (now - lastInput >= IDLE_MS) {
             // Back from a pause: the idle time does not count, and a new sitting begins.
+            Store.endSession((lastInput - sessionStart) / 1000)
             lastTick = now
             sessionStart = now
         }

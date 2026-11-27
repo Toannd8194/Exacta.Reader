@@ -116,6 +116,8 @@ class BienNienActivity : TabActivity() {
                 "Bản chính thức. Hợp luyện ba pháp bảo dư thành khoáng thạch phẩm trên; rà soát và tối ưu cách vẽ; thêm Biên niên này."),
             Era("1.0.1", "Khắc Lậu Cổ Pháp",
                 "Đồng hồ theo canh giờ và khắc, thời gian còn lại tính bằng canh giờ; Mục lục trọn trang, mười mục một trang, chọn theo khoảng; tùy chọn dạng thẻ."),
+            Era("2.0", "Ngũ Khí Triều Nguyên",
+                "Người tu có năm thước đo và tâm ma; mỗi cảnh giới bốn tiểu cảnh, bình cảnh, áp chế; đột phá tự bấm, tỉ lệ hiện rõ; Trúc Cơ quan, ngưng đan, lôi kiếp kèm tâm ma kiếp, ngộ đạo."),
         )
     }
 }

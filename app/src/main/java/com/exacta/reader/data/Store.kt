@@ -227,6 +227,7 @@ object Store {
             realmSeen = level
             dirty = true
         }
+        if (!TuLuyen.started) TuLuyen.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -282,6 +283,7 @@ object Store {
             it.optJSONObject("bonusMinutes")?.let { m -> for (k in m.keys()) bonusMinutes[k.toLong()] = m.getInt(k) }
             it.optJSONArray("sealed")?.let { a -> for (i in 0 until a.length()) sealedDays.add(a.getLong(i)) }
         }
+        o.optJSONObject("tuLuyen")?.let { TuLuyen.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -347,6 +349,7 @@ object Store {
                 .put("sealed", JSONArray().apply { sealedDays.forEach { put(it) } }))
             put("tienTe", JSONObject().put("lt", linhThach).put("ltEarned", linhThachEarned).put("ltWords", ltWords)
                 .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes).put("merge", mergeCount))
+            put("tuLuyen", TuLuyen.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -394,11 +397,13 @@ object Store {
         bonusTuVi = 0; trialSpare = 0; seekWords = 0; giftLuck = 0; biCanhBonusWeek = -1; biCanhBonusDays = 0
         bonusMinutes.clear(); sealedDays.clear()
         linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0; mergeCount = 0
+        TuLuyen.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
             realmSeen = Realm.level(totalWords)
         }
+        if (!TuLuyen.started) TuLuyen.migrate()
         dirty = true
         save()
         return true
@@ -415,12 +420,19 @@ object Store {
 
     // --- Notes ------------------------------------------------------------------------------------
 
-    private fun note(s: String) {
+    internal fun note(s: String) {
         notes.addLast(s)
         while (notes.size > 6) notes.removeFirst()
     }
 
     fun takeNote(): String = notes.removeFirstOrNull() ?: ""
+
+    /** A sitting is over: `seconds` long (the tâm ma kiếp counts the ones given up early). */
+    fun endSession(seconds: Long) {
+        TuLuyen.onSessionEnd(seconds)
+        checkRealm()
+        touch()
+    }
 
     // --- Reading ----------------------------------------------------------------------------------
 
@@ -439,6 +451,7 @@ object Store {
             beQuanSeconds += seconds
             if (beQuanSeconds >= beQuanTarget * 60L) finishBeQuan()
         }
+        TuLuyen.onSeconds(book, seconds, session)
         checkKiep()
         checkRealm()
         checkBiCanh()
@@ -458,7 +471,7 @@ object Store {
             // Jumps by the contents, the chapter buttons or the slider only move the mark.
             if (book.words > 0) {
                 val words = (step * book.words).toLong()
-                if (pageTurn || words <= PAGE_SWIPE) credit(book, minOf(words, PAGE_MAX))
+                if (pageTurn || words <= PAGE_SWIPE) credit(book, minOf(words, PAGE_MAX)) else TuLuyen.onJump()
             }
             book.maxProgress = progression
         }
@@ -469,6 +482,7 @@ object Store {
         }
         if (progression >= FINISH && book.finishDay < 0) {
             book.finishDay = today()
+            TuLuyen.onFinish()
             if (!book.forged && book.words > 0) {
                 book.forged = true
                 val tier = Treasure.tierForBook(book.words)
@@ -497,7 +511,10 @@ object Store {
         val d = today()
         dayWords[d] = (dayWords[d] ?: 0) + words
         book.wordsRead += words
+        val before = tuViRaw()
+        val state = TuLuyen.state()
         totalWords += words
+        TuLuyen.convert(tuViRaw() - before, state)
         // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
         var burn = if (setActive(6) && feastDay()) words * 2 else words
         if (fireWords > 0) {
@@ -737,16 +754,25 @@ object Store {
         return true
     }
 
-    /** Phá Cảnh Đan: a day of a hard thiên kiếp (Phá Đan Thành Anh and above), once per day of need. */
-    fun canBreakPill() = items[Treasure.PHA_CANH_DAN] > 0 && inTrial() && nextGate() >= 3 && trialDays().first < trialNeed()
+    /**
+     * Phá Cảnh Đan: during a lôi kiếp or thiên kiếp, a day of it; at the ceiling with no trial under
+     * way, 15% more for the next breakthrough.
+     */
+    fun canBreakPill() = items[Treasure.PHA_CANH_DAN] > 0 && realmCap in 0..8 &&
+        if (inTrial()) nextGate() >= 3 && trialDays().first < trialNeed() else !TuLuyen.pill && TuLuyen.atCeiling()
 
     fun useBreakPill(): Boolean {
         if (!canBreakPill()) return false
         items[Treasure.PHA_CANH_DAN]--
         pillsUsed++
-        trialBonus++
         breakPillUsed = true
-        note("Phá Cảnh Đan: bình cảnh ${Treasure.GATES[nextGate()]} lung lay")
+        if (inTrial()) {
+            trialBonus++
+            note("Phá Cảnh Đan: ${TuLuyen.trialName().lowercase()} tính thêm một ngày")
+        } else {
+            TuLuyen.pill = true
+            note("Phá Cảnh Đan: lần đột phá kế tiếp thêm 15%")
+        }
         checkRealm()
         checkTitles()
         touch()
@@ -803,7 +829,7 @@ object Store {
             when (i) {
                 Treasure.TU_LINH_DAN -> highSlot
                 Treasure.PHA_CANH_DAN -> realmCap >= 2
-                Treasure.THO_NGUYEN_DAN -> tuViLoss > 0
+                Treasure.THO_NGUYEN_DAN -> tuViLoss > 0 || TuLuyen.injured()
                 Treasure.HO_LO_PHU, Treasure.DAN_LOI_PHU -> forge.any { it.tier >= 3 } || realmCap >= 3
                 else -> true
             }
@@ -931,7 +957,10 @@ object Store {
         val today = today()
         when (i) {
             Treasure.THIEN_HOA_PHU -> return if (useThienHoaPhu()) "Thiên hỏa bừng lên: lò luyện cháy gấp đôi" else null
-            Treasure.PHA_CANH_DAN -> return if (useBreakPill()) "Bình cảnh lung lay: thêm một ngày độ kiếp" else null
+            Treasure.PHA_CANH_DAN -> {
+                val during = inTrial()
+                return if (!useBreakPill()) null else if (during) "Bình cảnh lung lay: thêm một ngày độ kiếp" else "Bình cảnh lung lay: đột phá kế tiếp thêm 15%"
+            }
             Treasure.NGUNG_THAN_DAN -> {
                 spend(i); bonusTuVi += 10_000; checkRealm()
                 return "Thần thức ngưng tụ: tu vi thêm 1 vạn từ"
@@ -942,9 +971,13 @@ object Store {
                 return "Tâm mạch được hộ: kỳ thiên kiếp này lỡ thêm một ngày vẫn không sao"
             }
             Treasure.THO_NGUYEN_DAN -> {
-                if (tuViLoss <= 0) return null
-                spend(i); tuViLoss /= 2; checkRealm()
-                return "Thọ nguyên kéo dài: một nửa tu vi đã mất trở về"
+                if (tuViLoss > 0) {
+                    spend(i); tuViLoss /= 2; checkRealm()
+                    return "Thọ nguyên kéo dài: một nửa tu vi đã mất trở về"
+                }
+                if (!TuLuyen.injured()) return null
+                spend(i); TuLuyen.injuryUntil = -1
+                return "Sinh cơ dồi dào: kinh mạch lành lại"
             }
             Treasure.TAM_BAO_PHU -> {
                 spend(i); seekWords += 30_000
@@ -961,8 +994,9 @@ object Store {
             }
             Treasure.DINH_THAN_PHU -> {
                 spend(i); bonusMinutes[today] = (bonusMinutes[today] ?: 0) + 15
+                TuLuyen.calm(10)
                 checkKiep(); checkRealm(); checkBiCanh()
-                return "Tâm định thần an: hôm nay tính thêm 15 phút"
+                return "Tâm định thần an: hôm nay tính thêm 15 phút, tâm ma lắng 10"
             }
             Treasure.PHONG_AN_PHU -> {
                 val day = ((today - 1) downTo (today - 7)).firstOrNull { (daySeconds[it] ?: 0) < 60 && it !in sealedDays } ?: return null
@@ -1081,7 +1115,7 @@ object Store {
 
     /** Words of tu vi: words read (+5% with Thượng Cổ Thần Khí), less what failed trials cost. */
     fun tuViRaw() = totalWords + bonusTuVi + (if (setActive(8)) totalWords / 20 else 0) + (if (setActive(17)) totalWords / 20 else 0)
-    fun tuVi() = (tuViRaw() - tuViLoss).coerceAtLeast(0)
+    fun tuVi() = (tuViRaw() - tuViLoss + TuLuyen.adj).coerceAtLeast(0)
 
     private fun rawLevel() = Realm.level(tuVi())
 
@@ -1091,9 +1125,17 @@ object Store {
         return if (realmCap >= 9) raw else minOf(raw, realmCap.coerceAtLeast(0) * 3 + 2)
     }
 
-    fun inTrial() = realmCap in 0..8 && Realm.realmOf(rawLevel()) > realmCap
-    fun trialNeed() = TRIAL_DAYS[realmCap.coerceIn(0, 8)]
-    fun trialMinutes() = TRIAL_MINUTES[realmCap.coerceIn(0, 8)] - if (setActive(13)) 5 else 0
+    /** A ngưng đan, lôi kiếp or thiên kiếp under way (2.0: begun by the reader at the ceiling). */
+    fun inTrial() = realmCap in 0..8 && trialStart >= 0
+    /** Days of the trial of gate `g`: ngưng đan 3, the others as in 1.0; 0 for the gates without one. */
+    fun trialNeed(g: Int = nextGate()) = when {
+        !TuLuyen.hasTrial(g) -> 0
+        g == 2 -> 3
+        else -> TRIAL_DAYS[(g - 1).coerceIn(0, 8)]
+    }
+    fun trialMinutes(g: Int = nextGate()) = if (g == 2) 45 else TRIAL_MINUTES[(g - 1).coerceIn(0, 8)] - if (setActive(13)) 5 else 0
+    /** A day of the trial is met: ngưng đan by one sitting, the others by the day's minutes. */
+    fun trialMet(day: Long) = if (nextGate() == 2) TuLuyen.bestMinutes(day) >= trialMinutes() else minutes(day) >= trialMinutes()
     fun minutes(day: Long) = (daySeconds[day] ?: 0) / 60 + (bonusMinutes[day] ?: 0)
 
     /** The realm the next trial opens (realmCap + 1), and the words to its gate. */
@@ -1107,11 +1149,10 @@ object Store {
     fun trialDays(): Pair<Int, Boolean> {
         val today = today()
         if (trialStart < 0) return 0 to false
-        val need = trialMinutes()
         var run = 0
         var forgiven = (if (setActive(4)) 1 else 0) + trialSpare
         for (d in trialStart..today) {
-            if (minutes(d) >= need) run++
+            if (trialMet(d)) run++
             else if (d != trialStart && d != today) {
                 if (forgiven > 0) forgiven-- else return run to true
             }
@@ -1119,50 +1160,22 @@ object Store {
         return (run + trialBonus) to false
     }
 
+    /**
+     * Each day and each page: the trial under way passes or fails, the tiểu cảnh opens with căn cơ.
+     * The breakthrough itself is the reader's tap (TuLuyen.breakThrough).
+     */
     fun checkRealm() {
         if (realmCap < 0) return
+        TuLuyen.tick()
         if (inTrial()) {
-            val today = today()
-            if (trialStart < 0) {
-                trialStart = today
-                trialBonus = 0
-                trialSpare = 0
-                note("Thiên kiếp ${Treasure.GATES[nextGate()]}: ${trialNeed()} ngày, mỗi ngày ${trialMinutes()} phút")
-                touch()
-            }
             val (days, failed) = trialDays()
-            if (failed) {
-                // Độ kiếp thất bại: tu vi falls to one ninth below the gate.
-                val lo = Realm.floor(realmCap * 3)
-                val hi = Realm.floor(realmCap * 3 + 3)
-                val target = hi - (hi - lo) / 9
-                if (tuViRaw() > target) tuViLoss = tuViRaw() - target
-                trialStart = -1
-                trialBonus = 0
-                trialSpare = 0
-                failDay = today
-                failCount++
-                note("Độ kiếp thất bại: tu vi lui về ${Realm.van(target)} vạn từ")
-                touch()
-            } else if (days >= trialNeed()) {
-                realmCap++
-                trialStart = -1
-                trialBonus = 0
-                trialSpare = 0
-                trialPassed++
-                if (failCount > 0) passedAfterFail = true
-                gainLinhThach(50L * realmCap)
-                note("Vượt thiên kiếp: mở cảnh giới ${Realm.baseName(realmCap)}")
-                touch()
-            }
-        } else if (trialStart >= 0) {
-            trialStart = -1
-            touch()
+            if (failed) TuLuyen.trialFailed("${TuLuyen.trialName()} thất bại")
+            else if (days >= trialNeed()) TuLuyen.trialPassed()
         }
+        TuLuyen.advance()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level
-            note("Đột phá: ${Realm.name(level)}")
             touch()
         }
     }

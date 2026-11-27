@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import android.view.View
 import com.exacta.reader.data.Book
 import com.exacta.reader.data.Store
+import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.DaoHieu
 import com.exacta.reader.game.Lunar
 import com.exacta.reader.game.NienKy
@@ -173,14 +174,14 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.text(c, number, nx + icon + 12 * u, ny, bigP)
         k.text(c, "vạn từ", nx + icon + 12 * u + nw + 8 * u, ny + (-bigP.ascent()) - (-unit.ascent()), unit)
         y += icon + 2 * u
-        k.centered(c, Realm.name(level), x, w, y, nb)
+        k.centered(c, TuLuyen.name(), x, w, y, nb)
         y += k.lineH(nb)
         if (t >= 0) {
             k.centered(c, "« ${DaoHieu.NAMES[t]} »", x, w, y, small)
             y += sl
         }
         y += 8 * u
-        y = k.realmBar(c, x, y, w, Realm.ninths(words, level), Realm.stageLabels(level), Realm.stageIndex(level))
+        y = k.realmBar(c, x, y, w, TuLuyen.bar())
         y += gap
         stats(c, k, x, y, w)
         y += statsH + gap
@@ -192,17 +193,12 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.icon(c, "thienkiep", x, y + (2 * sl - ic) / 2, ic)
         val tx = x + ic + 12 * u
         val tw = w - ic - 12 * u
-        val gate = Realm.baseName(Store.nextGate())
-        val (l1, l2) = when {
-            Store.realmCap >= 9 -> "Thiên kiếp · đã phi thăng" to "Tiên lộ thênh thang"
-            Store.inTrial() -> "Độ kiếp ${Treasure.GATES[Store.nextGate()]} · ngày ${Store.trialDays().first}/${Store.trialNeed()}" to
-                "Hôm nay ${Store.minutes(Store.today())}/${Store.trialMinutes()} phút; lỡ một ngày là thất bại"
-            Store.failDay == Store.today() -> "Độ kiếp thất bại" to "Tu vi đã lui về gần cửa ải, đọc tiếp"
-            else -> "Kiếp tới: ${Treasure.GATES[Store.nextGate()]}" to "Còn ${Realm.van(Store.wordsToGate())} vạn từ · ${Store.trialNeed()} ngày × ${Store.trialMinutes()} phút"
-        }
+        val gateLines = TuLuyen.homeLines()
+        val l1 = gateLines[0].first
+        val l2 = gateLines.getOrNull(1)?.first ?: ""
         k.text(c, k.fit(l1, tw, sb), tx, y, sb)
         k.text(c, k.fit(l2, tw, small), tx, y + sl, small)
-        on(trialRow, Action.TU_VI, "1")
+        on(trialRow, Action.TU_VI, "2")
         y += trialH + gap
 
         // Bí cảnh, one row with the week.
@@ -216,7 +212,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val met = (0 until 7).map { Store.minutes(monday + it) >= Store.BI_CANH_MINUTES }
         val ww = minOf(tw * 0.42f, 7 * 22 * u)
         k.week(c, x + w - ww, y + 3 * u, ww, 14 * u, met, today.dayOfWeek.value - 1)
-        on(biRow, Action.TU_VI, "2")
+        on(biRow, Action.TU_VI, "3")
         y += biH
 
         if (blocks.size == 6) {
@@ -400,7 +396,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         }
         bookTarget(RectF(a.left, bookTop - 20 * u, a.right, y + 20 * u))
         y += 70 * u
-        val realmLine = "${Realm.name(Store.level())} · ${Realm.van(Store.tuVi())} vạn từ · hôm nay ${todayText()}"
+        val realmLine = "${TuLuyen.name()} · ${Realm.van(Store.tuVi())} vạn từ · hôm nay ${todayText()}"
         k.centered(c, realmLine, a.left, a.width(), y, k.smallBold)
         on(RectF(a.left, y - 10 * u, a.right, y + k.lineH(k.smallBold) + 10 * u), Action.TU_VI)
         y += k.lineH(k.smallBold) + 24 * u
@@ -456,7 +452,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         y += k.lineH(sb) + 16 * u
         k.realmIcon(c, Realm.realmOf(level), hero.centerX() - icon / 2, y, icon)
         y += icon + 10 * u
-        k.centered(c, Realm.name(level), x, w, y, nameP)
+        k.centered(c, TuLuyen.name(), x, w, y, nameP)
         y += k.lineH(nameP)
         if (t >= 0) {
             k.centered(c, "« ${DaoHieu.NAMES[t]} »", x, w, y, k.ui10)
@@ -464,7 +460,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         }
         k.centered(c, "${Realm.van(words)} vạn từ tu vi", x, w, y, k.ui10Bold)
         y += k.lineH(k.ui10) + 20 * u
-        y = k.realmBar(c, x + w * 0.1f, y, w * 0.8f, Realm.ninths(words, level), Realm.stageLabels(level), Realm.stageIndex(level))
+        y = k.realmBar(c, x + w * 0.1f, y, w * 0.8f, TuLuyen.bar())
         y += 22 * u
         stats(c, k, x + w * 0.1f, y, w * 0.8f)
     }
@@ -505,7 +501,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.realmIcon(c, Realm.realmOf(level), r.left + pad, r.centerY() - icon / 2, icon)
         val tx = r.left + pad + icon + 14 * u
         val left = r.width() * 0.42f
-        k.text(c, k.fit(Realm.name(level), left - icon - 2 * pad, k.ui10Bold), tx, r.centerY() - k.lineH(k.ui10Bold), k.ui10Bold)
+        k.text(c, k.fit(TuLuyen.name(), left - icon - 2 * pad, k.ui10Bold), tx, r.centerY() - k.lineH(k.ui10Bold), k.ui10Bold)
         k.text(c, "${Realm.van(Store.tuVi())} vạn từ", tx, r.centerY() + 2 * u, k.small)
         stats(c, k, r.left + left, r.centerY() - k.lineH(k.small), r.width() - left - pad)
     }
@@ -740,14 +736,14 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.text(c, number, nx + icon + 12 * u, ny, bigP)
         k.text(c, "vạn từ", nx + icon + 12 * u + nw + 8 * u, ny + (-bigP.ascent()) - (-unit.ascent()), unit)
         y += icon + 2 * u
-        k.centered(c, Realm.name(level), x, w, y, k.ui10Bold)
+        k.centered(c, TuLuyen.name(), x, w, y, k.ui10Bold)
         y += k.lineH(k.ui10Bold)
         if (t >= 0) {
             k.centered(c, "« ${DaoHieu.NAMES[t]} »", x, w, y, small)
             y += sl
         }
         y += 10 * u
-        y = k.realmBar(c, x, y, w, Realm.ninths(words, level), Realm.stageLabels(level), Realm.stageIndex(level))
+        y = k.realmBar(c, x, y, w, TuLuyen.bar())
         y += gap
 
         // Today, the last seven days, the streak.
@@ -863,32 +859,20 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
 
     private fun drawTrial(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
-        var y = miniHead(c, k, r, "Thiên kiếp", "thienkiep")
+        var y = miniHead(c, k, r, "Cửa ải", "thienkiep")
         val pad = 16 * u
-        val gate = Realm.baseName(Store.nextGate())
-        when {
-            Store.realmCap >= 9 -> lines(c, k, r, y, listOf("Đã phi thăng" to true, "Tiên lộ thênh thang" to false))
-            Store.inTrial() -> {
-                val days = Store.trialDays().first
-                val need = Store.trialNeed()
-                val cw = minOf(24 * u, (r.width() - 2 * pad - (need - 1) * 5 * u) / need)
-                for (i in 0 until need) {
-                    val cell = RectF(r.left + pad + i * (cw + 5 * u), y, r.left + pad + i * (cw + 5 * u) + cw, y + 14 * u)
-                    if (i < days) c.drawRoundRect(cell, 3 * u, 3 * u, k.fill) else c.drawRoundRect(k.inset(cell, 0.6f * u), 3 * u, 3 * u, k.stroke(1.3f))
-                }
-                y += 22 * u
-                lines(c, k, r, y, listOf(
-                    "Độ kiếp vào $gate" to true,
-                    "Hôm nay ${Store.minutes(Store.today())}/${Store.trialMinutes()} phút" to false,
-                ))
+        if (Store.inTrial()) {
+            val days = Store.trialDays().first
+            val need = Store.trialNeed()
+            val cw = minOf(24 * u, (r.width() - 2 * pad - (need - 1) * 5 * u) / need)
+            for (i in 0 until need) {
+                val cell = RectF(r.left + pad + i * (cw + 5 * u), y, r.left + pad + i * (cw + 5 * u) + cw, y + 14 * u)
+                if (i < days) c.drawRoundRect(cell, 3 * u, 3 * u, k.fill) else c.drawRoundRect(k.inset(cell, 0.6f * u), 3 * u, 3 * u, k.stroke(1.3f))
             }
-            Store.failDay == Store.today() -> lines(c, k, r, y, listOf("Độ kiếp thất bại" to true, "Tu vi đã lui, đọc tiếp" to false))
-            else -> lines(c, k, r, y, listOf(
-                "Kiếp tới: $gate" to true,
-                "Còn ${Realm.van(Store.wordsToGate())} vạn từ" to false,
-                "${Store.trialNeed()} ngày × ${Store.trialMinutes()} phút" to false,
-            ))
+            y += 22 * u
         }
+        val more = if (Store.realmCap in 0..8 && !Store.inTrial()) listOf("Căn cơ ${TuLuyen.canCo()} · tâm ma ${TuLuyen.tamMa}" to false) else emptyList()
+        lines(c, k, r, y, TuLuyen.homeLines() + more)
     }
 
     private fun drawBiCanh(c: Canvas, k: Ink, r: RectF, today: LocalDate) {

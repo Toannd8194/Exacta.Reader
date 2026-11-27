@@ -34,6 +34,7 @@ TREASURE = read('game', 'Treasure.kt')
 REALM = read('game', 'Realm.kt')
 DAO = read('game', 'DaoHieu.kt')
 STORE = read('data', 'Store.kt')
+TULUYEN = read('data', 'TuLuyen.kt')
 GRADLE = open(os.path.join(ROOT, 'app', 'build.gradle.kts'), encoding='utf-8').read()
 BIEN_NIEN = read('BienNienActivity.kt')
 
@@ -85,6 +86,16 @@ FLOOR_VAN = numbers(REALM, 'FLOOR_VAN')
 TIEN_VAN = numbers(REALM, 'TIEN_VAN')
 REALM_NAMES = strings(REALM, 'NAMES')
 PHAM = strings(REALM, 'PHAM')
+BASE = numbers(TULUYEN, 'BASE')
+SUB_NEED = numbers(TULUYEN, 'SUB_NEED')
+TAM_CANH_TIERS = strings(TULUYEN, 'TAM_CANH_TIERS')
+TAM_CANH_AT = numbers(TULUYEN, 'TAM_CANH_AT')
+TRONG = strings(TULUYEN, 'TRONG')
+THAN_THUC_AT = numbers(TULUYEN, 'THAN_THUC_AT')
+THE_TIERS = strings(TULUYEN, 'THE_TIERS')
+THE_AT = numbers(TULUYEN, 'THE_AT')
+TRUC_CO_PHAM = strings(TULUYEN, 'TRUC_CO_PHAM')
+TRUC_CO_GOC = numbers(TULUYEN, 'TRUC_CO_GOC')
 DAO_GROUPS = strings(DAO, 'GROUP_NAMES')
 DAO_NAMES = strings(DAO, 'NAMES')
 DAO_RULES = strings(DAO, 'RULES')
@@ -105,6 +116,7 @@ assert len(NAMES) == 72 and len(SETS) == 18 and len(ITEM_NAMES) == 18 and len(DA
 assert len(DAO_RULES) == 72 and len(ITEM_PRICES) == 18 and len(ITEM_WEIGHTS) == 18
 assert sorted(s for g in SETS for s in g) == list(range(72)), 'every kind in exactly one set'
 assert len(TRIAL_MINUTES) == 9 and len(STAGE_WORDS) == 6
+assert len(BASE) == 10 and len(SUB_NEED) == 4 and len(TAM_CANH_AT) == 5 and len(THAN_THUC_AT) == 9 and len(THE_AT) == len(THE_TIERS)
 
 WEIGHT_SUM = sum(ITEM_WEIGHTS)
 
@@ -265,43 +277,91 @@ Mỗi lần lên tầng được đếm cho đạo hiệu «Bách Tầng Công P
 
 
 def part2():
+    asks = ['—', f'căn cơ từ {SUB_NEED[1]}', 'ngưng đan: 3 ngày, mỗi ngày một buổi liền 45′',
+            f'lôi kiếp {TRIAL_DAYS[2]} ngày × {TRIAL_MINUTES[2]}′ kèm tâm ma kiếp', 'thần thức Lục trọng; 3 lần ngộ đạo'] + \
+        [f'thiên kiếp {TRIAL_DAYS[r - 1]} ngày × {TRIAL_MINUTES[r - 1]}′' for r in range(5, 10)]
     rows = []
     for r in range(10):
         floor = f'{num(FLOOR_VAN[r])} vạn' if r < 9 else f'{num(TIEN_VAN[0])} vạn'
-        if r == 0:
-            gate, need = '—', 'bắt đầu'
-        else:
-            gate = e(GATES[r])
-            need = f'{TRIAL_DAYS[r - 1]} ngày × {TRIAL_MINUTES[r - 1]} phút'
-        rows.append([img(f'realm_{r}', 'ri'), f'<b>{e(REALM_NAMES[r])}</b>', floor, gate, need, f'{50 * r} LT' if r else '—'])
-    realm_table = table(['', 'Cảnh giới', 'Từ', 'Cửa thiên kiếp', 'Phải đọc liền', 'Thưởng'], rows, 'realms')
+        rows.append([img(f'realm_{r}', 'ri'), f'<b>{e(REALM_NAMES[r])}</b>', floor, '—' if r == 0 else e(GATES[r]), asks[r],
+                     f'{BASE[r]}%' if r else '—'])
+    realm_table = table(['', 'Cảnh giới', 'Từ', 'Cửa ải', 'Phải vượt', 'Nền'], rows, 'realms')
     pham = ' · '.join(f'{e(PHAM[i])} {num(TIEN_VAN[i])}' for i in range(9))
-    return chapter('II', 'Cảnh giới và thiên kiếp', 'Tu vi đưa bạn qua chín đại cảnh giới tới Tiên nhân; mỗi đại cảnh giới có một cửa thiên kiếp chặn đường.') + f'''
+    tam_canh = ' · '.join(f'{e(TAM_CANH_TIERS[i])} {TAM_CANH_AT[i]}' for i in range(5))
+    the = ' · '.join(f'{e(THE_TIERS[i])} {THE_AT[i]}' for i in range(len(THE_TIERS)))
+    measures = table(['Thước đo', 'Tính từ nhật ký đọc'], [
+        ['<b>Linh lực</b>', 'tu vi: chữ đọc lật trang, theo các luật dưới đây'],
+        ['<b>Căn cơ</b> 0 – 100', '2 × ngày đọc từ 30′ (30 ngày) + 10 × cuốn đọc trọn (90 ngày, tối đa 4) + gốc Trúc Cơ; '
+                                  'trừ 1 cho mỗi lần nhảy chương quá 5 lần trong 30 ngày'],
+        ['<b>Tâm cảnh</b> 0 – 100', f'chuỗi ngày (tối đa 30) + 3 × buổi từ 45′ (30 ngày, tối đa 10) + (30 − 2 × lần nhảy chương) + 10 nếu '
+                                    f'đọc xong một cuốn trong 30 ngày; trừ 10 mỗi lần hỏng, 3 mỗi cuốn bỏ dở. Bậc: {tam_canh}'],
+        ['<b>Thần thức</b>', f'5 × số tác giả đã đọc trọn một cuốn + số cuốn đọc trọn; Nhất trọng tới Cửu trọng '
+                             f'({" · ".join(str(x) for x in THAN_THUC_AT)})'],
+        ['<b>Thể phách</b>', f'giờ đọc + 3 × buổi liền từ 60′. Bậc: {the}'],
+    ], 'measures')
+    rescue = table(['Trợ lực', 'Công dụng'], [
+        ['Phá Cảnh Đan', 'ở bình cảnh: lần đột phá kế tiếp +15%; khi đang độ lôi kiếp, thiên kiếp: thêm một ngày'],
+        ['Hộ Mạch Đan', 'kỳ ngưng đan, lôi kiếp, thiên kiếp đang độ được lỡ thêm một ngày'],
+        ['Định Thần Phù', 'hôm nay tính thêm 15 phút (cả buổi ngưng đan); tâm ma −10'],
+        ['Thọ Nguyên Đan', 'lấy lại một nửa tu vi đã mất; không mất gì thì chữa lành kinh mạch'],
+        ['Bộ Đạo Môn Tứ Bảo', 'mỗi kỳ kiếp được lỡ một ngày'],
+        ['Bộ Thất Tinh Bắc Đẩu', 'mỗi ngày độ kiếp cần ít hơn 5 phút (trừ ngưng đan)'],
+    ])
+    fails = table(['Khi hỏng', 'Lúc nào', 'Hậu quả'], [
+        ['<b>Hụt khí</b>', 'tỉ lệ từ 50%', 'mất 2% linh lực'],
+        ['<b>Kinh mạch tổn thương</b>', 'tỉ lệ dưới 50%', '5 ngày tu luyện chỉ còn 70%'],
+        ['<b>Tẩu hỏa nhập ma</b>', 'tâm ma từ 70', 'tâm cảnh −20, căn cơ −10 trong 30 ngày; chỉ phá lại khi tâm ma dưới 50'],
+    ])
+    return chapter('II', 'Cảnh giới và đột phá', 'Từ bản 2.0, người tu không chỉ có tu vi: năm thước đo, tâm ma, bình cảnh, và mỗi lần lên đại cảnh giới là một lần đột phá do bạn tự bấm.') + f'''
 {h2('Mười cảnh giới')}
 {realm_table}
-<p class="small">Mỗi đại cảnh giới chia đều ba kỳ: sơ kỳ, trung kỳ, hậu kỳ (36 cấp tính cả Tiên nhân). Tiên nhân có chín phẩm
-(vạn chữ): {pham}. Từ Tiên nhân không còn thiên kiếp.</p>
+<p class="small">Nhân giới là Luyện Khí tới Hóa Thần, Linh giới là Luyện Hư tới Độ Kiếp Phi Thăng. Tiên nhân có chín phẩm
+(vạn chữ): {pham}. Từ Tiên nhân không còn cửa ải.</p>
 
-{h2('Độ kiếp diễn ra thế nào')}
+{h2('Năm thước đo', True)}
+{measures}
+<p><b>Tâm ma</b> (0 – 100) tăng khi đứt chuỗi (+10), nhảy chương quá 3 lần một ngày (+2 mỗi lần), đột phá hỏng (+10), kiếp hỏng
+(+15); giảm khi có buổi đọc từ 45 phút (−3), ngày đọc đủ 30 phút (−1), đọc xong sách (−10), Định Thần Phù (−10). Tâm ma trừ thẳng
+một nửa vào tỉ lệ đột phá.</p>
+
+{h2('Tiểu cảnh, nút thắt, bình cảnh', True)}
+<ul>
+<li>Luyện Khí có <b>9 tầng</b>. Từ Trúc Cơ, mỗi đại cảnh giới chia đều bốn <b>tiểu cảnh</b>: sơ kỳ, trung kỳ, hậu kỳ, viên mãn.</li>
+<li><b>Nút thắt</b>: vào trung kỳ, hậu kỳ, viên mãn cần căn cơ {SUB_NEED[1]}, {SUB_NEED[2]}, {SUB_NEED[3]}. Thiếu thì kẹt lại, chữ đọc
+chỉ 50% thành linh lực cho tới khi đọc đều trở lại. Tiểu cảnh đã mở thì không mất.</li>
+<li><b>Bình cảnh</b>: tới đỉnh cảnh giới, đan điền đầy. Chữ đọc thêm chỉ 20% thành linh lực, 80% thành <b>áp chế</b>. Mỗi 10% áp chế
+(so với cả cảnh giới) cộng 5% tỉ lệ đột phá, tối đa 20%. Phá ngay hay đè cảnh giới cho chắc là lựa chọn của bạn.</li>
+</ul>
+
+{h2('Đột phá diễn ra thế nào', True)}
 <ol>
-<li>Tu vi chạm ngưỡng cảnh giới mới thì thiên kiếp bắt đầu ngay hôm đó. Cảnh giới bị giữ ở hậu kỳ cảnh giới cũ,
-nhưng <b>chữ vẫn cộng vào tu vi</b>: vượt kiếp xong có thể nhảy liền mấy cấp.</li>
-<li>Phải có đủ số ngày đạt số phút của cửa kiếp. Ngày đầu tiên và hôm nay chỉ được tính khi đã đủ phút, không bị phạt khi thiếu.</li>
-<li>Một <b>ngày ở giữa thiếu phút</b> là độ kiếp thất bại: tu vi lui về một phần chín dưới cửa (vẫn ở hậu kỳ), phần mất
-được ghi sổ. Kiếp sẽ bắt đầu lại khi tu vi chạm ngưỡng lần nữa.</li>
-<li>Đủ ngày: cảnh giới mở, nhận <b>50 LT × số thứ tự cảnh giới</b> (Trúc Cơ 50, Kim Đan 100… Tiên nhân 450).</li>
+<li>Tới bình cảnh và đủ điều kiện của cửa ải: xem tab <b>Tu vi › Đột phá</b>, mỗi điều kiện có ô đánh dấu.</li>
+<li>Cửa có kiếp (ngưng đan, lôi kiếp, thiên kiếp): bấm <b>Bắt đầu</b>. Phải có đủ số ngày đạt số phút; ngày đầu và hôm nay chỉ
+được tính khi đã đủ. Một ngày ở giữa thiếu là kiếp hỏng: tâm ma +15, hồi khí 2 ngày, <b>không mất tu vi</b>. Kiếp đã vượt
+thì giữ, đột phá hỏng không phải độ lại.</li>
+<li>Bấm <b>Đột phá</b> hai lần. Tỉ lệ = nền + căn cơ / 2 + bậc tâm cảnh × 5 + áp chế + Phá Cảnh Đan 15 + 10 mỗi lần hỏng trước
+(tối đa 30) − tâm ma / 2, trong khoảng 5 – 95%. Tỉ lệ hiện từng phần trước khi bấm.</li>
+<li>Thành: cảnh giới mở, nhận <b>50 LT × số thứ tự</b> (Trúc Cơ 50 … Tiên nhân 450). Hỏng: tâm ma +10, hồi khí 2 ngày và một
+trong ba mức dưới đây. Không mức nào làm rớt cảnh giới.</li>
 </ol>
+{fails}
+
+{h2('Bốn cửa ải Nhân giới', True)}
+<ul>
+<li><b>Trúc Cơ Quan</b>: căn cơ từ {SUB_NEED[1]}. Phẩm Trúc Cơ theo căn cơ cộng hai lần điểm áp chế lúc phá: dưới 45 hạ phẩm, dưới 65
+trung, dưới 85 thượng, từ 85 hoàn mỹ; căn cơ gốc {" / ".join(f"+{x}" for x in TRUC_CO_GOC)} theo suốt đời tu.</li>
+<li><b>Ngưng Đan</b>: 3 ngày, mỗi ngày <b>một buổi liền</b> từ 45 phút (thoát ra là buổi mới). Phẩm Kim Đan theo độ dư của lần gieo,
+từ cửu phẩm tới nhất phẩm; tu tới Nguyên Anh nhanh thêm 2% mỗi phẩm. Vô Hà Kim Đan (+25%) cần dư từ 70 và căn cơ từ 90.</li>
+<li><b>Phá Đan Thành Anh</b>: lôi kiếp {TRIAL_DAYS[2]} ngày × {TRIAL_MINUTES[2]} phút, cùng lúc là <b>tâm ma kiếp</b>: mỗi lần nhảy chương,
+đổi sang cuốn khác, bỏ buổi đọc dưới 10 phút là một lần tâm ma tấn công; ba lần là kiếp hỏng. Chọn một cuốn và đọc tới nơi.</li>
+<li><b>Cảm Ngộ Thiên Địa</b>: thần thức Lục trọng và ba lần <b>ngộ đạo</b>: ba cuốn từ 20 vạn chữ, mỗi cuốn đọc trọn trong 30 ngày kể
+từ ngày mở, đọc xong sau khi vào Nguyên Anh.</li>
+</ul>
+<p class="small">Linh giới (từ Luyện Thần Phản Hư) tạm giữ thiên kiếp của bản 1.0 trước khi đột phá; pháp tắc, phi thăng kiếp,
+cửu cửu thiên kiếp sẽ tới ở các bản sau.</p>
 
 {h2('Đồ trợ kiếp')}
-{table(['Trợ lực', 'Công dụng'], [
-    ['Hộ Mạch Đan', 'kỳ kiếp đang độ được lỡ thêm một ngày'],
-    ['Phá Cảnh Đan', 'tính thêm một ngày đã vượt (từ cửa Phá Đan Thành Anh)'],
-    ['Định Thần Phù', 'hôm nay được tính thêm 15 phút'],
-    ['Thọ Nguyên Đan', 'sau thất bại: lấy lại một nửa tu vi đã mất'],
-    ['Bộ Đạo Môn Tứ Bảo', 'mỗi kỳ kiếp được lỡ một ngày'],
-    ['Bộ Thất Tinh Bắc Đẩu', 'mỗi ngày độ kiếp cần ít hơn 5 phút'],
-])}
-{tip('Trang Tu vi ghi số chữ còn tới cửa kiếp. Khi còn dưới 2 vạn, hãy nhìn lịch tuần tới: nếu có mấy ngày bận, mua sẵn Định Thần Phù (60 LT) và Hộ Mạch Đan (250 LT), hoặc giữ lại Ngưng Thần Đan chưa dùng để khỏi bị đẩy vào kiếp sớm.')}
+{rescue}
 </section>'''
 
 
@@ -382,7 +442,7 @@ Hỗn Độn phẩm là phẩm cao nhất, không hợp luyện được.</p>
 
 
 def part5():
-    item_cond = 'Đan phù chỉ rơi loại dùng được lúc đó: Tụ Linh Đan cần một ô Thiên phẩm trở lên đang luyện; Phá Cảnh Đan cần đã mở Kim Đan; Thọ Nguyên Đan cần đã mất tu vi; Hộ Lô Phù, Dẫn Lôi Phù cần lò Thiên phẩm hoặc đã mở Nguyên Anh.'
+    item_cond = 'Đan phù chỉ rơi loại dùng được lúc đó: Tụ Linh Đan cần một ô Thiên phẩm trở lên đang luyện; Phá Cảnh Đan cần đã mở Kim Đan; Thọ Nguyên Đan cần đã mất tu vi hoặc đang bị thương kinh mạch; Hộ Lô Phù, Dẫn Lôi Phù cần lò Thiên phẩm hoặc đã mở Nguyên Anh.'
     gift = ' · '.join(f'{e(TIER_NAMES[t])} {str(GIFT_ODDS[t] / 10).replace(".", ",").replace(",0", "")}%' for t in range(6))
     return chapter('V', 'Kỳ ngộ, linh thạch, bế quan, bí cảnh', 'Những dòng chảy phụ của tu hành: cơ duyên ngẫu nhiên, tiền tiêu, những buổi bế quan và cửa bí cảnh mỗi tuần.') + f'''
 {h2('Kỳ ngộ')}
@@ -405,7 +465,7 @@ Tụ Bảo Phù gieo ba lần.</p>
     ['Mỗi vạn chữ đọc', '5 (×2 ngày rằm, mồng một; ×3 Tết)'],
     ['Bế quan viên mãn 30 / 60 / 90 / 120 phút', '15 / 35 / 60 / 90 (cũng nhân ngày lễ)'],
     ['Qua bí cảnh tuần', '20'],
-    ['Vượt thiên kiếp', '50 × số thứ tự cảnh giới'],
+    ['Đột phá đại cảnh giới', '50 × số thứ tự cảnh giới'],
     ['Vượt kiếp phá lô Thiên / Âm Dương / Hỗn Độn', '60 / 90 / 120'],
     ['Hợp luyện', '10 – 50 theo phẩm'],
     ['Gom đủ một bộ (lần đầu)', '50'],
@@ -451,10 +511,10 @@ def part6():
 <ol class="tenets">
 <li><b>Không để ô lò trống.</b> Mỗi chữ đốt cùng lúc cả sáu ô; một ô trống là một phần sáu sản lượng bỏ phí.</li>
 <li><b>Lật trang, đừng kéo.</b> Chữ chỉ được tính khi lật tới; nhảy qua thì mất chữ.</li>
-<li><b>Ba mươi phút, năm ngày một tuần.</b> Một nhịp đủ cho bí cảnh, cho cửa kiếp đầu và cho kiếp phá lô Âm Dương.</li>
+<li><b>Ba mươi phút mỗi ngày.</b> Đủ cho bí cảnh, kiếp phá lô Âm Dương, và giữ căn cơ 60 để không kẹt tiểu cảnh.</li>
 <li><b>Ngày rằm, mồng một là ngày vàng.</b> Linh thạch ×2, Tết ×3; bế quan 120 phút + Thiên Hỏa Phù để lò cháy dồn.</li>
 <li><b>Bồi Nguyên Đan vào ô có số chữ cần lớn nhất.</b> 10% của chặng Hỗn Độn là 13,5 vạn chữ, cho 50 LT.</li>
-<li><b>Tích đồ hộ thân trước cửa kiếp.</b> Một lần thất bại mất cả một phần chín cảnh giới và mấy ngày công.</li>
+<li><b>Đè cảnh giới rồi mới phá.</b> Áp chế cộng tới 20%; một lần hỏng mất 2% linh lực, hai ngày hồi khí và thêm tâm ma.</li>
 <li><b>Không để nhiều lò Thiên phẩm chín cùng lúc trước tuần bận.</b> Mỗi lò là mấy ngày phải đọc đủ phút.</li>
 <li><b>Hợp luyện đều tay hàng Hoàng, Huyền dư</b>; hàng Âm Dương, Hỗn Độn trùng thì để Luyện Hóa Phù.</li>
 <li><b>Tẩy Tủy Đan dành cho khoáng thạch phẩm cao nhất trong túi.</b> Âm Dương lên Hỗn Độn chênh 800 LT giá chợ.</li>
@@ -464,8 +524,8 @@ def part6():
 {h2('Lộ trình theo giai đoạn', True)}
 <div class="stage"><b>Tân thủ · Luyện Khí → Kim Đan (0 – 30 vạn).</b> Đọc đều 30 phút. Để lò tự nạp 3 ô khoáng thạch; 3 ô
 còn lại đặt cuốn đang đọc: chặng Hoàng (2,7 vạn) và chặng Huyền (6,75 vạn), cộng trọn quyển nếu sách dài. Mục tiêu: pháp bảo
-đầu tiên, chuỗi 7 ngày, bí cảnh tuần đầu, bộ đầu tiên. Hai cửa kiếp đầu chỉ 3 ngày × 30 phút.</div>
-<div class="stage"><b>Trung kỳ · Kim Đan → Hợp Thể (30 – 250 vạn).</b> Cửa kiếp dài dần (35 – 45 phút, 4 – 5 ngày). Đẩy chặng
+đầu tiên, chuỗi 7 ngày, bí cảnh tuần đầu, bộ đầu tiên. Trúc Cơ Quan chỉ cần căn cơ 30; ngưng đan cần ba buổi liền 45 phút.</div>
+<div class="stage"><b>Trung kỳ · Kim Đan → Hợp Thể (30 – 250 vạn).</b> Lôi kiếp kèm tâm ma kiếp: một cuốn, đọc tới nơi; Hóa Thần cần đọc rộng (ngộ đạo). Đẩy chặng
 sách lên Địa (13,5 vạn) và Thiên (27 vạn); kiếp phá lô Thiên phẩm chỉ 2 ngày × 20 phút, rất dễ. Bắt đầu nhắm bộ: xem bảng bộ
 theo độ khó ở cuối quyển này. Giữ sẵn 2 – 3 Định Thần Phù.</div>
 <div class="stage"><b>Hậu kỳ · Hợp Thể → Độ Kiếp Phi Thăng (250 – 1.000 vạn).</b> Kiếp 50 – 60 phút, 6 – 7 ngày: dùng Phá Cảnh
@@ -567,18 +627,18 @@ def part9():
 ITEM_TIPS = [
     'Rót vào ô có số chữ cần lớn nhất: chặng Hỗn Độn được 20 vạn chữ một viên (40 vạn với bộ Linh Đăng Chiếu Lộ).',
     'Dùng khi cả 6 ô đều đang cháy, tốt nhất trong buổi bế quan vào ngày rằm hay mồng một.',
-    'Chỉ dùng khi đang độ kiếp, từ cửa Phá Đan Thành Anh trở lên; dành cho kiếp dài (Phi Thăng 7 ngày × 60 phút). Dùng một lần là được đạo hiệu «Phá Cảnh Thần Tốc».',
+    'Hai cách dùng: ở bình cảnh, lần đột phá kế tiếp +15% (hết sau lần bấm, thành hay hỏng); khi đang độ lôi kiếp, thiên kiếp, thêm một ngày. Dùng một lần là được đạo hiệu «Phá Cảnh Thần Tốc».',
     'Không cần bấm: nằm trong túi là tự cháy thay khi lò lỡ một ngày. Mang 1 – 2 lá khi có lò Thiên phẩm sắp chín.',
     'Món đáng mua nhất Phường thị. Rót vào chặng Âm Dương, Hỗn Độn: mỗi viên 6,75 – 13,5 vạn chữ.',
-    'Cẩn thận khi gần cửa kiếp: thêm 1 vạn tu vi có thể kéo bạn vào thiên kiếp sớm hơn dự tính. Dùng ngay sau khi vượt kiếp.',
-    'Uống ngay đầu kỳ kiếp nếu đã biết trước có ngày bận; chỉ dùng được khi đang độ kiếp.',
+    'Dùng khi đã ở bình cảnh: 1 vạn tu vi này vào thẳng, không bị chia còn 20% như chữ đọc.',
+    'Uống ngay đầu kỳ ngưng đan, lôi kiếp hay thiên kiếp nếu đã biết trước có ngày bận; chỉ dùng được khi đang độ.',
     'Dùng cho khoáng thạch phẩm cao nhất còn nằm trong túi; Âm Dương lên Hỗn Độn là lời nhất.',
     'Đặt vào chặng Địa phẩm vừa luyện lại từ đầu để được trọn 13,5 vạn chữ. Đừng mua: 10 Bồi Nguyên Đan rẻ hơn mà làm được hơn.',
     'Dành cho món bạn quý nhất, như một Thần khí: món có khí linh không bao giờ bị hợp luyện lấy đi.',
-    'Chỉ rơi khi bạn đã mất tu vi vì độ kiếp thất bại. Uống trước khi chạm lại cửa kiếp để lấy lại một nửa phần đã mất.',
+    'Chỉ rơi khi bạn đã mất tu vi (hụt khí) hay đang bị kinh mạch tổn thương: lấy lại một nửa phần đã mất, không mất gì thì chữa lành kinh mạch.',
     'Bật đầu buổi bế quan: gấp ba của phù nhân gấp đôi của bế quan, mỗi vạn chữ có 72% gặp kỳ ngộ.',
     'Dùng vào cuối tuần khi đã có 4 ngày; không dùng được khi bí cảnh tuần đã qua.',
-    'Rẻ và cứu được cả kỳ kiếp. Giữ sẵn 2 – 3 lá. Không tính cho chuỗi ngày đọc hay bế quan.',
+    'Rẻ và cứu được cả kỳ kiếp; còn hạ tâm ma 10, nên đốt một lá trước khi đột phá. Không tính cho chuỗi ngày đọc hay bế quan.',
     'Dùng cho lò Hỗn Độn (4 ngày × 40 phút) để bớt một ngày phải đọc đủ phút.',
     'Niêm ngày lỡ gần nhất trong 7 ngày qua. Giữ cho các mốc chuỗi 30, 60, 100, 200, 365 ngày.',
     'Không mất hạn: lá phù chờ tới lần quà kế tiếp. Nhiều lá thì nhiều lần quà được gieo ba lần.',
@@ -623,7 +683,10 @@ def appendix():
         ['Quà', '1 khoáng thạch mỗi 10 vạn chữ'],
         ['Lò', '6 ô; tự nạp 3 khoáng thạch; mỗi cuốn 3 ô'],
         ['Kiếp phá lô', 'Thiên 2×20′ · Âm Dương 3×30′ · Hỗn Độn 4×40′'],
-        ['Thiên kiếp', '3×30′ … 7×60′ (xem Quyển II)'],
+        ['Tiểu cảnh', f'căn cơ {SUB_NEED[1]} / {SUB_NEED[2]} / {SUB_NEED[3]} để vào trung, hậu kỳ, viên mãn'],
+        ['Bình cảnh', '20% chữ thành linh lực, 80% thành áp chế (tối đa +20%)'],
+        ['Đột phá', 'nền 40% … 15% + căn cơ/2 + tâm cảnh + áp chế − tâm ma/2'],
+        ['Thiên kiếp', '4×35′ … 7×60′ (xem Quyển II)'],
         ['Bí cảnh', '5 ngày × 30′ trong tuần → khoáng thạch ≥ Huyền + 20 LT'],
         ['Bế quan', '30/60/90/120′ → 15/35/60/90 LT; lò ×1,5; kỳ ngộ ×2'],
         ['Hợp luyện', '3 món dư → 1 khoáng thạch phẩm trên'],

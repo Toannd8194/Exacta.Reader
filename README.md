@@ -4,15 +4,36 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-1.0.1.apk`](dist/Van-Quyen-Tien-Do-1.0.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.0.apk`](dist/Van-Quyen-Tien-Do-2.0.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
-Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, 54 trang): [`dist/Van-Quyen-Tien-Do-1.0.1-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-1.0.1-Cam-nang.pdf).
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, 56 trang, theo luật bản 2.0): [`dist/Van-Quyen-Tien-Do-2.0-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.0-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện 72 pháp bảo, 18 bộ, 18 đan dược
 và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
 
 Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, dừng ở chạm Tiên cảnh):
 [`docs/Chien-luoc-nang-cap-tu-tien.md`](docs/Chien-luoc-nang-cap-tu-tien.md), bản PDF
 [`docs/Chien-luoc-nang-cap-tu-tien.pdf`](docs/Chien-luoc-nang-cap-tu-tien.pdf) (`python tools/md_pdf.py <tệp .md>`).
+Bản 2.0 làm bước đầu của lộ trình; các bước 2.1 – 2.6 còn đó.
+
+## Bản 2.0 · Ngũ Khí Triều Nguyên
+
+Bước đầu của bản thiết kế nâng cấp: người tu có thân, có tâm, và tự quyết lúc phá cảnh.
+
+- **Năm thước đo** (Tu vi › tab Thân), tính từ nhật ký đọc: linh lực (tu vi), căn cơ (ngày đọc từ 30 phút, sách đọc
+  trọn), tâm cảnh (chuỗi ngày, buổi đọc dài, đọc theo thứ tự), thần thức (tác giả và sách đọc trọn), thể phách (giờ
+  đọc, buổi liền một tiếng). Thêm **tâm ma**: đứt chuỗi, nhảy chương, thất bại làm tăng; buổi đọc dài, đọc xong sách
+  làm giảm.
+- **Tiểu cảnh**: Luyện Khí 9 tầng; từ Trúc Cơ mỗi cảnh giới có sơ, trung, hậu kỳ, viên mãn. Vào trung, hậu kỳ, viên
+  mãn cần căn cơ 30, 45, 60; thiếu thì kẹt, chữ đọc chỉ 50% thành tu vi.
+- **Bình cảnh**: tới đỉnh cảnh giới, chữ đọc chỉ 20% thành tu vi, phần còn lại thành áp chế (tối đa +20% đột phá).
+- **Đột phá tự bấm** (tab Đột phá): điều kiện có ô đánh dấu, tỉ lệ hiện từng phần, bấm hai lần mới gieo. Hỏng thì
+  hụt khí, kinh mạch tổn thương hay tẩu hỏa nhập ma, không bao giờ rớt cảnh giới; lần sau thêm 10%.
+- **Bốn cửa Nhân giới**: Trúc Cơ Quan (căn cơ, quyết định phẩm Trúc Cơ), Ngưng Đan (3 buổi đọc liền 45 phút, ra phẩm
+  Kim Đan), Phá Đan Thành Anh (lôi kiếp kèm tâm ma kiếp: không nhảy chương, không đổi sách, không bỏ buổi dưới 10
+  phút), Cảm Ngộ Thiên Địa (thần thức Lục trọng, ba cuốn từ 20 vạn chữ đọc trọn trong 30 ngày). Linh giới giữ thiên
+  kiếp cũ trước khi đột phá.
+- Phá Cảnh Đan còn cộng 15% cho lần đột phá; Thọ Nguyên Đan chữa kinh mạch; Định Thần Phù hạ tâm ma 10.
+- Dữ liệu cũ chuyển sang nguyên vẹn: cảnh giới đã mở giữ nguyên, phần tu vi vượt đỉnh thành áp chế.
 
 ## Bản 1.0.1 · Khắc Lậu Cổ Pháp
 
@@ -48,6 +69,7 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, d�
   | 0.10 | Bế Quan Tụ Linh | linh thạch, Phường thị, bế quan |
   | 1.0 | Vạn Pháp Quy Nhất | hợp luyện, tối ưu, Biên niên |
   | 1.0.1 | Khắc Lậu Cổ Pháp | giờ canh khắc, mục lục trọn trang, tùy chọn dạng thẻ |
+  | 2.0 | Ngũ Khí Triều Nguyên | năm thước đo, tâm ma, tiểu cảnh, bình cảnh, đột phá tự bấm |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.
@@ -225,7 +247,7 @@ khóa debug.
 ## Cấu trúc
 
 - `game/`: cảnh giới (`Realm`), lịch âm và tiết khí (`Lunar`), pháp bảo (`Treasure`), đạo hiệu (`DaoHieu`), Niên kỷ (`NienKy`), chữ của Home (`Texts`).
-- `data/`: dữ liệu lưu trong một tệp JSON (`Store`, kèm thiên kiếp, bí cảnh, đạo hiệu), quét sách, bìa, đếm chữ (`Library`), CSS chèn vào chương (`BookCss`).
+- `data/`: dữ liệu lưu trong một tệp JSON (`Store`, kèm thiên kiếp, bí cảnh, đạo hiệu), luật tu luyện 2.0 (`TuLuyen`: năm thước đo, tâm ma, tiểu cảnh, đột phá), quét sách, bìa, đếm chữ (`Library`), CSS chèn vào chương (`BookCss`).
 - `ui/`: bộ vẽ kiểu Exacta.OS (`Ink`), Home 6 kiểu (`HomeView`), khung màn có tab (`TabScreen`), bảng chỉnh khi đọc (`ReaderSheet`).
 - Các màn: `HomeActivity`, `LibraryActivity`, `ReaderActivity`, `TuViActivity`, `PhapBaoActivity`, `DaoHieuActivity`, `NienKyActivity`, `SettingsActivity`.
 

@@ -173,36 +173,60 @@ class Ink(private val context: Context, width: Int) {
      * Nine cells in three rising groups (sơ, trung, hậu kỳ) filled to `ninths`, the stage names under,
      * the current one bold. Returns the y below.
      */
-    fun realmBar(c: Canvas, x: Float, y: Float, w: Float, ninths: Double, labels: List<String>, here: Int): Float {
-        val heights = floatArrayOf(7f, 11f, 15f)
+    fun realmBar(c: Canvas, x: Float, y: Float, w: Float, ninths: Double, labels: List<String>, here: Int, groups: Int = 3): Float {
         val gg = 8 * u
         val cg = 3 * u
-        val cw = (w - 2 * gg - 6 * cg) / 9
+        val n = groups * 3
+        val cw = (w - (groups - 1) * gg - groups * 2 * cg) / n
         val gw = 3 * cw + 2 * cg
-        val x0 = x + (w - (3 * gw + 2 * gg)) / 2
+        val x0 = x + (w - (groups * gw + (groups - 1) * gg)) / 2
         val base = y + 15 * u
-        for (i in 0 until 9) {
+        for (i in 0 until n) {
             val g = i / 3
-            val hh = heights[g] * u
+            val hh = (7f + 8f * g / (groups - 1)) * u
             val cx = x0 + g * (gw + gg) + (i % 3) * (cw + cg)
             val r = RectF(cx, base - hh, cx + cw, base)
             val f = (ninths - i).coerceIn(0.0, 1.0).toFloat()
             if (f >= 1f) {
                 c.drawRoundRect(r, 3 * u, 3 * u, fill)
             } else {
-                c.drawRoundRect(inset(r, 0.5f * u), 3 * u, 3 * u, stroke(if (g == 2) 2f else 1.2f))
+                c.drawRoundRect(inset(r, 0.5f * u), 3 * u, 3 * u, stroke(if (g == groups - 1) 2f else 1.2f))
                 if (f > 0) c.drawRect(cx + u, base - hh + u, cx + u + (cw - 2 * u) * f, base - u, fill)
             }
         }
         val p = small
         val pb = smallBold
         val ly = base + 5 * u
-        for (g in 0 until 3) {
+        for (g in 0 until groups) {
             val paint = if (g == here) pb else p
             val lab = fit(labels[g], gw + gg - 2 * u, paint)
             text(c, lab, x0 + g * (gw + gg) + (gw - paint.measureText(lab)) / 2, ly, paint)
         }
         return ly + lineH(p)
+    }
+
+    /** The realm bar of 2.0: three groups of tầng in Luyện Khí, four tiểu cảnh after. */
+    fun realmBar(c: Canvas, x: Float, y: Float, w: Float, bar: com.exacta.reader.data.TuLuyen.Bar): Float =
+        realmBar(c, x, y, w, bar.cells, bar.labels, bar.here, bar.groups)
+
+    /** A meter: a thin outlined bar filled to `f` (0..1). */
+    fun meter(c: Canvas, x: Float, y: Float, w: Float, f: Float, h: Float = 12 * u) {
+        val r = RectF(x, y, x + w, y + h)
+        c.drawRoundRect(inset(r, 0.6f * u), h / 2, h / 2, stroke(1.4f))
+        val v = f.coerceIn(0f, 1f)
+        if (v > 0f) c.drawRoundRect(RectF(x, y, x + maxOf(h, w * v), y + h), h / 2, h / 2, fill)
+    }
+
+    /** A box ticked or not, for the conditions of a gate. */
+    fun check(c: Canvas, x: Float, y: Float, s: Float, met: Boolean) {
+        val r = RectF(x, y, x + s, y + s)
+        if (met) {
+            c.drawRoundRect(r, 3 * u, 3 * u, fill)
+            val p = Path().apply { moveTo(x + s * 0.22f, y + s * 0.52f); lineTo(x + s * 0.43f, y + s * 0.72f); lineTo(x + s * 0.8f, y + s * 0.3f) }
+            c.drawPath(p, Paint(stroke(2.2f)).apply { color = Color.WHITE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND })
+        } else {
+            c.drawRoundRect(inset(r, 0.7f * u), 3 * u, 3 * u, stroke(1.6f))
+        }
     }
 
     // --- Controls ------------------------------------------------------------------------------

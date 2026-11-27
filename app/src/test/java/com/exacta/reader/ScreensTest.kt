@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import com.exacta.reader.data.Beast
 import com.exacta.reader.data.Ore
 import com.exacta.reader.data.Store
+import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.Treasure
 import com.exacta.reader.ui.HomeView
 import com.exacta.reader.ui.ReaderSheet
@@ -122,6 +123,15 @@ class ScreensTest {
         Store.trialPassed = 2
         Store.unseen = 2
         Store.homeStyle = 0
+        // 2.0: the state the move from 1.0 makes (Kim Đan at its ceiling, a lôi kiếp under way).
+        for (d in 0..2) Store.daySeconds[today - d] = 2700L + d * 300
+        TuLuyen.reset()
+        TuLuyen.migrate()
+        TuLuyen.tamMa = 24
+        TuLuyen.dayLong[today - 1] = 2
+        TuLuyen.dayVeryLong[today - 3] = 1
+        TuLuyen.coPham = 2
+        TuLuyen.danPham = 5
     }
 
     private fun cover(f: File, title: String, i: Int) {
@@ -220,6 +230,37 @@ class ScreensTest {
     @Test fun nienKy() = tabs(NienKyActivity::class.java, "nienky")
     @Test fun settings() = tabs(SettingsActivity::class.java, "settings")
     @Test fun bienNien() = tabs(BienNienActivity::class.java, "biennien")
+
+    /** The second pages of Thân and Đột phá, and the breakthrough ready and far off. */
+    @Test
+    fun dotPha() {
+        val a = Robolectric.buildActivity(TuViActivity::class.java).setup().get()
+        a.resources.displayMetrics.xdpi = 300f
+        idle()
+        for (t in listOf(1, 2)) {
+            a.selectTab(t)
+            a.page = 1
+            a.refresh()
+            idle()
+            shoot(root(a), "tuvi_${t}_p2")
+        }
+        Store.trialStart = -1
+        TuLuyen.trialDone = 3
+        TuLuyen.restUntil = -1
+        a.selectTab(2)
+        idle()
+        shoot(root(a), "dotpha_ready")
+        Store.realmCap = 0
+        Store.totalWords = 95_000
+        TuLuyen.reset()
+        TuLuyen.migrate()
+        a.selectTab(2)
+        idle()
+        shoot(root(a), "dotpha_early")
+        a.selectTab(0)
+        idle()
+        shoot(root(a), "tuvi_0_early")
+    }
 
     @Test
     fun merge() {

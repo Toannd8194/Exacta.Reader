@@ -127,7 +127,7 @@ object Treasure {
     const val TAY_TUY_DAN = 7     // an ore of the bag one grade up
     const val CUU_CHUYEN_DAN = 8  // a slot below Thiên phẩm finished at once
     const val KHAI_LINH_DAN = 9   // a chosen treasure's spirit wakes
-    const val THO_NGUYEN_DAN = 10 // half the tu vi lost to failed trials comes back
+    const val THO_NGUYEN_DAN = 10 // half the tu vi lost comes back, else kinh mạch heals
     const val TAM_BAO_PHU = 11    // kỳ ngộ three times as likely for 3 vạn words
     const val BI_CANH_PHU = 12    // one more day of bí cảnh this week
     const val DINH_THAN_PHU = 13  // 15 more minutes counted today (trials, bí cảnh)
@@ -144,18 +144,18 @@ object Treasure {
     val ITEM_TEXTS = arrayOf(
         "Linh khí ngưng thành đan: rót vào một lò Thiên phẩm trở lên, đẩy thêm 15% tiến độ.",
         "Phù chú dẫn thiên hỏa: 2 vạn từ kế tiếp, lò luyện cháy gấp đôi.",
-        "Đan phá bình cảnh: khi độ kiếp từ Phá Đan Thành Anh trở lên, tính thêm một ngày đã vượt.",
+        "Đan phá bình cảnh: lần đột phá kế tiếp thêm 15%; khi đang độ lôi kiếp hay thiên kiếp, tính thêm một ngày đã vượt.",
         "Phù hộ lô: khi kiếp phá lô lỡ một ngày, phù tự cháy thay, lò không vỡ.",
         "Đan bồi bổ nguyên khí: rót vào bất kỳ lò nào đang luyện, đẩy thêm 10%.",
         "Đan ngưng tụ thần thức: tu vi tăng ngay 1 vạn từ.",
-        "Đan hộ tâm mạch: kỳ thiên kiếp đang độ được lỡ thêm một ngày mà không thất bại.",
+        "Đan hộ tâm mạch: kỳ ngưng đan, lôi kiếp hay thiên kiếp đang độ được lỡ thêm một ngày mà không thất bại.",
         "Đan tẩy kinh phạt tủy: một viên khoáng thạch trong túi lên một phẩm.",
         "Kim đan chín lần luyện: một lò dưới Thiên phẩm luyện thành ngay.",
         "Đan khai mở linh trí: đánh thức khí linh của một pháp bảo tự chọn.",
-        "Đan kéo dài thọ nguyên: lấy lại một nửa tu vi đã mất vì độ kiếp thất bại.",
+        "Đan kéo dài thọ nguyên: lấy lại một nửa tu vi đã mất; không mất gì thì chữa lành kinh mạch tổn thương.",
         "Phù tầm bảo: 3 vạn từ kế tiếp, cơ hội gặp kỳ ngộ gấp ba.",
         "Phù mở bí cảnh: tuần này tính thêm một ngày bí cảnh.",
-        "Phù định thần: hôm nay tính thêm 15 phút đọc cho thiên kiếp, bí cảnh và kiếp phá lô.",
+        "Phù định thần: hôm nay tính thêm 15 phút đọc cho thiên kiếp, bí cảnh, kiếp phá lô; tâm ma lắng 10.",
         "Phù dẫn lôi: một lò đang qua kiếp phá lô được tính thêm một ngày.",
         "Phù phong ấn: niêm một ngày lỡ trong tuần qua, chuỗi ngày đọc không đứt.",
         "Phù tụ bảo: lần quà 10 vạn từ kế tiếp gieo ba lần, lấy phẩm cao nhất.",
@@ -167,7 +167,7 @@ object Treasure {
     val ITEM_WEIGHTS = intArrayOf(8, 14, 5, 8, 14, 9, 4, 7, 2, 4, 3, 10, 7, 12, 4, 6, 6, 6)
 
     /** The nine gates of thiên kiếp, by the realm they open (1 Trúc Cơ … 9 Tiên nhân). */
-    val GATES = arrayOf("", "Trúc Cơ", "Kết Đan", "Phá Đan Thành Anh", "Anh Biến Hóa Thần", "Luyện Thần Phản Hư",
+    val GATES = arrayOf("", "Trúc Cơ Quan", "Ngưng Đan", "Phá Đan Thành Anh", "Cảm Ngộ Thiên Địa", "Luyện Thần Phản Hư",
         "Hợp Thể Quy Nguyên", "Đại Thừa Viên Mãn", "Độ Kiếp", "Phi Thăng")
 
     /** A finished book forges a treasure whose grade follows its length. */
