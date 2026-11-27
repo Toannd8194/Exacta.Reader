@@ -6,6 +6,14 @@ Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exac
 
 Tải bản cài: [`dist/Van-Quyen-Tien-Do-1.0.1.apk`](dist/Van-Quyen-Tien-Do-1.0.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, 54 trang): [`dist/Van-Quyen-Tien-Do-1.0.1-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-1.0.1-Cam-nang.pdf).
+Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện 72 pháp bảo, 18 bộ, 18 đan dược
+và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
+
+Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, dừng ở chạm Tiên cảnh):
+[`docs/Chien-luoc-nang-cap-tu-tien.md`](docs/Chien-luoc-nang-cap-tu-tien.md), bản PDF
+[`docs/Chien-luoc-nang-cap-tu-tien.pdf`](docs/Chien-luoc-nang-cap-tu-tien.pdf) (`python tools/md_pdf.py <tệp .md>`).
+
 ## Bản 1.0.1 · Khắc Lậu Cổ Pháp
 
 - **Giờ kiểu xưa** khi đọc: góc trên phải là canh giờ và khắc (vd. "Giờ Thân 4 khắc"; mỗi canh giờ 2 tiếng, mỗi khắc
