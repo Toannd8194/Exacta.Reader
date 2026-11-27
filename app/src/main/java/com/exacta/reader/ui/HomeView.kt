@@ -2,11 +2,8 @@ package com.exacta.reader.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.view.MotionEvent
@@ -15,10 +12,10 @@ import com.exacta.reader.data.Book
 import com.exacta.reader.data.Store
 import com.exacta.reader.game.DaoHieu
 import com.exacta.reader.game.Lunar
+import com.exacta.reader.game.NienKy
 import com.exacta.reader.game.Realm
 import com.exacta.reader.game.Texts
 import com.exacta.reader.game.Treasure
-import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
 import kotlin.math.cos
@@ -26,19 +23,18 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * Home, layout A2 of Exacta.OS: the book being read on top; under it a rail (Pháp bảo with a large
- * treasure, then Thư viện, Tu vi, Cài đặt) and the cultivation card. The lunar date sits in the
- * status line. Every block is a touch target.
+ * Home: the book being read across the top; the realm and the treasures side by side; the three
+ * Omega cards (thiên kiếp, bí cảnh, đạo hiệu); a dock of the other screens along the bottom. The
+ * blocks share one grid, so the page stays balanced on any screen. Every block is a touch target.
  */
 @SuppressLint("ViewConstructor")
 class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU }
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY }
 
     var book: Book? = null
     var needsPermission = false
     private var ink: Ink? = null
     private val targets = ArrayList<Pair<RectF, () -> Unit>>()
-    private val covers = HashMap<String, Bitmap?>()
 
     // Picked again on every visit, like the firmware.
     private var scripture = 0
@@ -68,12 +64,12 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         invalidate()
     }
 
-    private fun on(r: RectF, action: Action, path: String? = null) = targets.add(r to { onAction(action, path) })
+    private fun on(r: RectF, action: Action, path: String? = null) = targets.add(RectF(r) to { onAction(action, path) })
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_UP) {
-            targets.firstOrNull { it.first.contains(event.x, event.y) }?.second?.invoke()
+            targets.lastOrNull { it.first.contains(event.x, event.y) }?.second?.invoke()
         }
         return true
     }
@@ -83,53 +79,387 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val u = k.u
         val w = width.toFloat()
         val h = height.toFloat()
-        val hu = h / u
         targets.clear()
         val today = LocalDate.now()
         val lunar = Lunar.fromSolar(today.dayOfMonth, today.monthValue, today.year)
-        k.status(c, w, Lunar.ancientMonthDay(lunar))
-
+        if (Store.homeStyle != 4) k.status(c, w, Lunar.ancientMonthDay(lunar))
         val m = Ink.MARGIN * u
-        val g = Ink.GAP * u
-        var top = (Ink.STATUS_H + 12) * u
-        val bookH = (hu * 0.27f).coerceIn(210f, 320f) * u
-        val bookRect = RectF(m, top, w - m, top + bookH)
-        drawBook(c, k, bookRect)
-        val b = book
-        if (needsPermission) on(bookRect, Action.PERMISSION) else if (b != null) on(bookRect, Action.READ, b.path) else on(bookRect, Action.LIBRARY)
-        top = bookRect.bottom + g
-
-        // Other books read lately, when there is room.
-        val others = if (needsPermission) emptyList() else Store.recent(6).filter { it.path != b?.path }
-        if (others.isNotEmpty() && hu >= 900) {
-            val stripH = 128 * u
-            drawRecent(c, k, RectF(m, top, w - m, top + stripH), others)
-            top += stripH + g
+        val area = RectF(m, (Ink.STATUS_H + 12) * u, w - m, h - 10 * u)
+        when (Store.homeStyle) {
+            1 -> classic(c, k, area, today, lunar)
+            2 -> bigCover(c, k, area)
+            3 -> shelf(c, k, area)
+            4 -> minimal(c, k, RectF(m, 0f, w - m, h - 10 * u), today, lunar)
+            5 -> cultivation(c, k, area, today, lunar)
+            else -> board(c, k, area, today, lunar)
         }
+    }
 
-        // The three Omega cards along the bottom, the rail and the cultivation card above them.
-        val miniH = 148 * u
-        val miniTop = h - 10 * u - miniH
-        val miniW = (w - 2 * m - 2 * g) / 3
-        val cards = listOf(
-            RectF(m, miniTop, m + miniW, miniTop + miniH),
-            RectF(m + miniW + g, miniTop, m + 2 * miniW + g, miniTop + miniH),
-            RectF(m + 2 * (miniW + g), miniTop, w - m, miniTop + miniH),
-        )
+    private fun bookTarget(r: RectF) {
+        val b = book
+        if (needsPermission) on(r, Action.PERMISSION) else if (b != null) on(r, Action.READ, b.path) else on(r, Action.LIBRARY)
+    }
+
+    /** The three Omega cards in a row. */
+    private fun minis(c: Canvas, k: Ink, r: RectF, today: LocalDate) {
+        val g = Ink.GAP * k.u
+        val mw = (r.width() - 2 * g) / 3
+        val cards = (0 until 3).map { RectF(r.left + it * (mw + g), r.top, r.left + it * (mw + g) + mw, r.bottom) }
         drawTrial(c, k, cards[0]); on(cards[0], Action.TU_VI)
         drawBiCanh(c, k, cards[1], today); on(cards[1], Action.TU_VI)
         drawTitle(c, k, cards[2]); on(cards[2], Action.DAO_HIEU)
-
-        val lowerBottom = miniTop - g
-        val railW = 108 * u
-        drawRail(c, k, RectF(m, top, m + railW, lowerBottom))
-        val card = RectF(m + railW + g, top, w - m, lowerBottom)
-        drawCultivation(c, k, card, today, lunar)
-        on(card, Action.TU_VI)
     }
 
-    private fun coverOf(b: Book): Bitmap? = covers.getOrPut(b.cover) {
-        if (b.cover.isNotEmpty() && File(b.cover).exists()) runCatching { BitmapFactory.decodeFile(b.cover) }.getOrNull() else null
+    /** 0 · Bảng tu hành: the book, the realm and the treasures, the Omega cards, the dock. */
+    private fun board(c: Canvas, k: Ink, a: RectF, today: LocalDate, lunar: Lunar.Date) {
+        val u = k.u
+        val g = Ink.GAP * u
+        val dock = RectF(a.left, a.bottom - 92 * u, a.right, a.bottom)
+        drawDock(c, k, dock)
+        val mini = RectF(a.left, dock.top - g - 150 * u, a.right, dock.top - g)
+        minis(c, k, mini, today)
+        val free = mini.top - g - a.top
+        val bookRect = RectF(a.left, a.top, a.right, a.top + ((free - g) * 0.45f).coerceIn(220 * u, 360 * u))
+        drawBook(c, k, bookRect); bookTarget(bookRect)
+        val half = (a.width() - g) / 2
+        val realm = RectF(a.left, bookRect.bottom + g, a.left + half, mini.top - g)
+        val treasures = RectF(realm.right + g, realm.top, a.right, realm.bottom)
+        drawRealm(c, k, realm, today, lunar); on(realm, Action.TU_VI)
+        drawTreasures(c, k, treasures); on(treasures, Action.PHAP_BAO)
+    }
+
+    /** 1 · Cổ điển: Exacta.OS A2, the book on top, the rail of buttons beside the realm. */
+    private fun classic(c: Canvas, k: Ink, a: RectF, today: LocalDate, lunar: Lunar.Date) {
+        val u = k.u
+        val g = Ink.GAP * u
+        val bookRect = RectF(a.left, a.top, a.right, a.top + (a.height() * 0.33f).coerceIn(220 * u, 340 * u))
+        drawBook(c, k, bookRect); bookTarget(bookRect)
+        val railW = 128 * u
+        val rail = RectF(a.left, bookRect.bottom + g, a.left + railW, a.bottom)
+        drawRail(c, k, rail)
+        val right = RectF(rail.right + g, rail.top, a.right, a.bottom)
+        val mini = RectF(right.left, right.bottom - 150 * u, right.right, right.bottom)
+        minis(c, k, mini, today)
+        val realm = RectF(right.left, right.top, right.right, mini.top - g)
+        drawRealm(c, k, realm, today, lunar); on(realm, Action.TU_VI)
+    }
+
+    /** 2 · Bìa lớn: the cover large in the middle, the realm in one strip, the dock. */
+    private fun bigCover(c: Canvas, k: Ink, a: RectF) {
+        val u = k.u
+        val g = Ink.GAP * u
+        val dock = RectF(a.left, a.bottom - 92 * u, a.right, a.bottom)
+        drawDock(c, k, dock)
+        val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
+        drawStrip(c, k, strip); on(strip, Action.TU_VI)
+        val hero = RectF(a.left, a.top, a.right, strip.top - g)
+        k.card(c, hero)
+        bookTarget(hero)
+        val b = book
+        if (needsPermission || b == null) {
+            drawBook(c, k, hero)
+            return
+        }
+        val pad = 26 * u
+        val sb = k.smallBold
+        val textH = k.lineH(k.big) * 2 + k.lineH(k.ui10) + 18 * u + k.lineH(sb) + 14 * u + 14 * u + 14 * u + k.lineH(k.ui10Bold)
+        val coverH = hero.height() - 2 * pad - textH - 16 * u
+        val coverW = minOf(coverH * 0.67f, hero.width() - 2 * pad)
+        val cr = RectF(hero.centerX() - coverW / 2, hero.top + pad, hero.centerX() + coverW / 2, hero.top + pad + coverH)
+        k.cover(c, b.cover, b.title, cr)
+        var y = cr.bottom + 16 * u
+        val x = hero.left + pad
+        val w = hero.width() - 2 * pad
+        for (line in k.wrap(b.title, w, k.big, 2)) {
+            k.centered(c, line, x, w, y, k.big)
+            y += k.lineH(k.big)
+        }
+        if (b.author.isNotEmpty()) k.centered(c, b.author, x, w, y, k.ui10)
+        y += k.lineH(k.ui10) + 18 * u
+        val pct = b.percent
+        val bw = minOf(w, 460 * u)
+        k.centered(c, "${Realm.tangName(Realm.tangOf(pct))} · $pct%" + (timeLeft(b)?.let { " · còn $it" } ?: ""), x, w, y, sb)
+        y += k.lineH(sb) + 8 * u
+        tangBar(c, k, hero.centerX() - bw / 2, y, bw, 14 * u, pct)
+        y += 28 * u
+        k.centered(c, Texts.PRACTICES[practice] + "  ›", x, w, y, k.ui10Bold)
+    }
+
+    /** 3 · Kệ sách: the book, the other books being read as a shelf, the realm strip, the dock. */
+    private fun shelf(c: Canvas, k: Ink, a: RectF) {
+        val u = k.u
+        val g = Ink.GAP * u
+        val dock = RectF(a.left, a.bottom - 92 * u, a.right, a.bottom)
+        drawDock(c, k, dock)
+        val strip = RectF(a.left, dock.top - g - 112 * u, a.right, dock.top - g)
+        drawStrip(c, k, strip); on(strip, Action.TU_VI)
+        val bookRect = RectF(a.left, a.top, a.right, a.top + (a.height() * 0.3f).coerceIn(220 * u, 320 * u))
+        drawBook(c, k, bookRect); bookTarget(bookRect)
+        val r = RectF(a.left, bookRect.bottom + g, a.right, strip.top - g)
+        k.card(c, r)
+        val pad = 18 * u
+        val sb = k.smallBold
+        k.text(c, "KỆ SÁCH · ĐANG ĐỌC", r.left + pad, r.top + pad, sb)
+        k.right(c, "Thư viện ›", r.right - pad, r.top + pad, sb)
+        on(RectF(r.right - 160 * u, r.top, r.right, r.top + pad + k.lineH(sb) + 8 * u), Action.LIBRARY)
+        val others = Store.recent(12).filter { it.path != book?.path }
+        val inner = RectF(r.left + pad, r.top + pad + k.lineH(sb) + 14 * u, r.right - pad, r.bottom - pad)
+        if (others.isEmpty()) {
+            k.centered(c, "Sách khác đang đọc sẽ xếp lên kệ này.", inner.left, inner.width(), inner.centerY(), k.small)
+            on(inner, Action.LIBRARY)
+            return
+        }
+        val gap = 14 * u
+        val cols = ((inner.width() + gap) / (132 * u + gap)).toInt().coerceIn(3, 6)
+        val cw = (inner.width() - (cols - 1) * gap) / cols
+        val textH = 2 * k.lineH(k.small) + 10 * u
+        val ch = minOf(cw * 1.5f, inner.height() - textH)
+        val rows = ((inner.height() + gap) / (ch + textH + gap)).toInt().coerceIn(1, 3)
+        for ((i, b) in others.take(rows * cols).withIndex()) {
+            val x = inner.left + (i % cols) * (cw + gap)
+            val y = inner.top + (i / cols) * (ch + textH + gap)
+            val covW = minOf(cw, ch / 1.45f)
+            val cr = RectF(x + (cw - covW) / 2, y, x + (cw + covW) / 2, y + ch)
+            k.cover(c, b.cover, b.title, cr)
+            k.centered(c, b.title, x, cw, cr.bottom + 6 * u, k.small)
+            k.centered(c, "${b.percent}%", x, cw, cr.bottom + 6 * u + k.lineH(k.small), sb)
+            on(RectF(x, y, x + cw, y + ch + textH), Action.READ, b.path)
+        }
+    }
+
+    /** 4 · Tối giản: the clock, the book in large type, one line of the realm, the names of the screens. */
+    private fun minimal(c: Canvas, k: Ink, a: RectF, today: LocalDate, lunar: Lunar.Date) {
+        val u = k.u
+        val now = LocalTime.now()
+        val clockP = k.paint(96f, big = true)
+        var y = a.top + 60 * u
+        k.centered(c, now.hour.toString().padStart(2, '0') + ":" + now.minute.toString().padStart(2, '0'), a.left, a.width(), y, clockP)
+        y += k.lineH(clockP)
+        val dark = k.paint(Ink.UI10, color = Ink.DARK)
+        k.centered(c, "${today.dayOfMonth}/${today.monthValue} · ${Lunar.ancientMonthDay(lunar)}", a.left, a.width(), y, dark)
+        y += k.lineH(dark) + 70 * u
+        c.drawRect(a.centerX() - 30 * u, y, a.centerX() + 30 * u, y + 2 * u, k.fill)
+        y += 50 * u
+        val b = book
+        val bookTop = y
+        if (b == null || needsPermission) {
+            k.centered(c, if (needsPermission) "Chạm để cấp quyền đọc thẻ nhớ" else "Chạm để chọn sách", a.left, a.width(), y, k.ui12Bold)
+            y += k.lineH(k.ui12Bold)
+        } else {
+            for (line in k.wrap(b.title, a.width() - 40 * u, k.big, 3)) {
+                k.centered(c, line, a.left, a.width(), y, k.big)
+                y += k.lineH(k.big)
+            }
+            if (b.author.isNotEmpty()) {
+                k.centered(c, b.author, a.left, a.width(), y + 4 * u, k.ui10)
+                y += k.lineH(k.ui10) + 4 * u
+            }
+            y += 30 * u
+            val bw = minOf(a.width() * 0.6f, 420 * u)
+            tangBar(c, k, a.centerX() - bw / 2, y, bw, 10 * u, b.percent)
+            y += 26 * u
+            k.centered(c, "${Realm.tangName(Realm.tangOf(b.percent))} · ${b.percent}%" + (timeLeft(b)?.let { " · còn $it" } ?: ""), a.left, a.width(), y, k.small)
+            y += k.lineH(k.small)
+        }
+        bookTarget(RectF(a.left, bookTop - 20 * u, a.right, y + 20 * u))
+        y += 70 * u
+        val realmLine = "${Realm.name(Store.level())} · ${Realm.van(Store.tuVi())} vạn từ · hôm nay ${todayText()}"
+        k.centered(c, realmLine, a.left, a.width(), y, k.smallBold)
+        on(RectF(a.left, y - 10 * u, a.right, y + k.lineH(k.smallBold) + 10 * u), Action.TU_VI)
+        y += k.lineH(k.smallBold) + 24 * u
+        if (Store.showProverb) {
+            for (l in k.wrap(Texts.PROVERBS[proverb], a.width() - 80 * u, dark, 3)) {
+                k.centered(c, l, a.left, a.width(), y, dark)
+                y += k.lineH(dark)
+            }
+        }
+        // The screens as words along the bottom.
+        val items = listOf(Action.LIBRARY to "Thư viện", Action.TU_VI to "Tu vi", Action.PHAP_BAO to "Pháp bảo",
+            Action.DAO_HIEU to "Đạo hiệu", Action.NIEN_KY to "Niên kỷ", Action.SETTINGS to "Cài đặt")
+        val rowY = a.bottom - 60 * u
+        c.drawRect(a.left, rowY - 16 * u, a.right, rowY - 15 * u, k.gray)
+        val cw = a.width() / items.size
+        for ((i, item) in items.withIndex()) {
+            val cell = RectF(a.left + i * cw, rowY - 14 * u, a.left + (i + 1) * cw, a.bottom)
+            k.centered(c, item.second, cell.left, cell.width(), rowY + 8 * u, k.smallBold)
+            on(cell, item.first)
+        }
+    }
+
+    /** 5 · Tu tiên: the realm large on top, the Omega cards, the book in one row, the dock. */
+    private fun cultivation(c: Canvas, k: Ink, a: RectF, today: LocalDate, lunar: Lunar.Date) {
+        val u = k.u
+        val g = Ink.GAP * u
+        val dock = RectF(a.left, a.bottom - 92 * u, a.right, a.bottom)
+        drawDock(c, k, dock)
+        val bookRect = RectF(a.left, dock.top - g - 170 * u, a.right, dock.top - g)
+        drawBookRow(c, k, bookRect); bookTarget(bookRect)
+        val mini = RectF(a.left, bookRect.top - g - 150 * u, a.right, bookRect.top - g)
+        minis(c, k, mini, today)
+        val hero = RectF(a.left, a.top, a.right, mini.top - g)
+        k.card(c, hero)
+        drawRealmFrame(c, k, hero, Realm.realmOf(Store.level()))
+        on(hero, Action.TU_VI)
+        val words = Store.tuVi()
+        val level = Store.level()
+        val pad = 30 * u
+        val x = hero.left + pad
+        val w = hero.width() - 2 * pad
+        val sb = k.smallBold
+        val term = Lunar.termName(Lunar.solarTerm(today.dayOfMonth, today.monthValue, today.year)) + " · " + Texts.TERM_PHRASES[termPhrase]
+        val icon = minOf(120 * u, hero.height() * 0.3f)
+        val nameP = k.paint(44f, big = true)
+        val t = Store.shownTitle()
+        val blockH = k.lineH(sb) + 16 * u + icon + 10 * u + k.lineH(nameP) + (if (t >= 0) k.lineH(k.ui10) else 0f) +
+            k.lineH(k.ui10) + 20 * u + 40 * u + 22 * u + 2 * k.lineH(k.small)
+        var y = hero.top + maxOf(pad, (hero.height() - blockH) / 2)
+        k.centered(c, (occasion(today, lunar) ?: greeting()) + " · " + term, x, w, y, sb)
+        y += k.lineH(sb) + 16 * u
+        k.realmIcon(c, Realm.realmOf(level), hero.centerX() - icon / 2, y, icon)
+        y += icon + 10 * u
+        k.centered(c, Realm.name(level), x, w, y, nameP)
+        y += k.lineH(nameP)
+        if (t >= 0) {
+            k.centered(c, "« ${DaoHieu.NAMES[t]} »", x, w, y, k.ui10)
+            y += k.lineH(k.ui10)
+        }
+        k.centered(c, "${Realm.van(words)} vạn từ tu vi", x, w, y, k.ui10Bold)
+        y += k.lineH(k.ui10) + 20 * u
+        y = k.realmBar(c, x + w * 0.1f, y, w * 0.8f, Realm.ninths(words, level), Realm.stageLabels(level), Realm.stageIndex(level))
+        y += 22 * u
+        stats(c, k, x + w * 0.1f, y, w * 0.8f)
+    }
+
+    /** Today, the last seven days, the streak in three columns. */
+    private fun stats(c: Canvas, k: Ink, x: Float, y: Float, w: Float) {
+        val u = k.u
+        val d = Store.today()
+        val cols = listOf(
+            todayText() to "hôm nay",
+            hours(Store.secondsBetween(d - 6, d)) to "7 ngày",
+            "${Store.streak()} ngày" to "chuỗi",
+        )
+        val sl = k.lineH(k.small)
+        val colW = w / cols.size
+        for ((i, pair) in cols.withIndex()) {
+            val cx = x + i * colW
+            if (i > 0) c.drawRect(cx, y + 3 * u, cx + u, y + 2 * sl - 3 * u, k.gray)
+            k.centered(c, pair.first, cx, colW, y, k.smallBold)
+            k.centered(c, pair.second, cx, colW, y + sl, k.small)
+        }
+    }
+
+    /** The minutes read today, against the day's goal when there is one. */
+    private fun todayText(): String {
+        val sec = Store.daySeconds[Store.today()] ?: 0
+        val min = sec / 60
+        return if (Store.dailyGoal > 0 && min < Store.dailyGoal) "$min/${Store.dailyGoal} phút" else duration(sec)
+    }
+
+    /** The realm in one strip: logo, name, words, then the day's numbers. */
+    private fun drawStrip(c: Canvas, k: Ink, r: RectF) {
+        val u = k.u
+        k.card(c, r)
+        val level = Store.level()
+        val pad = 20 * u
+        val icon = minOf(56 * u, r.height() - 2 * pad)
+        k.realmIcon(c, Realm.realmOf(level), r.left + pad, r.centerY() - icon / 2, icon)
+        val tx = r.left + pad + icon + 14 * u
+        val left = r.width() * 0.42f
+        k.text(c, k.fit(Realm.name(level), left - icon - 2 * pad, k.ui10Bold), tx, r.centerY() - k.lineH(k.ui10Bold), k.ui10Bold)
+        k.text(c, "${Realm.van(Store.tuVi())} vạn từ", tx, r.centerY() + 2 * u, k.small)
+        stats(c, k, r.left + left, r.centerY() - k.lineH(k.small), r.width() - left - pad)
+    }
+
+    /** The book in one row: a small cover, the title, the tầng. */
+    private fun drawBookRow(c: Canvas, k: Ink, r: RectF) {
+        val u = k.u
+        k.card(c, r)
+        val b = book
+        if (needsPermission || b == null) {
+            k.centered(c, if (needsPermission) "Chạm để cấp quyền đọc thẻ nhớ" else "Chưa đọc cuốn nào · chạm để mở Thư viện", r.left, r.width(), r.centerY() - k.lineH(k.ui10) / 2, k.ui10)
+            return
+        }
+        val pad = 16 * u
+        val ch = r.height() - 2 * pad
+        val cr = RectF(r.left + pad, r.top + pad, r.left + pad + ch * 0.67f, r.bottom - pad)
+        k.cover(c, b.cover, b.title, cr)
+        val tx = cr.right + 20 * u
+        val tw = r.right - pad - tx
+        var y = cr.top + 4 * u
+        for (l in k.wrap(b.title, tw, k.ui12Bold, 2)) {
+            k.text(c, l, tx, y, k.ui12Bold)
+            y += k.lineH(k.ui12Bold)
+        }
+        if (b.author.isNotEmpty()) k.text(c, k.fit(b.author, tw, k.small), tx, y, k.small)
+        val by = cr.bottom - 12 * u - k.lineH(k.smallBold) - 8 * u
+        k.text(c, "${Realm.tangName(Realm.tangOf(b.percent))} · ${b.percent}%  ·  ${Texts.PRACTICES[practice]} ›", tx, by, k.smallBold)
+        tangBar(c, k, tx, cr.bottom - 12 * u, tw, 12 * u, b.percent)
+    }
+
+    /** Nine cells filled to `pct`. */
+    private fun tangBar(c: Canvas, k: Ink, x: Float, y: Float, w: Float, h: Float, pct: Int) {
+        val u = k.u
+        val gap = 4 * u
+        val cellW = (w - 8 * gap) / 9
+        val filled = pct * 9 / 100.0
+        for (i in 0 until 9) {
+            val cx = x + i * (cellW + gap)
+            val cell = RectF(cx, y, cx + cellW, y + h)
+            val f = (filled - i).coerceIn(0.0, 1.0).toFloat()
+            if (f >= 1f) {
+                c.drawRoundRect(cell, 3 * u, 3 * u, k.fill)
+            } else {
+                c.drawRoundRect(k.inset(cell, 0.5f * u), 3 * u, 3 * u, k.stroke(1.3f))
+                if (f > 0) c.drawRect(cx + u, y + u, cx + u + (cellW - 2 * u) * f, y + h - u, k.fill)
+            }
+        }
+    }
+
+    /** The rail of Cổ điển: Pháp bảo with its treasure, then the screens as icon buttons. */
+    private fun drawRail(c: Canvas, k: Ink, col: RectF) {
+        val u = k.u
+        val g = 10 * u
+        val items = listOf(
+            Triple(Action.LIBRARY, "library", "Thư viện"),
+            Triple(Action.NIEN_KY, "nienky", "Niên kỷ"),
+            Triple(Action.SETTINGS, "settings", "Cài đặt"),
+        )
+        val cell = 92 * u
+        val pb = RectF(col.left, col.top, col.right, col.bottom - items.size * (cell + g))
+        k.card(c, pb)
+        on(pb, Action.PHAP_BAO)
+        val sb = k.smallBold
+        val small = k.small
+        val beast = Store.strongest()
+        val art = minOf(pb.width() - 20 * u, pb.height() - 3 * k.lineH(small) - 50 * u)
+        val block = k.lineH(sb) + 8 * u + art + 6 * u + 2 * k.lineH(small)
+        val by = pb.top + maxOf(12 * u, (pb.height() - block) / 2)
+        k.centered(c, "Pháp bảo", pb.left, pb.width(), by, sb)
+        val ay = by + k.lineH(sb) + 8 * u
+        if (beast != null) {
+            k.badge(c, beast.species, pb.centerX() - art / 2, ay, art)
+            var ny = ay + art + 6 * u
+            for (l in k.wrap(beast.name, pb.width() - 12 * u, small, 2)) {
+                k.centered(c, l, pb.left, pb.width(), ny, small)
+                ny += k.lineH(small)
+            }
+        } else {
+            k.ore(c, 0, 0, pb.centerX() - art * 0.35f, ay, art * 0.7f)
+            k.centered(c, "Lò trống", pb.left, pb.width(), ay + art * 0.7f + 6 * u, small)
+        }
+        var y = pb.bottom + g
+        for (item in items) {
+            val r = RectF(col.left, y, col.right, y + cell)
+            k.card(c, r)
+            val icon = 34 * u
+            val total = icon + 6 * u + k.lineH(sb)
+            val iy = r.top + (cell - total) / 2
+            k.icon(c, item.second, r.centerX() - icon / 2, iy, icon)
+            k.centered(c, item.third, r.left, r.width(), iy + icon + 6 * u, sb)
+            on(r, item.first)
+            y += cell + g
+        }
     }
 
     // --- The book ---------------------------------------------------------------------------
@@ -146,304 +476,66 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             k.centered(c, lines[1], r.left, r.width(), y + k.lineH(p) + 4 * u, k.ui10)
             return
         }
-        val pad = 16 * u
+        val pad = 20 * u
         val coverH = r.height() - 2 * pad
         val coverW = coverH * 0.67f
         val cr = RectF(r.left + pad, r.top + pad, r.left + pad + coverW, r.top + pad + coverH)
-        drawCover(c, k, b, cr)
+        k.cover(c, b.cover, b.title, cr)
 
-        val tx = cr.right + pad
+        val tx = cr.right + 24 * u
         val tw = r.right - pad - tx
-        val ui10b = k.ui10Bold
         val small = k.small
-        val smallBold = k.smallBold
-        val readY = r.top + 16 * u
-        k.centered(c, Texts.SCRIPTURES[scripture], tx, tw, readY, ui10b)
-        val ruleY = readY + k.lineH(ui10b) + 4 * u
-        c.drawRect(tx + tw / 2 - 24 * u, ruleY, tx + tw / 2 + 24 * u, ruleY + 2 * u, k.fill)
-        k.diamond(c, tx + tw / 2 - 32 * u, ruleY + u, 3 * u)
-        k.diamond(c, tx + tw / 2 + 32 * u, ruleY + u, 3 * u)
+        val sb = k.smallBold
+        val dark = k.paint(Ink.SMALL, color = Ink.DARK)
 
-        // Pinned to the bottom: the tầng and its nine cells, then the call to read on.
-        val contY = r.bottom - 18 * u - k.lineH(ui10b)
-        val barH = 12 * u
-        val barY = contY - 10 * u - barH
-        val labelY = barY - 6 * u - k.lineH(small)
+        // Bottom block: the tầng, its nine cells, the call to read on.
+        val call = Texts.PRACTICES[practice] + "  ›"
+        val callY = cr.bottom - k.lineH(k.ui10Bold)
+        val barH = 14 * u
+        val barY = callY - 14 * u - barH
+        val labelY = barY - 8 * u - k.lineH(sb)
         val pct = b.percent
         val tang = Realm.tangOf(pct)
-        val label = if (tang >= 10) "Đại viên mãn · 100%" else "Tu đến ${Realm.tangName(tang)} · $pct%"
-        k.centered(c, label, tx, tw, labelY, smallBold)
-        val gap = 3 * u
+        k.text(c, if (tang >= 10) "Đại viên mãn" else "Tu đến ${Realm.tangName(tang)}", tx, labelY, sb)
+        k.right(c, "$pct%", tx + tw, labelY, sb)
+        val gap = 4 * u
         val cellW = (tw - 8 * gap) / 9
-        val x0 = tx + (tw - (9 * cellW + 8 * gap)) / 2
         val filled = pct * 9 / 100.0
         for (i in 0 until 9) {
-            val cx = x0 + i * (cellW + gap)
+            val cx = tx + i * (cellW + gap)
             val cell = RectF(cx, barY, cx + cellW, barY + barH)
             val f = (filled - i).coerceIn(0.0, 1.0).toFloat()
             if (f >= 1f) {
                 c.drawRoundRect(cell, 3 * u, 3 * u, k.fill)
             } else {
-                c.drawRoundRect(k.inset(cell, 0.5f * u), 3 * u, 3 * u, k.stroke(1.2f))
+                c.drawRoundRect(k.inset(cell, 0.5f * u), 3 * u, 3 * u, k.stroke(1.3f))
                 if (f > 0) c.drawRect(cx + u, barY + u, cx + u + (cellW - 2 * u) * f, barY + barH - u, k.fill)
             }
         }
-        k.centered(c, Texts.PRACTICES[practice] + " ›", tx, tw, contY, ui10b)
+        k.text(c, k.fit(call, tw, k.ui10Bold), tx, callY, k.ui10Bold)
 
-        // Title and author between the rule and the tầng, centred.
-        var y = ruleY + 12 * u
-        val bottom = labelY - 8 * u
-        val tp = k.ui12Bold
-        val maxTitle = ((bottom - y) / k.lineH(tp)).toInt().coerceIn(1, 4)
-        for (line in k.wrap(b.title, tw, tp, maxTitle)) {
-            k.centered(c, line, tx, tw, y, tp)
-            y += k.lineH(tp)
+        // Top block: the scripture's name, the title, the author, the time.
+        var y = cr.top
+        k.text(c, Texts.SCRIPTURES[scripture].uppercase(), tx, y, dark)
+        y += k.lineH(small) + 6 * u
+        c.drawRect(tx, y, tx + 40 * u, y + 2 * u, k.fill)
+        y += 14 * u
+        val room = labelY - 14 * u
+        val title = if (k.wrap(b.title, tw, k.big, 3).size <= 2 && y + 2 * k.lineH(k.big) + k.lineH(k.ui10) <= room) k.big else k.ui12Bold
+        for (line in k.wrap(b.title, tw, title, 3)) {
+            if (y + k.lineH(title) > room) break
+            k.text(c, line, tx, y, title)
+            y += k.lineH(title)
+        }
+        if (b.author.isNotEmpty() && y + k.lineH(k.ui10) <= room) {
+            y += 2 * u
+            k.text(c, k.fit(b.author, tw, k.ui10), tx, y, k.ui10)
+            y += k.lineH(k.ui10)
         }
         val info = bookInfo(b)
-        val infoH = if (info.isNotEmpty()) 8 * u + small.fontSpacing else 0f
-        if (b.author.isNotEmpty() && y + 6 * u + k.lineH(k.ui10) + infoH <= bottom) {
-            y += 6 * u
-            for (line in k.wrap(b.author, tw, k.ui10, ((bottom - infoH - y) / k.lineH(k.ui10)).toInt().coerceIn(1, 2))) {
-                k.centered(c, line, tx, tw, y, k.ui10)
-                y += k.lineH(k.ui10)
-            }
-        }
-        if (info.isNotEmpty() && y + infoH <= bottom) {
+        if (info.isNotEmpty() && y + 8 * u + k.lineH(small) <= room) {
             y += 8 * u
-            k.centered(c, info, tx, tw, y, k.paint(Ink.SMALL, color = Ink.DARK))
-        }
-    }
-
-    private fun drawCover(c: Canvas, k: Ink, b: Book, r: RectF) {
-        val u = k.u
-        val bmp = coverOf(b)
-        c.drawRoundRect(r, 8 * u, 8 * u, k.white)
-        if (bmp != null) {
-            // Fill the slot, cropping the overflow.
-            val scale = maxOf(r.width() / bmp.width, r.height() / bmp.height)
-            val sw = r.width() / scale
-            val sh = r.height() / scale
-            val sx = (bmp.width - sw) / 2
-            val sy = (bmp.height - sh) / 2
-            c.save()
-            c.clipRect(r)
-            c.drawBitmap(bmp, android.graphics.Rect(sx.toInt(), sy.toInt(), (sx + sw).toInt(), (sy + sh).toInt()), r, Paint(Paint.FILTER_BITMAP_FLAG))
-            c.restore()
-        } else {
-            c.drawRoundRect(r, 8 * u, 8 * u, k.gray)
-            val p = if (r.width() < 90 * u) k.smallBold else k.ui10Bold
-            var y = r.top + 12 * u
-            for (line in k.wrap(b.title, r.width() - 12 * u, p, 5)) {
-                k.centered(c, line, r.left, r.width(), y, p)
-                y += k.lineH(p)
-            }
-        }
-        c.drawRoundRect(k.inset(r, u), 8 * u, 8 * u, k.stroke(2f))
-    }
-
-    // --- The rail ---------------------------------------------------------------------------
-
-    private fun drawRail(c: Canvas, k: Ink, col: RectF) {
-        val u = k.u
-        val gap = 10 * u
-        val iconCell = (col.height() * 0.17f).coerceIn(56 * u, 68 * u)
-        val pbH = col.height() - 3 * (iconCell + gap)
-        val pb = RectF(col.left, col.top, col.right, col.top + pbH)
-        k.card(c, pb)
-        on(pb, Action.PHAP_BAO)
-        val smallBold = k.smallBold
-        val small = k.small
-        val line = k.lineH(small)
-        val label = "Pháp bảo" + if (Store.unseen > 0) " •${Store.unseen}" else ""
-        val beast = Store.strongest()
-        val ore = Store.forge.firstOrNull()
-        val caption = when {
-            beast != null -> beast.name
-            ore != null -> "${Treasure.TIER_NAMES[ore.tier]} · ${ore.percent}%"
-            else -> "Lò luyện trống"
-        }
-        val name = k.wrap(caption, pb.width() - 8 * u, small, 3)
-        val nameH = name.size * line
-        val size = (pb.height() - line - nameH - 24 * u).coerceAtMost(pb.width() - 8 * u).coerceAtLeast(32 * u)
-        val stack = line + 4 * u + size + 6 * u + nameH
-        var y = pb.top + maxOf(6 * u, (pbH - stack) / 2)
-        k.centered(c, label, pb.left, pb.width(), y, smallBold)
-        y += line + 4 * u
-        val ax = pb.left + (pb.width() - size) / 2
-        when {
-            beast != null -> k.badge(c, beast.species, ax, y, size)
-            ore != null -> k.ore(c, ore.tier, ore.percent, ax, y, size)
-            else -> k.ore(c, 0, 0, ax, y, size)
-        }
-        y += size + 6 * u
-        for (l in name) {
-            k.centered(c, l, pb.left, pb.width(), y, small)
-            y += line
-        }
-
-        var cy = pb.bottom + gap
-        val items = listOf(Action.LIBRARY to "Thư viện", Action.TU_VI to "Tu vi", Action.SETTINGS to "Cài đặt")
-        for ((action, text) in items) {
-            val cell = RectF(col.left, cy, col.right, cy + iconCell)
-            k.card(c, cell)
-            on(cell, action)
-            val icon = 28 * u
-            val total = icon + 3 * u + line
-            val iy = cell.top + (iconCell - total) / 2
-            drawIcon(c, k, action, cell.centerX() - icon / 2, iy, icon)
-            k.centered(c, text, cell.left, cell.width(), iy + icon + 3 * u, smallBold)
-            cy += iconCell + gap
-        }
-    }
-
-    private fun drawIcon(c: Canvas, k: Ink, action: Action, x: Float, y: Float, s: Float) {
-        val p = k.stroke(2.4f)
-        when (action) {
-            Action.LIBRARY -> {  // three spines and one leaning
-                for ((i, hh) in listOf(0.8f, 0.95f, 0.85f).withIndex()) {
-                    c.drawRect(x + s * (0.06f + i * 0.2f), y + s * (1 - hh), x + s * (0.2f + i * 0.2f), y + s, k.fill)
-                }
-                c.drawLine(x + s * 0.72f, y + s, x + s * 0.92f, y + s * 0.18f, k.stroke(4f))
-            }
-            Action.TU_VI -> {  // a mountain under the sun
-                val path = Path().apply { moveTo(x, y + s); lineTo(x + s * 0.4f, y + s * 0.3f); lineTo(x + s * 0.62f, y + s * 0.62f); lineTo(x + s * 0.76f, y + s * 0.45f); lineTo(x + s, y + s); close() }
-                c.drawPath(path, k.fill)
-                c.drawCircle(x + s * 0.82f, y + s * 0.16f, s * 0.12f, p)
-            }
-            else -> {  // two sliders
-                for ((i, kx) in listOf(0.3f, 0.68f).withIndex()) {
-                    val yy = y + s * (0.3f + i * 0.42f)
-                    c.drawLine(x, yy, x + s, yy, k.stroke(2.2f))
-                    c.drawCircle(x + s * kx, yy, s * 0.13f, k.white)
-                    c.drawCircle(x + s * kx, yy, s * 0.13f, p)
-                }
-            }
-        }
-    }
-
-    // --- Cultivation ------------------------------------------------------------------------
-
-    private fun drawCultivation(c: Canvas, k: Ink, r: RectF, today: LocalDate, lunar: Lunar.Date) {
-        val u = k.u
-        val words = Store.tuVi()
-        val level = Store.level()
-        k.card(c, r)
-        drawRealmFrame(c, k, r, Realm.realmOf(level))
-        val x = r.left + 16 * u
-        val w = r.width() - 32 * u
-        val small = k.small
-        val smallBold = k.smallBold
-        val sl = k.lineH(small)
-        val bigP = k.big
-        val bl = k.lineH(bigP)
-        val hintY = r.bottom - 14 * u - sl
-        val top = r.top + 16 * u
-        val bottom = hintY - 8 * u
-
-        val term = Lunar.termName(Lunar.solarTerm(today.dayOfMonth, today.monthValue, today.year)) + " · " + Texts.TERM_PHRASES[termPhrase]
-        val head = k.evenLines((occasion(today, lunar) ?: greeting()) + " · " + term, w, smallBold)
-        val headH = head.size * sl
-        val realmH = bl + 2 * u + sl + 6 * u + 15 * u + 5 * u + sl
-        val statsH = 1 * u + 10 * u + 2 * sl
-        val saying = k.wrap(Texts.PROVERBS[proverb], w, small, 4)
-        val sayingH = 12 * u + saying.size * sl
-        var blocks = 3
-        var used = headH + realmH + statsH
-        val withSaying = used + sayingH + (blocks + 2) * 10 * u <= bottom - top
-        if (withSaying) {
-            used += sayingH
-            blocks++
-        }
-        val spare = maxOf(0f, bottom - top - used)
-        val gap = minOf(36 * u, spare / (blocks + 1))
-        var y = top + maxOf(0f, (spare - gap * (blocks - 1)) / 2)
-
-        for (l in head) {
-            k.centered(c, l, x, w, y, smallBold)
-            y += sl
-        }
-        y += gap
-
-        // The realm logo and the words read, large; the realm and its road.
-        val number = Realm.van(words)
-        val unit = k.ui12Bold
-        val icon = minOf(40 * u, bl)
-        val nw = bigP.measureText(number)
-        val uw = unit.measureText("vạn từ")
-        val nx = x + maxOf(0f, (w - (icon + 10 * u + nw + 8 * u + uw)) / 2)
-        k.realmIcon(c, Realm.realmOf(level), nx, y + (bl - icon) / 2, icon)
-        k.text(c, number, nx + icon + 10 * u, y, bigP)
-        k.text(c, "vạn từ", nx + icon + 10 * u + nw + 8 * u, y + (-bigP.ascent()) - (-unit.ascent()), unit)
-        y += bl + 2 * u
-        k.centered(c, Realm.name(level), x, w, y, smallBold)
-        y += sl + 6 * u
-        y = k.realmBar(c, x + 8 * u, y, w - 16 * u, Realm.ninths(words, level), Realm.stageLabels(level), Realm.stageIndex(level))
-        y += gap
-
-        // Today, the last seven days, the streak.
-        c.drawRect(x, y, x + w, y + u, k.fill)
-        y += 10 * u
-        val d = Store.today()
-        val cols = mutableListOf(
-            duration(Store.daySeconds[d] ?: 0) to "hôm nay",
-            hours(Store.secondsBetween(d - 6, d)) to "7 ngày",
-            "${Store.streak()} ngày" to "chuỗi",
-        )
-        if (w >= 380 * u) cols.add((if (Store.pace() > 0) "${Store.pace()}" else "–") to "từ/phút")
-        val colW = w / cols.size
-        for ((i, pair) in cols.withIndex()) {
-            val cx = x + i * colW
-            if (i > 0) c.drawRect(cx, y + 2 * u, cx + u, y + 2 * sl - 2 * u, k.fill)
-            k.centered(c, pair.first, cx, colW, y, smallBold)
-            k.centered(c, pair.second, cx, colW, y + sl, small)
-        }
-        y += 2 * sl
-
-        if (withSaying) {
-            y += gap
-            var sy = y + maxOf(0f, (bottom - y - sayingH) / 2)
-            c.drawRect(x + (w - 40 * u) / 2, sy, x + (w + 40 * u) / 2, sy + 2 * u, k.fill)
-            sy += 12 * u
-            val sp = k.paint(Ink.SMALL, color = Ink.DARK)
-            for (l in saying) {
-                k.centered(c, l, x, w, sy, sp)
-                sy += sl
-            }
-        }
-        k.centered(c, "Tu vi & thành tích ›", x, w, hintY, smallBold)
-    }
-
-    // --- Recent books --------------------------------------------------------------------------
-
-    private fun drawRecent(c: Canvas, k: Ink, r: RectF, books: List<Book>) {
-        val u = k.u
-        val g = 10 * u
-        val n = ((r.width() + g) / (230 * u + g)).toInt().coerceIn(1, 4).coerceAtMost(books.size)
-        val cw = (r.width() - (n - 1) * g) / n
-        val small = k.small
-        val sb = k.smallBold
-        for (i in 0 until n) {
-            val b = books[i]
-            val cell = RectF(r.left + i * (cw + g), r.top, r.left + i * (cw + g) + cw, r.bottom)
-            k.card(c, cell)
-            on(cell, Action.READ, b.path)
-            val pad = 10 * u
-            val ch = cell.height() - 2 * pad
-            val cr = RectF(cell.left + pad, cell.top + pad, cell.left + pad + ch * 0.67f, cell.bottom - pad)
-            drawCover(c, k, b, cr)
-            val tx = cr.right + pad
-            val tw = cell.right - pad - tx
-            var y = cell.top + pad + 2 * u
-            for (line in k.wrap(b.title, tw, sb, 3)) {
-                k.text(c, line, tx, y, sb)
-                y += k.lineH(sb)
-            }
-            val pct = b.percent
-            val bottomY = cell.bottom - pad - k.lineH(small)
-            k.text(c, k.fit(if (b.finishDay >= 0) "Đại viên mãn" else "${Realm.tangName(Realm.tangOf(pct))} · $pct%", tw, small), tx, bottomY, small)
-            val barY = bottomY - 8 * u
-            c.drawRect(tx, barY, tx + tw, barY + 2 * u, k.gray)
-            c.drawRect(tx, barY - u, tx + tw * pct / 100f, barY + 3 * u, k.fill)
+            k.text(c, k.fit(info, tw, dark), tx, y, dark)
         }
     }
 
@@ -452,31 +544,155 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val parts = mutableListOf<String>()
         if (b.seconds >= 60) parts.add("Đã đọc ${duration(b.seconds)}")
         timeLeft(b)?.let { parts.add("còn $it") }
-        if (parts.isEmpty() && b.words > 0) parts.add("${Realm.van(b.words)} vạn từ")
+        if (b.words > 0 && parts.size < 2) parts.add("${Realm.van(b.words)} vạn từ")
         return parts.joinToString(" · ")
     }
 
-    // --- Omega cards: thiên kiếp, bí cảnh, đạo hiệu ----------------------------------------------
+    // --- The realm --------------------------------------------------------------------------
 
-    /** The card's head: an icon and a title; returns the y below it. */
-    private fun miniHead(c: Canvas, k: Ink, r: RectF, title: String, icon: (Float, Float, Float) -> Unit): Float {
+    private fun drawRealm(c: Canvas, k: Ink, r: RectF, today: LocalDate, lunar: Lunar.Date) {
+        val u = k.u
+        val words = Store.tuVi()
+        val level = Store.level()
+        k.card(c, r)
+        drawRealmFrame(c, k, r, Realm.realmOf(level))
+        val pad = 22 * u
+        val x = r.left + pad
+        val w = r.width() - 2 * pad
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val bigP = k.big
+        val bl = k.lineH(bigP)
+
+        val term = Lunar.termName(Lunar.solarTerm(today.dayOfMonth, today.monthValue, today.year)) + " · " + Texts.TERM_PHRASES[termPhrase]
+        val head = k.evenLines((occasion(today, lunar) ?: greeting()) + " · " + term, w, sb)
+        val t = Store.shownTitle()
+        val realmH = 56 * u + 6 * u + sl + (if (t >= 0) sl else 0f) + 10 * u + 15 * u + 5 * u + sl
+        val statsH = 12 * u + 2 * sl
+        val saying = k.wrap(Texts.PROVERBS[proverb], w, small, 3)
+        val blocks = mutableListOf(head.size * sl, realmH, statsH)
+        val sayingH = 14 * u + saying.size * sl
+        val inner = r.height() - 2 * pad
+        if (Store.showProverb && blocks.sum() + sayingH + 4 * 12 * u <= inner) blocks.add(sayingH)
+        val gap = ((inner - blocks.sum()) / (blocks.size - 1)).coerceIn(8 * u, 40 * u)
+        var y = r.top + pad + maxOf(0f, (inner - blocks.sum() - gap * (blocks.size - 1)) / 2)
+
+        for (l in head) {
+            k.centered(c, l, x, w, y, sb)
+            y += sl
+        }
+        y += gap
+
+        // The realm logo and the words read, large; the realm, the title worn, the road.
+        val number = Realm.van(words)
+        val unit = k.ui12Bold
+        val icon = 56 * u
+        val nw = bigP.measureText(number)
+        val uw = unit.measureText("vạn từ")
+        val nx = x + maxOf(0f, (w - (icon + 12 * u + nw + 8 * u + uw)) / 2)
+        k.realmIcon(c, Realm.realmOf(level), nx, y, icon)
+        val ny = y + (icon - bl) / 2
+        k.text(c, number, nx + icon + 12 * u, ny, bigP)
+        k.text(c, "vạn từ", nx + icon + 12 * u + nw + 8 * u, ny + (-bigP.ascent()) - (-unit.ascent()), unit)
+        y += icon + 6 * u
+        k.centered(c, Realm.name(level), x, w, y, sb)
+        y += sl
+        if (t >= 0) {
+            k.centered(c, "« ${DaoHieu.NAMES[t]} »", x, w, y, small)
+            y += sl
+        }
+        y += 10 * u
+        y = k.realmBar(c, x, y, w, Realm.ninths(words, level), Realm.stageLabels(level), Realm.stageIndex(level))
+        y += gap
+
+        // Today, the last seven days, the streak.
+        c.drawRect(x, y, x + w, y + u, k.gray)
+        y += 12 * u
+        stats(c, k, x, y, w)
+        y += 2 * sl
+
+        if (blocks.size == 4) {
+            y += gap
+            c.drawRect(x + (w - 36 * u) / 2, y, x + (w + 36 * u) / 2, y + 2 * u, k.fill)
+            y += 14 * u
+            val sp = k.paint(Ink.SMALL, color = Ink.DARK)
+            for (l in saying) {
+                k.centered(c, l, x, w, y, sp)
+                y += sl
+            }
+        }
+    }
+
+    // --- The treasures ----------------------------------------------------------------------
+
+    private fun drawTreasures(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
         k.card(c, r)
-        val pad = 12 * u
-        val s = 26 * u
-        icon(r.left + pad, r.top + pad, s)
+        val pad = 22 * u
+        val x = r.left + pad
+        val w = r.width() - 2 * pad
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        k.text(c, "PHÁP BẢO", x, r.top + pad, sb)
+        if (Store.unseen > 0) k.right(c, "${Store.unseen} món mới", x + w, r.top + pad, sb)
+        val foot = "Bảo khố ${Store.beasts.size} món · Bộ ${Store.setsCount()}/${Treasure.SETS}"
+        val footY = r.bottom - pad - sl
+        k.centered(c, foot, x, w, footY, small)
+
+        // The forge: three ores with their progress.
+        val oreS = 40 * u
+        val forgeY = footY - 14 * u - sl - oreS
+        val slotW = w / 3
+        for (i in 0 until Store.FORGE_SLOTS) {
+            val ore = Store.forge.getOrNull(i)
+            val sx = x + i * slotW
+            k.ore(c, ore?.tier ?: 0, ore?.percent ?: 0, sx + (slotW - oreS) / 2, forgeY, oreS)
+            k.centered(c, if (ore != null) "${ore.percent}%" else "trống", sx, slotW, forgeY + oreS + 2 * u, small)
+        }
+        c.drawRect(x, forgeY - 14 * u, x + w, forgeY - 13 * u, k.gray)
+
+        // The strongest treasure, large.
+        val top = r.top + pad + sl + 10 * u
+        val bottom = forgeY - 24 * u
+        val beast = Store.strongest()
+        val nameLines = 2
+        val art = minOf(w * 0.8f, bottom - top - nameLines * sl - 8 * u)
+        val ay = top + maxOf(0f, (bottom - top - art - 8 * u - nameLines * sl) / 2)
+        if (beast != null) {
+            k.badge(c, beast.species, x + (w - art) / 2, ay, art)
+            k.centered(c, beast.name, x, w, ay + art + 8 * u, k.ui10Bold)
+            k.centered(c, "${Treasure.CLANS[beast.tier]} · ${Treasure.TIER_NAMES[beast.tier]}", x, w, ay + art + 8 * u + k.lineH(k.ui10Bold), small)
+        } else {
+            val s = art * 0.7f
+            k.ore(c, 0, 0, x + (w - s) / 2, ay + (art - s) / 2, s)
+            k.centered(c, "Chưa có pháp bảo", x, w, ay + art + 8 * u, k.ui10Bold)
+            k.centered(c, "Đọc để lò luyện thành", x, w, ay + art + 8 * u + k.lineH(k.ui10Bold), small)
+        }
+    }
+
+    // --- Omega cards ------------------------------------------------------------------------
+
+    /** The card's head: an icon and a title; returns the y below it. */
+    private fun miniHead(c: Canvas, k: Ink, r: RectF, title: String, icon: String): Float {
+        val u = k.u
+        k.card(c, r)
+        val pad = 16 * u
+        val s = 30 * u
+        k.icon(c, icon, r.left + pad, r.top + pad, s)
         val p = k.smallBold
-        k.text(c, k.fit(title, r.width() - 3 * pad - s, p), r.left + pad + s + 8 * u, r.top + pad + (s - k.lineH(p)) / 2, p)
-        return r.top + pad + s + 10 * u
+        k.text(c, k.fit(title, r.width() - 2 * pad - s - 10 * u, p), r.left + pad + s + 10 * u, r.top + pad + (s - k.lineH(p)) / 2, p)
+        return r.top + pad + s + 12 * u
     }
 
     private fun lines(c: Canvas, k: Ink, r: RectF, y0: Float, items: List<Pair<String, Boolean>>) {
         val u = k.u
         var y = y0
-        val pad = 12 * u
+        val pad = 16 * u
         for ((text, bold) in items) {
             val p = if (bold) k.smallBold else k.small
-            if (y + k.lineH(p) > r.bottom - 8 * u) break
+            if (y + k.lineH(p) > r.bottom - 10 * u) break
             k.text(c, k.fit(text, r.width() - 2 * pad, p), r.left + pad, y, p)
             y += k.lineH(p)
         }
@@ -484,21 +700,20 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
 
     private fun drawTrial(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
-        var y = miniHead(c, k, r, "Thiên kiếp") { x, yy, s -> k.bolt(c, x, yy, s) }
-        val pad = 12 * u
+        var y = miniHead(c, k, r, "Thiên kiếp", "thienkiep")
+        val pad = 16 * u
         val gate = Realm.baseName(Store.nextGate())
         when {
             Store.realmCap >= 9 -> lines(c, k, r, y, listOf("Đã phi thăng" to true, "Tiên lộ thênh thang" to false))
             Store.inTrial() -> {
                 val days = Store.trialDays().first
                 val need = Store.trialNeed()
-                // One cell per day of the trial.
-                val cw = minOf(22 * u, (r.width() - 2 * pad - (need - 1) * 4 * u) / need)
+                val cw = minOf(24 * u, (r.width() - 2 * pad - (need - 1) * 5 * u) / need)
                 for (i in 0 until need) {
-                    val cell = RectF(r.left + pad + i * (cw + 4 * u), y, r.left + pad + i * (cw + 4 * u) + cw, y + 12 * u)
-                    if (i < days) c.drawRoundRect(cell, 3 * u, 3 * u, k.fill) else c.drawRoundRect(k.inset(cell, 0.6f * u), 3 * u, 3 * u, k.stroke(1.2f))
+                    val cell = RectF(r.left + pad + i * (cw + 5 * u), y, r.left + pad + i * (cw + 5 * u) + cw, y + 14 * u)
+                    if (i < days) c.drawRoundRect(cell, 3 * u, 3 * u, k.fill) else c.drawRoundRect(k.inset(cell, 0.6f * u), 3 * u, 3 * u, k.stroke(1.3f))
                 }
-                y += 20 * u
+                y += 22 * u
                 lines(c, k, r, y, listOf(
                     "Độ kiếp vào $gate" to true,
                     "Hôm nay ${Store.minutes(Store.today())}/${Store.trialMinutes()} phút" to false,
@@ -515,46 +730,76 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
 
     private fun drawBiCanh(c: Canvas, k: Ink, r: RectF, today: LocalDate) {
         val u = k.u
-        var y = miniHead(c, k, r, "Bí cảnh tuần") { x, yy, s -> k.gate(c, x, yy, s) }
-        val pad = 12 * u
+        var y = miniHead(c, k, r, "Bí cảnh tuần", "bicanh")
+        val pad = 16 * u
         val monday = Store.weekStart(Store.today())
         val met = (0 until 7).map { Store.minutes(monday + it) >= Store.BI_CANH_MINUTES }
-        k.week(c, r.left + pad, y, r.width() - 2 * pad, 14 * u, met, today.dayOfWeek.value - 1)
-        y += 22 * u
-        val days = Store.biCanhDays()
-        val status = if (Store.biCanhDone()) "Đã qua tuần này" else "$days/${Store.BI_CANH_DAYS} ngày · ${Store.BI_CANH_MINUTES} phút"
+        k.week(c, r.left + pad, y, r.width() - 2 * pad, 16 * u, met, today.dayOfWeek.value - 1)
+        y += 26 * u
+        val status = if (Store.biCanhDone()) "Đã qua tuần này" else "${Store.biCanhDays()}/${Store.biCanhNeed()} ngày · ${Store.BI_CANH_MINUTES} phút"
         lines(c, k, r, y, listOf(status to true, "Đã qua ${Store.biCanhCount} lần" to false))
     }
 
     private fun drawTitle(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
-        val head = "Đạo hiệu" + if (Store.titleUnseen > 0) " •${Store.titleUnseen}" else ""
-        var y = miniHead(c, k, r, head) { x, yy, s -> k.seal(c, x, yy, s) }
-        val pad = 12 * u
+        val head = "Đạo hiệu" + if (Store.titleUnseen > 0) " · ${Store.titleUnseen} mới" else ""
+        var y = miniHead(c, k, r, head, "daohieu")
+        val pad = 16 * u
         val t = Store.shownTitle()
         val p = k.ui10Bold
         val name = if (t >= 0) DaoHieu.NAMES[t] else "Chưa đắc đạo hiệu"
+        val foot = r.bottom - 12 * u - k.lineH(k.small)
         for (line in k.wrap(name, r.width() - 2 * pad, p, 2)) {
-            if (y + k.lineH(p) > r.bottom - 8 * u - k.lineH(k.small)) break
+            if (y + k.lineH(p) > foot) break
             k.text(c, line, r.left + pad, y, p)
             y += k.lineH(p)
         }
-        k.text(c, "${Store.titleCount()}/${DaoHieu.COUNT} đạo hiệu ›", r.left + pad, r.bottom - 10 * u - k.lineH(k.small), k.small)
+        k.text(c, "${Store.titleCount()}/${DaoHieu.COUNT} đạo hiệu", r.left + pad, foot, k.small)
+    }
+
+    // --- The dock ---------------------------------------------------------------------------
+
+    private fun drawDock(c: Canvas, k: Ink, r: RectF) {
+        val u = k.u
+        k.card(c, r)
+        val due = NienKy.due()
+        val items = listOf(
+            Triple(Action.LIBRARY, "library", "Thư viện"),
+            Triple(Action.TU_VI, "tuvi", "Tu vi"),
+            Triple(Action.PHAP_BAO, "phapbao", "Pháp bảo"),
+            Triple(Action.NIEN_KY, "nienky", "Niên kỷ"),
+            Triple(Action.SETTINGS, "settings", "Cài đặt"),
+        )
+        val cw = r.width() / items.size
+        val icon = 36 * u
+        val p = k.smallBold
+        val total = icon + 6 * u + k.lineH(p)
+        for ((i, item) in items.withIndex()) {
+            val cell = RectF(r.left + i * cw, r.top, r.left + (i + 1) * cw, r.bottom)
+            if (i > 0) c.drawRect(cell.left, r.top + 16 * u, cell.left + u, r.bottom - 16 * u, k.gray)
+            val iy = cell.top + (cell.height() - total) / 2
+            k.icon(c, item.second, cell.centerX() - icon / 2, iy, icon)
+            k.centered(c, item.third, cell.left, cell.width(), iy + icon + 6 * u, p)
+            if (item.first == Action.NIEN_KY && due != 0 && Store.nienKySeen != due) {
+                c.drawCircle(cell.centerX() + icon / 2 + 4 * u, iy + 4 * u, 5 * u, k.fill)
+            }
+            on(cell, item.first)
+        }
     }
 
     /** Corner marks of the card that grow with the realm. */
     private fun drawRealmFrame(c: Canvas, k: Ink, r: RectF, realm: Int) {
         val u = k.u
-        val inset = 10 * u
+        val inset = 11 * u
         val pts = listOf(r.left + inset to r.top + inset, r.right - inset to r.top + inset, r.left + inset to r.bottom - inset, r.right - inset to r.bottom - inset)
         for ((x, y) in pts) {
             when (realm) {
                 0 -> c.drawCircle(x, y, 2 * u, k.fill)
-                1 -> { c.drawCircle(x, y, 5 * u, k.fill); c.drawCircle(x, y, 2 * u, k.white) }
-                2 -> { c.drawCircle(x, y, 6 * u, k.fill); c.drawCircle(x, y, 4 * u, k.white); c.drawCircle(x, y, 2 * u, k.fill) }
-                3 -> k.diamond(c, x, y, 7 * u)
-                4, 5 -> { k.diamond(c, x, y, 7 * u); c.drawCircle(x, y, 2 * u, k.white) }
-                else -> star(c, k, x, y, 8 * u)
+                1 -> { c.drawCircle(x, y, 4 * u, k.fill); c.drawCircle(x, y, 1.6f * u, k.white) }
+                2 -> { c.drawCircle(x, y, 5 * u, k.fill); c.drawCircle(x, y, 3.4f * u, k.white); c.drawCircle(x, y, 1.6f * u, k.fill) }
+                3 -> k.diamond(c, x, y, 6 * u)
+                4, 5 -> { k.diamond(c, x, y, 6 * u); c.drawCircle(x, y, 1.6f * u, k.white) }
+                else -> star(c, k, x, y, 7 * u)
             }
         }
         if (realm >= 5) c.drawRoundRect(k.inset(r, 4 * u), (Ink.RADIUS - 2) * u, (Ink.RADIUS - 2) * u, k.stroke(1f))
@@ -574,6 +819,16 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
     }
 
     companion object {
+        val STYLES = listOf("Bảng tu hành", "Cổ điển (A2)", "Bìa lớn", "Kệ sách", "Tối giản", "Tu tiên")
+        val STYLE_NOTES = listOf(
+            "Sách đang đọc, cảnh giới và pháp bảo cạnh nhau, ba thẻ Omega, thanh điều hướng",
+            "Như Exacta.OS: sách trên cùng, cột nút bên trái, thẻ tu hành bên phải",
+            "Bìa sách lớn ở giữa, cảnh giới gọn một dải",
+            "Sách đang đọc và một kệ các cuốn đang đọc dở",
+            "Đồng hồ lớn, tên sách, một dòng cảnh giới, nhiều khoảng trắng",
+            "Cảnh giới lớn ở trên, ba thẻ Omega, sách đang đọc một hàng",
+        )
+
         fun greeting(): String {
             val h = LocalTime.now().hour
             return when {

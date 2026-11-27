@@ -27,9 +27,11 @@ class ExactaApp : Application() {
         instance = this
         val httpClient = DefaultHttpClient()
         assetRetriever = AssetRetriever(contentResolver, httpClient)
+        // Every chapter gets the app's CSS (line spacing, weight) as it is read from the book.
         publicationOpener = PublicationOpener(
-            publicationParser = DefaultPublicationParser(this, httpClient, assetRetriever, pdfFactory = null)
-        )
+            DefaultPublicationParser(this, httpClient, assetRetriever, pdfFactory = null),
+            emptyList(),
+        ) { container = com.exacta.reader.data.BookCss.wrap(container) }
         com.exacta.reader.data.Store.load(this)
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
@@ -49,6 +51,13 @@ class ExactaApp : Application() {
             private set
 
         const val LAST_CRASH = "last-crash.txt"
+
+        /** Set by the screen tests (Robolectric cannot answer the all-files question). */
+        var storageOverride: Boolean? = null
+
+        /** May the app read the whole shared storage (MANAGE_EXTERNAL_STORAGE on Android 11+)? */
+        fun canReadAll(): Boolean = storageOverride
+            ?: if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) Environment.isExternalStorageManager() else true
         private val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
         /** One line to the log files (app folder always; ExactaReader/ on the storage when allowed). */
@@ -72,5 +81,5 @@ class ExactaApp : Application() {
 }
 
 object BuildConfigInfo {
-    const val VERSION = "0.3"
+    const val VERSION = "0.4"
 }

@@ -60,7 +60,8 @@ data class Beast(val seed: Long, val tier: Int, val bornDay: Long, val book: Str
 
 /** An ore in the forge: words read (any book) forge it. */
 data class Ore(val tier: Int, var words: Long = 0) {
-    val percent get() = (words * 100 / Treasure.FORGE_WORDS[tier]).toInt().coerceIn(0, 100)
+    val need get() = Store.forgeNeed(tier)
+    val percent get() = (words * 100 / need).toInt().coerceIn(0, 100)
 }
 
 /**
@@ -107,6 +108,12 @@ object Store {
     var biCanhWeek = -1L       // Monday of the last rewarded week
     var biCanhCount = 0
 
+    // Bộ pháp bảo: bit per set completed (once complete, for good).
+    var setsDone = 0
+
+    // Niên kỷ: the lunar year whose summary was opened at Tết.
+    var nienKySeen = -1
+
     // Đạo hiệu.
     val titleDays = HashMap<Int, Long>()  // title -> day earned
     var titleChosen = -1       // -1 = show the newest
@@ -118,14 +125,25 @@ object Store {
 
     // Reader preferences.
     var fontSize = 1.1
-    var lineHeight = 1.5
-    var margins = 1.2
+    var lineHeight = 1.6
+    var margins = 1.0
     var fontFamily = "Bitter"   // "Original", "Bitter", "serif", "sans-serif"
     var justify = true
     var swapTaps = false
     var uiScale = 1.0
     var birthDay = 0
     var birthMonth = 0
+    var textWeight = 1          // 0 Mảnh, 1 Thường, 2 Hơi đậm, 3 Đậm, 4 Rất đậm
+    var footerMode = 0          // 0 chương · %, 1 chỉ %, 2 ẩn
+    var homeStyle = 0           // see HomeView.STYLES
+    var showHeader = true       // the book's title above the page
+    var showNotices = true      // the cultivation's lines in the footer
+    var hyphens = false
+    var indent = false
+    var showProverb = true
+    var dailyGoal = 30          // minutes, 0 = none
+    var librarySort = 0         // 0 recent, 1 title, 2 author
+    var idleMinutes = 3         // reading time stops counting after this long without a touch
 
     private var dirty = false
 
@@ -175,6 +193,7 @@ object Store {
             trialPassed = it.optInt("passed"); passedAfterFail = it.optBoolean("passedAfterFail")
         }
         o.optJSONObject("biCanh")?.let { biCanhWeek = it.optLong("week", -1); biCanhCount = it.optInt("count") }
+        setsDone = o.optInt("sets"); nienKySeen = o.optInt("nienKySeen", -1)
         o.optJSONObject("titles")?.let { t ->
             t.optJSONObject("days")?.let { d -> for (k in d.keys()) titleDays[k.toInt()] = d.getLong(k) }
             titleChosen = t.optInt("chosen", -1); titleLast = t.optInt("last", -1); titleUnseen = t.optInt("unseen")
@@ -184,6 +203,15 @@ object Store {
             margins = it.optDouble("margins", margins); fontFamily = it.optString("fontFamily", fontFamily)
             justify = it.optBoolean("justify", justify); swapTaps = it.optBoolean("swapTaps", swapTaps)
             uiScale = it.optDouble("uiScale", uiScale); birthDay = it.optInt("birthDay"); birthMonth = it.optInt("birthMonth")
+            textWeight = it.optInt("textWeight", textWeight); footerMode = it.optInt("footerMode", footerMode)
+            homeStyle = it.optInt("homeStyle", homeStyle); showHeader = it.optBoolean("showHeader", showHeader)
+            showNotices = it.optBoolean("showNotices", showNotices); hyphens = it.optBoolean("hyphens", hyphens)
+            indent = it.optBoolean("indent", indent); showProverb = it.optBoolean("showProverb", showProverb)
+            dailyGoal = it.optInt("dailyGoal", dailyGoal); librarySort = it.optInt("librarySort", librarySort)
+            idleMinutes = it.optInt("idleMinutes", idleMinutes)
+            // Values from 0.2/0.3 snap to the choices offered now.
+            lineHeight = listOf(1.2, 1.4, 1.6, 1.8, 2.0).minBy { v -> kotlin.math.abs(v - lineHeight) }
+            margins = listOf(0.6, 1.0, 1.5).minBy { v -> kotlin.math.abs(v - margins) }
         }
     }
 
@@ -212,11 +240,16 @@ object Store {
             put("trial", JSONObject().put("cap", realmCap).put("seen", realmSeen).put("start", trialStart).put("loss", tuViLoss)
                 .put("failDay", failDay).put("fails", failCount).put("passed", trialPassed).put("passedAfterFail", passedAfterFail))
             put("biCanh", JSONObject().put("week", biCanhWeek).put("count", biCanhCount))
+            put("sets", setsDone); put("nienKySeen", nienKySeen)
             put("titles", JSONObject().put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
                 .put("fontFamily", fontFamily).put("justify", justify).put("swapTaps", swapTaps)
-                .put("uiScale", uiScale).put("birthDay", birthDay).put("birthMonth", birthMonth))
+                .put("uiScale", uiScale).put("birthDay", birthDay).put("birthMonth", birthMonth)
+                .put("textWeight", textWeight).put("footerMode", footerMode)
+                .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
+                .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
+                .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes))
         }
         val tmp = File(file.parentFile, file.name + ".tmp")
         tmp.writeText(o.toString())
@@ -225,6 +258,37 @@ object Store {
             tmp.renameTo(file)
         }
         dirty = false
+    }
+
+    /** Copies the state to `target` (a backup the reader keeps on the storage). */
+    @Synchronized
+    fun backup(target: File) {
+        dirty = true
+        save()
+        target.parentFile?.mkdirs()
+        file.copyTo(target, overwrite = true)
+    }
+
+    /** Replaces everything with a backup; false when the file cannot be read. */
+    @Synchronized
+    fun restore(source: File): Boolean {
+        val o = try {
+            JSONObject(source.readText())
+        } catch (e: Exception) {
+            return false
+        }
+        books.clear(); daySeconds.clear(); dayWords.clear(); forge.clear(); beasts.clear(); titleDays.clear()
+        bag.fill(0); hourSeconds.fill(0)
+        realmCap = -1; trialStart = -1; tuViLoss = 0; failDay = -1; failCount = 0; trialPassed = 0; passedAfterFail = false
+        biCanhWeek = -1; biCanhCount = 0; setsDone = 0; titleChosen = -1; titleLast = -1; titleUnseen = 0
+        read(o)
+        if (realmCap < 0) {
+            realmCap = Realm.realmOf(Realm.level(totalWords))
+            realmSeen = Realm.level(totalWords)
+        }
+        dirty = true
+        save()
+        return true
     }
 
     fun book(path: String) = books.getOrPut(path) { Book(path) }
@@ -286,6 +350,7 @@ object Store {
                 book.forged = true
                 val tier = Treasure.tierForBook(book.words)
                 hatch(tier, book.title)
+                if (setActive(7)) giveOre(Treasure.rollTier(), "Giang Hồ Kỳ Binh")
             }
             checkTitles()
         }
@@ -301,11 +366,12 @@ object Store {
         dayWords[d] = (dayWords[d] ?: 0) + words
         book.wordsRead += words
         totalWords += words
-        // The forge burns with every word read, in any book.
+        // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
+        val burn = if (setActive(6) && feastDay()) words * 2 else words
         val done = ArrayList<Ore>()
         for (ore in forge) {
-            ore.words += words
-            if (ore.words >= Treasure.FORGE_WORDS[ore.tier]) done.add(ore)
+            ore.words += burn
+            if (ore.words >= ore.need) done.add(ore)
         }
         for (ore in done) {
             forge.remove(ore)
@@ -315,7 +381,7 @@ object Store {
         // A gift ore every 10 vạn words.
         while (totalWords / Treasure.GIFT_WORDS > giftsAwarded) {
             giftsAwarded++
-            val tier = Treasure.rollTier()
+            val tier = if (setActive(0)) maxOf(Treasure.rollTier(), Treasure.rollTier()) else Treasure.rollTier()
             bag[tier]++
             fillForge()
             note("Quà 10 vạn từ: khoáng thạch ${Treasure.TIER_NAMES[tier]}")
@@ -328,6 +394,44 @@ object Store {
         beasts.add(beast)
         unseen++
         note("Pháp bảo xuất thế: ${beast.name} (${Treasure.TIER_NAMES[tier]})")
+        checkSets()
+    }
+
+    private fun giveOre(tier: Int, why: String) {
+        bag[tier]++
+        fillForge()
+        note("$why: khoáng thạch ${Treasure.TIER_NAMES[tier]}")
+    }
+
+    /** Words to forge an ore of a grade (Khai Thiên Phủ Đao: 10% fewer). */
+    fun forgeNeed(tier: Int): Long {
+        val base = Treasure.FORGE_WORDS[tier.coerceIn(0, Treasure.TIERS - 1)]
+        return if (setActive(1)) base * 9 / 10 else base
+    }
+
+    /** Mồng một, rằm and the three days of Tết. */
+    fun feastDay(): Boolean {
+        val d = LocalDate.now()
+        val l = Lunar.fromSolar(d.dayOfMonth, d.monthValue, d.year)
+        return l.day == 1 || l.day == 15 || (!l.leap && l.month == 1 && l.day <= 3)
+    }
+
+    // --- Bộ pháp bảo ------------------------------------------------------------------------------
+
+    fun setActive(set: Int) = set in 0 until Treasure.SETS && (setsDone shr set) and 1 == 1
+    fun setsCount() = Integer.bitCount(setsDone)
+    fun kinds(): Set<Int> = beasts.map { it.species }.toSet()
+
+    /** A set whose four kinds are all owned turns on for good; the first time gives an Địa phẩm ore. */
+    fun checkSets() {
+        val have = kinds()
+        for (set in 0 until Treasure.SETS) {
+            if (setActive(set) || !Treasure.SET_MEMBERS[set].all { it in have }) continue
+            setsDone = setsDone or (1 shl set)
+            note("Gom đủ bộ ${Treasure.SET_NAMES[set]}: ${Treasure.SET_EFFECTS[set]}")
+            giveOre(2, "Thưởng bộ pháp bảo")
+            touch()
+        }
     }
 
     /** Ores wait in the bag while the forge is full; the best one goes in first. */
@@ -344,8 +448,9 @@ object Store {
     private val TRIAL_MINUTES = intArrayOf(30, 30, 35, 40, 45, 45, 50, 55, 60)
     private val TRIAL_DAYS = intArrayOf(3, 3, 4, 4, 5, 5, 6, 6, 7)
 
-    /** Words of tu vi: words read, less what failed trials cost. */
-    fun tuVi() = (totalWords - tuViLoss).coerceAtLeast(0)
+    /** Words of tu vi: words read (+5% with Thượng Cổ Thần Khí), less what failed trials cost. */
+    fun tuViRaw() = if (setActive(8)) totalWords + totalWords / 20 else totalWords
+    fun tuVi() = (tuViRaw() - tuViLoss).coerceAtLeast(0)
 
     private fun rawLevel() = Realm.level(tuVi())
 
@@ -373,9 +478,12 @@ object Store {
         if (trialStart < 0) return 0 to false
         val need = trialMinutes()
         var run = 0
+        var forgiven = if (setActive(4)) 1 else 0
         for (d in trialStart..today) {
             if (minutes(d) >= need) run++
-            else if (d != trialStart && d != today) return run to true
+            else if (d != trialStart && d != today) {
+                if (forgiven > 0) forgiven-- else return run to true
+            }
         }
         return run to false
     }
@@ -395,7 +503,7 @@ object Store {
                 val lo = Realm.floor(realmCap * 3)
                 val hi = Realm.floor(realmCap * 3 + 3)
                 val target = hi - (hi - lo) / 9
-                if (totalWords > target) tuViLoss = totalWords - target
+                if (tuViRaw() > target) tuViLoss = tuViRaw() - target
                 trialStart = -1
                 failDay = today
                 failCount++
@@ -423,8 +531,8 @@ object Store {
 
     // --- Bí cảnh ------------------------------------------------------------------------------------
 
-    const val BI_CANH_DAYS = 5
     const val BI_CANH_MINUTES = 30
+    fun biCanhNeed() = if (setActive(2)) 4 else 5
 
     fun weekStart(day: Long): Long = LocalDate.ofEpochDay(day).with(DayOfWeek.MONDAY).toEpochDay()
     fun biCanhDays(): Int {
@@ -435,13 +543,11 @@ object Store {
 
     private fun checkBiCanh() {
         val week = weekStart(today())
-        if (biCanhWeek == week || biCanhDays() < BI_CANH_DAYS) return
+        if (biCanhWeek == week || biCanhDays() < biCanhNeed()) return
         biCanhWeek = week
         biCanhCount++
-        val tier = maxOf(Treasure.rollTier(), 1)  // never below Huyền
-        bag[tier]++
-        fillForge()
-        note("Qua bí cảnh tuần: khoáng thạch ${Treasure.TIER_NAMES[tier]}")
+        giveOre(maxOf(Treasure.rollTier(), 1), "Qua bí cảnh tuần")  // never below Huyền
+        if (setActive(5)) giveOre(maxOf(Treasure.rollTier(), 1), "Phong Thần Bảo Lục")
         touch()
     }
 
@@ -467,7 +573,6 @@ object Store {
         val trungThu = readToday && !lunar.leap && lunar.month == 8 && lunar.day == 15
         val birthday = readToday && birthDay > 0 && date.dayOfMonth == birthDay && date.monthValue == birthMonth
         val kinds = beasts.map { it.species }.toSet().size
-        val tiers = beasts.map { it.tier }.toSet().size
         val earned = booleanArrayOf(
             // Tu hành
             totalWords >= 10_000, totalWords >= 100_000, totalWords >= 1_000_000, totalWords >= 5_000_000,
@@ -481,7 +586,7 @@ object Store {
             finished.size >= 1, finished.size >= 10, finished.size >= 50, quickest in 1..3, tangCount >= 100,
             books.values.count { it.lastOpened > 0 } >= 30,
             // Pháp bảo
-            beasts.isNotEmpty(), kinds >= 18, kinds >= 36, beasts.any { it.tier == Treasure.TIERS - 1 }, beasts.size >= 30, tiers >= 4,
+            beasts.isNotEmpty(), kinds >= 18, kinds >= 36, beasts.any { it.tier == Treasure.TIERS - 1 }, beasts.size >= 30, setsDone != 0,
             // Kỳ duyên
             giftsAwarded >= 20, totalSeconds >= 360_000, biCanhCount >= 10, trungThu, birthday, trialPassed >= 5,
         )
@@ -500,11 +605,19 @@ object Store {
 
     /** Days in a row with reading, ending today or yesterday. */
     fun streak(): Int {
+        fun read(day: Long) = (daySeconds[day] ?: 0) >= 60
         var d = today()
-        if ((daySeconds[d] ?: 0) < 60) d--
+        if (!read(d)) d--
         var n = 0
-        while ((daySeconds[d] ?: 0) >= 60) {
-            n++
+        val shielded = HashSet<Long>()  // weeks whose hộ pháp phù is used
+        while (true) {
+            if (read(d)) {
+                n++
+            } else if (setActive(3) && n > 0 && read(d - 1) && shielded.add(weekStart(d))) {
+                // Hộ pháp phù: the day is forgiven, the streak goes on.
+            } else {
+                break
+            }
             d--
         }
         return n

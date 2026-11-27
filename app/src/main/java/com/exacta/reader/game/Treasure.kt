@@ -51,6 +51,45 @@ object Treasure {
         return 0
     }
 
+    // --- Bộ pháp bảo: nine sets of four kinds, every kind in exactly one set (as on Exacta.OS) ---
+
+    const val SETS = 9
+    val SET_NAMES = arrayOf(
+        "Vạn Kiếm Quy Tông", "Khai Thiên Phủ Đao", "Thương Kích Liệt Trận", "Phật Môn Kim Cang", "Đạo Môn Tứ Bảo",
+        "Phong Thần Bảo Lục", "Tứ Hải Long Cung", "Giang Hồ Kỳ Binh", "Thượng Cổ Thần Khí",
+    )
+    val SET_MEMBERS = arrayOf(
+        intArrayOf(0, 6, 24, 30), intArrayOf(1, 4, 12, 31), intArrayOf(2, 13, 14, 17),
+        intArrayOf(5, 11, 20, 22), intArrayOf(8, 18, 19, 21), intArrayOf(23, 25, 26, 27),
+        intArrayOf(7, 10, 28, 29), intArrayOf(3, 9, 15, 16), intArrayOf(32, 33, 34, 35),
+    )
+    /** The effects, adapted to what the app has (no kỳ ngộ, bế quan or linh thạch here). */
+    val SET_EFFECTS = arrayOf(
+        "Quà 10 vạn từ gieo hai lần",
+        "Lò luyện nhanh 10%",
+        "Bí cảnh chỉ cần 4 ngày",
+        "Hộ pháp phù giữ chuỗi",
+        "Thiên kiếp tha 1 ngày lỡ",
+        "Bí cảnh thêm 1 khoáng thạch",
+        "Sóc, Vọng, Tết: lò ×2",
+        "Đọc xong sách thêm khoáng thạch",
+        "Tu vi +5%",
+    )
+    val SET_DETAILS = arrayOf(
+        "Khoáng thạch quà mỗi 10 vạn từ được gieo hai lần, lấy phẩm cao hơn.",
+        "Mọi khoáng thạch trong lò cần ít hơn 10% số chữ để luyện thành.",
+        "Bí cảnh tuần chỉ cần 4 ngày đọc từ 30 phút thay vì 5.",
+        "Mỗi tuần (thứ Hai đến Chủ nhật) chuỗi ngày đọc được tha một ngày lỡ.",
+        "Mỗi kỳ thiên kiếp được lỡ một ngày mà không thất bại.",
+        "Qua bí cảnh tuần được thêm một khoáng thạch nữa.",
+        "Ngày mồng một, ngày rằm và ba ngày Tết, chữ đọc luyện lò gấp đôi.",
+        "Mỗi cuốn đọc xong cho thêm một khoáng thạch vào túi.",
+        "Tu vi tính thêm 5% số chữ đã đọc.",
+    )
+    fun setOf(species: Int) = SET_MEMBERS.indexOfFirst { species in it }
+    /** A seed whose kind is `species` (its grade is species / 6). */
+    fun seedFor(species: Int) = (species % KINDS).toLong() * 18
+
     /** A finished book forges a treasure whose grade follows its length. */
     fun tierForBook(words: Long) = when {
         words < 40_000 -> 0

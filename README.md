@@ -4,7 +4,29 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.3.apk`](dist/Exacta-Reader-0.3.apk) (chép vào máy rồi cài; cài đè lên bản cũ được).
+Tải bản cài: [`dist/Exacta-Reader-0.4.apk`](dist/Exacta-Reader-0.4.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 0.4
+
+- **Mọi màn dạng tab, không cuộn**: Thư viện (Đang đọc · Chưa đọc · Đã xong · Tất cả, lưới bìa theo trang), Tu vi (Cảnh giới ·
+  Độ kiếp · Thống kê · Kinh Các), Pháp bảo (Lò luyện · Bảo khố · Bộ pháp bảo), Đạo hiệu (6 nhóm), Niên kỷ, Cài đặt.
+  Nội dung dài lật trang bằng nút ‹ › hoặc vuốt ngang.
+- **6 kiểu Home** chọn trong Cài đặt › Giao diện: Bảng tu hành, Cổ điển (A2), Bìa lớn, Kệ sách, Tối giản, Tu tiên.
+- **Màn đọc**: dòng tên sách trên đầu trang giữ chữ khỏi mép trên; bảng chỉnh như Exacta.OS: thanh tua có nút chương,
+  tab Mục lục (theo trang), Chữ (font, cỡ, độ đậm 5 mức), Trang (giãn dòng, lề, căn chữ, chân trang), Khác.
+- **Sửa giãn dòng không ăn**: CSS của sách đè quy tắc của Readium; app chèn CSS riêng vào từng chương lúc mở sách.
+  **Độ đậm chữ** mới: font Bitter biến thiên (100–900) kèm nét viền mảnh cho font gốc của sách.
+- **Bộ pháp bảo**: 9 bộ × 4 loại, gom đủ bộ có hiệu quả mãi mãi (hiệu quả điều chỉnh cho app: quà gieo hai lần, lò
+  nhanh 10%, bí cảnh 4 ngày, hộ pháp phù giữ chuỗi, thiên kiếp tha 1 ngày, bí cảnh thêm khoáng thạch, ngày lễ lò ×2,
+  đọc xong thêm khoáng thạch, tu vi +5%); đủ bộ lần đầu thưởng khoáng thạch Địa phẩm.
+- **Niên kỷ**: tổng kết mỗi năm âm lịch (giờ đọc, chữ, ngày đọc, chuỗi, ngày và tháng đọc nhiều nhất, sách xong,
+  pháp bảo, đạo hiệu, cảnh giới đầu và cuối năm); dịp Tết có chấm báo trên Home.
+- **Cài đặt** 5 tab: Giao diện, Đọc sách (font, cỡ, độ đậm, giãn dòng, lề, ngắt từ, thụt đầu dòng, tên sách, chân trang,
+  báo tin tu tiên), Tu tiên (mục tiêu đọc mỗi ngày, thời gian chờ tính giờ, sinh nhật, luật chơi), Thư viện (quét lại,
+  cách xếp, làm mới bìa, đếm lại chữ), Thông tin (sao lưu và khôi phục dữ liệu vào `ExactaReader/backup`).
+- **Logo** app và bộ icon vẽ lại nét mịn cho màn 300 ppi.
+- `app/src/test/.../ScreensTest.kt` vẽ mọi màn ở cỡ Neo 3 (1072×1448, 300 ppi) bằng Robolectric:
+  `.\gradlew.bat testReleaseUnitTest`, ảnh ra ở `app/build/screens`.
 
 ## Bản 0.3
 
@@ -67,18 +89,18 @@ khóa debug.
 
 ## Cấu trúc
 
-- `game/`: cảnh giới (`Realm`), lịch âm và tiết khí (`Lunar`), pháp bảo (`Treasure`), đạo hiệu (`DaoHieu`), chữ của Home (`Texts`).
-- `data/`: dữ liệu lưu trong một tệp JSON (`Store`, kèm thiên kiếp, bí cảnh, đạo hiệu), quét sách, bìa, đếm chữ (`Library`).
-- `ui/`: bộ vẽ kiểu Exacta.OS (`Ink`), Home (`HomeView`), trang cuộn (`PageView`).
-- Các màn: `HomeActivity`, `LibraryActivity`, `ReaderActivity`, `TuViActivity`, `PhapBaoActivity`, `DaoHieuActivity`, `SettingsActivity`.
+- `game/`: cảnh giới (`Realm`), lịch âm và tiết khí (`Lunar`), pháp bảo (`Treasure`), đạo hiệu (`DaoHieu`), Niên kỷ (`NienKy`), chữ của Home (`Texts`).
+- `data/`: dữ liệu lưu trong một tệp JSON (`Store`, kèm thiên kiếp, bí cảnh, đạo hiệu), quét sách, bìa, đếm chữ (`Library`), CSS chèn vào chương (`BookCss`).
+- `ui/`: bộ vẽ kiểu Exacta.OS (`Ink`), Home 6 kiểu (`HomeView`), khung màn có tab (`TabScreen`), bảng chỉnh khi đọc (`ReaderSheet`).
+- Các màn: `HomeActivity`, `LibraryActivity`, `ReaderActivity`, `TuViActivity`, `PhapBaoActivity`, `DaoHieuActivity`, `NienKyActivity`, `SettingsActivity`.
 
 ## Hướng tiếp
 
-Bộ pháp bảo, Niên kỷ (đã có trên Exacta.OS Omega), đồng bộ.
+Đồng bộ với Exacta.OS; kỳ ngộ, bế quan, hợp luyện, linh thạch (chưa có trên app).
 
-Đạo hiệu khác Exacta.OS ở năm chỗ, vì app chưa có kỳ ngộ, bế quan, hợp luyện, linh thạch: Phúc Duyên Thâm
-Hậu (20 khoáng thạch quà), Bế Quan Khổ Tu (tổng 100 giờ đọc), Lò Hỏa Thuần Thanh (30 pháp bảo), Tứ Bảo
-Tề Tụ (pháp bảo của 4 phẩm), Nguyệt Hạ Độc Thư (đọc đêm Trung Thu).
+Đạo hiệu khác Exacta.OS ở bốn chỗ, vì app chưa có kỳ ngộ, bế quan, hợp luyện, linh thạch: Phúc Duyên Thâm
+Hậu (20 khoáng thạch quà), Bế Quan Khổ Tu (tổng 100 giờ đọc), Lò Hỏa Thuần Thanh (30 pháp bảo), Nguyệt Hạ Độc
+Thư (đọc đêm Trung Thu).
 
 ## Giấy phép bên thứ ba
 

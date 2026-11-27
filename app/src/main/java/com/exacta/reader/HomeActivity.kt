@@ -34,6 +34,7 @@ class HomeActivity : AppCompatActivity() {
                     startActivity(Intent(this, ReaderActivity::class.java).putExtra(ReaderActivity.EXTRA_PATH, it))
                 }
                 HomeView.Action.DAO_HIEU -> startActivity(Intent(this, DaoHieuActivity::class.java))
+                HomeView.Action.NIEN_KY -> startActivity(Intent(this, NienKyActivity::class.java))
                 HomeView.Action.LIBRARY -> startActivity(Intent(this, LibraryActivity::class.java))
                 HomeView.Action.PHAP_BAO -> startActivity(Intent(this, PhapBaoActivity::class.java))
                 HomeView.Action.TU_VI -> startActivity(Intent(this, TuViActivity::class.java))
@@ -69,7 +70,7 @@ class HomeActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    private fun canReadAll() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Environment.isExternalStorageManager() else true
+    private fun canReadAll() = ExactaApp.canReadAll()
 
     private fun askAllFiles() {
         try {

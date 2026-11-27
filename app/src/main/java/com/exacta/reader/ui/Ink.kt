@@ -119,14 +119,18 @@ class Ink(private val context: Context, width: Int) {
 
     // --- Pixel art -------------------------------------------------------------------------
 
-    private val bitmaps = HashMap<Int, Bitmap>()
     private fun bitmap(id: Int) = bitmaps.getOrPut(id) {
         BitmapFactory.decodeResource(context.resources, id, BitmapFactory.Options().apply { inScaled = false })
     }
 
-    fun badge(c: Canvas, species: Int, x: Float, y: Float, size: Float) {
-        val id = context.resources.getIdentifier("badge_%02d".format(species.coerceIn(0, 35)), "drawable", context.packageName)
-        if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), pixels)
+    fun coverBitmap(path: String): Bitmap? {
+        if (path.isEmpty() || path == "none") return null
+        return covers.getOrPut(path) { if (java.io.File(path).exists()) runCatching { BitmapFactory.decodeFile(path) }.getOrNull() else null }
+    }
+
+    fun badge(c: Canvas, species: Int, x: Float, y: Float, size: Float, alpha: Int = 255) {
+        val id = context.resources.getIdentifier("badge_" + species.coerceIn(0, 35).toString().padStart(2, '0'), "drawable", context.packageName)
+        if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), if (alpha >= 255) pixels else Paint(pixels).apply { this.alpha = alpha })
     }
 
     fun realmIcon(c: Canvas, realm: Int, x: Float, y: Float, size: Float) {
@@ -189,6 +193,92 @@ class Ink(private val context: Context, width: Int) {
             text(c, lab, x0 + g * (gw + gg) + (gw - paint.measureText(lab)) / 2, ly, paint)
         }
         return ly + lineH(p)
+    }
+
+    // --- Controls ------------------------------------------------------------------------------
+
+    /** An outlined button; `selected` fills it black with white text; disabled is gray. */
+    fun button(c: Canvas, r: RectF, label: String, p: Paint = ui10Bold, enabled: Boolean = true, selected: Boolean = false) {
+        val rad = 10 * u
+        if (selected) {
+            c.drawRoundRect(r, rad, rad, fill)
+        } else {
+            c.drawRoundRect(r, rad, rad, white)
+            c.drawRoundRect(inset(r, u), rad, rad, stroke(if (enabled) 2f else 1.2f).apply { if (!enabled) color = LIGHT })
+        }
+        val tp = Paint(p).apply { color = if (selected) Color.WHITE else if (enabled) Color.BLACK else DARK }
+        centered(c, label, r.left + 6 * u, r.width() - 12 * u, r.centerY() - lineH(tp) / 2, tp)
+    }
+
+    /** One tab of a tab row: the chosen one black with white bold text. */
+    fun tab(c: Canvas, r: RectF, label: String, selected: Boolean) {
+        val rad = r.height() / 2
+        if (selected) {
+            c.drawRoundRect(r, rad, rad, fill)
+        } else {
+            c.drawRoundRect(inset(r, 0.8f * u), rad, rad, stroke(1.6f))
+        }
+        val p = paint(SMALL + 1f, bold = selected, color = if (selected) Color.WHITE else Color.BLACK)
+        centered(c, label, r.left + 8 * u, r.width() - 16 * u, r.centerY() - lineH(p) / 2, p)
+    }
+
+    /** The app's logo (res/drawable-nodpi/logo.png). */
+    fun logo(c: Canvas, x: Float, y: Float, size: Float) {
+        val id = context.resources.getIdentifier("logo", "drawable", context.packageName)
+        if (id != 0) c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), pixels)
+    }
+
+    /** A drawable icon (res/drawable-nodpi/ic_<name>.png), drawn black. */
+    fun icon(c: Canvas, name: String, x: Float, y: Float, size: Float, color: Int = Color.BLACK) {
+        val id = context.resources.getIdentifier("ic_$name", "drawable", context.packageName)
+        if (id == 0) return
+        val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
+            colorFilter = android.graphics.PorterDuffColorFilter(color, android.graphics.PorterDuff.Mode.SRC_IN)
+        }
+        c.drawBitmap(bitmap(id), null, RectF(x, y, x + size, y + size), p)
+    }
+
+    /** A section title with a rule under it, from x to x + w; returns the y below. */
+    fun section(c: Canvas?, x: Float, y: Float, w: Float, title: String): Float {
+        val p = smallBold
+        if (c != null) {
+            text(c, fit(title, w, p), x, y, p)
+            c.drawRect(x, y + lineH(p) + 2 * u, x + w, y + lineH(p) + 3 * u, fill)
+        }
+        return y + lineH(p) + 12 * u
+    }
+
+    /** Label on the left, value on the right, one line. */
+    fun pair(c: Canvas, label: String, value: String, x: Float, y: Float, w: Float, p: Paint = small, vp: Paint = smallBold) {
+        text(c, label, x, y, p)
+        right(c, fit(value, w - p.measureText(label) - 16 * u, vp), x + w, y, vp)
+    }
+
+    /** A cover image (or a gray block with the title) cropped to fill r. */
+    fun cover(c: Canvas, path: String, title: String, r: RectF) {
+        val bmp = coverBitmap(path)
+        val rad = 6 * u
+        if (bmp != null) {
+            val scale = maxOf(r.width() / bmp.width, r.height() / bmp.height)
+            val sw = r.width() / scale
+            val sh = r.height() / scale
+            val sx = (bmp.width - sw) / 2
+            val sy = (bmp.height - sh) / 2
+            c.save()
+            c.clipRect(r)
+            c.drawBitmap(bmp, android.graphics.Rect(sx.toInt(), sy.toInt(), (sx + sw).toInt(), (sy + sh).toInt()), r, pixels)
+            c.restore()
+        } else {
+            c.drawRoundRect(r, rad, rad, gray)
+            val p = if (r.width() < 110 * u) paint(SMALL - 2f, bold = true) else smallBold
+            var y = r.top + 10 * u
+            for (line in wrap(title, r.width() - 14 * u, p, 6)) {
+                if (y + lineH(p) > r.bottom - 6 * u) break
+                centered(c, line, r.left, r.width(), y, p)
+                y += lineH(p)
+            }
+        }
+        c.drawRoundRect(inset(r, 0.6f * u), rad, rad, stroke(1.4f))
     }
 
     // --- Small vector marks for the Omega systems --------------------------------------------
@@ -280,10 +370,20 @@ class Ink(private val context: Context, width: Int) {
     }
 
     companion object {
+        // Decoded images, shared by every screen (an e-ink app opens few at a time).
+        private val bitmaps = HashMap<Int, Bitmap>()
+        private val covers = object : LinkedHashMap<String, Bitmap?>(32, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap?>?) = size > 40
+        }
+
+        /** Set by the screen tests to draw at a given density. */
+        var dpiOverride = 0f
+
         /** Pixels per firmware pixel: the screen's real density against the X4's, times the UI size. */
         fun unit(context: Context, width: Int = 0): Float {
             val dm = context.resources.displayMetrics
             val dpi = when {
+                dpiOverride > 0f -> dpiOverride
                 dm.xdpi in 180f..480f -> dm.xdpi
                 dm.densityDpi in 180..480 -> dm.densityDpi.toFloat()
                 else -> 300f

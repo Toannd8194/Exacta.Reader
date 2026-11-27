@@ -14,8 +14,8 @@ android {
         applicationId = "com.exacta.reader"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.3"
+        versionCode = 4
+        versionName = "0.4"
     }
 
     // The app's own key, kept with the project (keystore/): every later APK must carry the same
@@ -52,6 +52,10 @@ android {
     buildFeatures {
         viewBinding = false
     }
+    // Screens are drawn on the desktop at the Neo 3's size (Robolectric) to check the layouts.
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -66,4 +70,7 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
 }

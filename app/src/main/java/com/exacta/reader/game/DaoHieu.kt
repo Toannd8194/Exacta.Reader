@@ -57,7 +57,7 @@ object DaoHieu {
         "Có đủ 36 loại pháp bảo",
         "Luyện thành một món Thần khí",
         "Luyện thành 30 pháp bảo",
-        "Có pháp bảo của 4 phẩm khác nhau",
+        "Gom đủ một bộ pháp bảo",
         "Nhận 20 khoáng thạch quà 10 vạn từ",
         "Tổng thời gian đọc 100 giờ",
         "Qua bí cảnh tuần 10 lần",
