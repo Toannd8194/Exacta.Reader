@@ -88,19 +88,23 @@ class DaoHieuActivity : TabActivity() {
         val day = Store.titleDays[t]
         val status = when {
             !earned -> "Chưa đắc"
-            day != null && day > 0 -> LocalDate.ofEpochDay(day).let { "Đắc ngày ${it.dayOfMonth}/${it.monthValue}/${it.year}" } + if (worn) " · đang mang" else ""
+            day != null && day > 0 -> LocalDate.ofEpochDay(day).let { "Đắc ${it.dayOfMonth}/${it.monthValue}/${it.year}" } + if (worn) " · mang" else ""
             else -> if (worn) "Đang mang" else "Đã đắc"
         }
-        val blockH = k.lineH(nameP) + 4 * u + rule.size * k.lineH(small) + 4 * u + k.lineH(small)
+        val names = k.wrap(DaoHieu.NAMES[t], tw, nameP, 2)
+        val blockH = names.size * k.lineH(nameP) + 4 * u + rule.size * k.lineH(small) + 4 * u + k.lineH(small)
         var y = r.centerY() - blockH / 2
-        k.text(c, k.fit(DaoHieu.NAMES[t], tw, nameP), tx, y, nameP)
-        y += k.lineH(nameP) + 4 * u
+        for (l in names) {
+            k.text(c, l, tx, y, nameP)
+            y += k.lineH(nameP)
+        }
+        y += 4 * u
         for (l in rule) {
             k.text(c, l, tx, y, if (earned) small else dark)
             y += k.lineH(small)
         }
         y += 4 * u
-        k.text(c, k.fit(status, tw, if (worn) k.smallBold else dark), tx, y, if (worn) k.smallBold else dark)
+        k.line(c, status, tx, y, tw, if (worn) k.smallBold else dark)
         if (earned) {
             hits.add(r) {
                 Store.titleChosen = if (Store.titleChosen == t) -1 else t

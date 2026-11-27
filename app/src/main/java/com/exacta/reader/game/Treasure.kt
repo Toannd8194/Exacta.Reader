@@ -168,7 +168,7 @@ object Treasure {
 
     /** The nine gates of thiên kiếp, by the realm they open (1 Trúc Cơ … 9 Tiên nhân). */
     val GATES = arrayOf("", "Trúc Cơ Quan", "Ngưng Đan", "Phá Đan Thành Anh", "Cảm Ngộ Thiên Địa", "Luyện Thần Phản Hư",
-        "Hợp Thể Quy Nguyên", "Đại Thừa Viên Mãn", "Độ Kiếp", "Phi Thăng")
+        "Hợp Thể Quy Nguyên", "Đại Thừa Viên Mãn", "Độ Kiếp", "Lục Giới Môn")
 
     /** A finished book forges a treasure whose grade follows its length. */
     fun tierForBook(words: Long) = when {

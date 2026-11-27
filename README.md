@@ -4,9 +4,9 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.3.apk`](dist/Van-Quyen-Tien-Do-2.3.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.3.1.apk`](dist/Van-Quyen-Tien-Do-2.3.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
-Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.2.1): [`dist/Van-Quyen-Tien-Do-2.2.1-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.2.1-Cam-nang.pdf).
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.3.1): [`dist/Van-Quyen-Tien-Do-2.3.1-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.3.1-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
 pháp, 72 pháp bảo, 18 bộ, 18 đan dược và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
 
@@ -16,6 +16,20 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, Đ
 Bản 2.0, 2.1, 2.2 là ba bước đầu của lộ trình; các bước 2.3 – 2.7 còn đó. Từ 2.1, bản thiết kế có thêm chương Độ Kiếp
 (giai đoạn đặc biệt chín tầng kiếp) và chương Phi Thăng kỳ: cảnh giới cuối của Linh giới, nơi Lục Giới Môn mở và người
 tu chọn một trong sáu đại thiên thế giới (Tiên, Ma, Phật, Yêu, Minh, Thần). Phần sau cửa để ngỏ cho các bản 3.x.
+
+## Bản 2.3.1 · Lục Giới Phân Đồ
+
+- **Phi Thăng** là cảnh giới cuối của Linh giới; **Độ Kiếp** là chặng đặc biệt giữa Đại Thừa và Phi Thăng. Từ Phi Thăng lên
+  Tiên nhân qua **Lục Giới Môn**: chọn một trong sáu giới (Tiên, Ma, Phật, Yêu, Minh, Thần), thành một trong sáu loại tiên
+  nhân (Thiên Tiên, Ma Tiên, Phật Tiên, Yêu Tiên, Quỷ Tiên, Thần Tiên). Mỗi giới có một lời gọi rút từ cả đời tu: có lời gọi
+  thì đột phá +10%, cửa tối −10%. Ai đã là Tiên nhân được chọn một lần.
+- **Home**: thanh trên hiện đạo hiệu đang mang, căn giữa (chạm để mở Đạo hiệu); đạo hiệu bỏ khỏi thẻ cảnh giới; hàng nút
+  dưới đều nhau (thêm Tông môn, Đạo hiệu thành nút thường). Thẻ cảnh giới sắp lại: lời chào riêng một dòng, cảnh giới lớn
+  kèm tu vi, căn cơ, tâm ma, thanh tiến độ, số liệu trong ngày, tiết khí kèm một lời bình về việc tu (24 lời), cửa ải, bí
+  cảnh. Kiểu Tu tiên: thẻ thứ ba là Tông môn.
+- Các màn khác: thanh trên hiện ngày dương và ngày âm dễ đọc. Tên truyện khi đọc được căn giữa.
+- Chữ dài trên mọi màn thu nhỏ một chút trước khi phải cắt; Cẩm nang có chương Tông môn và bí cảnh, bảng 72 kỳ ngộ.
+- versionCode 231.
 
 ## Bản 2.3 · Bái Nhập Sơn Môn
 
@@ -160,6 +174,8 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.1 | Vạn Pháp Quy Nguyên | linh căn, công pháp, tâm pháp, thuật pháp, ngộ tính, Tàng Kinh Các, vẽ lại đồ họa |
   | 2.2 | Động Phủ Khai Lô | động phủ, linh mạch, dược viên, đan phòng, đan độc, 36 kỳ ngộ, popup có khung |
   | 2.2.1 | Kim Khung Ngọc Khuyết | khung Home theo % và cảnh giới, hết cắt chữ, nút Thư viện vuông, 4 kiểu Home |
+  | 2.3 | Bái Nhập Sơn Môn | tông môn, bí cảnh bản đồ, 72 kỳ ngộ, tiểu đột phá, cảnh giới theo kỳ |
+  | 2.3.1 | Lục Giới Phân Đồ | Phi Thăng, Lục Giới Môn, sáu loại tiên nhân, Home gọn lại |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

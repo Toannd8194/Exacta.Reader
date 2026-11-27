@@ -429,6 +429,14 @@ class ScreensTest {
         a.selectTab(0)
         idle()
         shoot(root(a), "tuvi_0_early")
+        // At Phi Thăng: the six realms.
+        Store.realmCap = 8
+        Store.totalWords = TuLuyen.floor(9) + 10_000
+        TuLuyen.reset()
+        TuLuyen.migrate()
+        a.selectTab(2)
+        idle()
+        shoot(root(a), "dotpha_lucgioi")
     }
 
     @Test

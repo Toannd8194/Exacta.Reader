@@ -145,7 +145,7 @@ class TongMonActivity : TabActivity() {
         k.text(c, "Tu vi ${Realm.van(theirs)} vạn · bạn ${Realm.van(mine)} vạn", card.left + pad, cy, small); cy += sl
         val diff = mine - theirs
         k.text(c, if (diff >= 0) "Bạn đang dẫn trước ${Realm.van(diff)} vạn" else "Còn kém ${Realm.van(-diff)} vạn", card.left + pad, cy, sb); cy += sl
-        k.text(c, k.fit("Mỗi ngày tu theo nhịp đọc 30 ngày của bạn nhân 1,1: đọc đều hơn chính mình mới vượt được.", card.width() - 2 * pad, small), card.left + pad, cy, small)
+        k.line(c, "Tu theo nhịp đọc 30 ngày của bạn, nhanh hơn một phần mười.", card.left + pad, cy, card.width() - 2 * pad, small)
         y = card.bottom + 18 * u
 
         if (!TongMon.changed) {

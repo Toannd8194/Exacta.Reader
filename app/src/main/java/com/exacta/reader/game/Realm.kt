@@ -11,7 +11,7 @@ object Realm {
     private val TIEN_VAN = longArrayOf(1000, 1200, 1450, 1750, 2100, 2500, 3000, 3600, 4300)
     private val NAMES = arrayOf(
         "Luyện Khí", "Trúc Cơ", "Kim Đan", "Nguyên Anh", "Hóa Thần", "Luyện Hư", "Hợp Thể", "Đại Thừa",
-        "Độ Kiếp Phi Thăng", "Tiên nhân",
+        "Phi Thăng", "Tiên nhân",
     )
     private val STAGES = arrayOf("sơ kỳ", "trung kỳ", "hậu kỳ")
     private val PHAM = arrayOf("cửu phẩm", "bát phẩm", "thất phẩm", "lục phẩm", "ngũ phẩm", "tứ phẩm", "tam phẩm", "nhị phẩm", "nhất phẩm")

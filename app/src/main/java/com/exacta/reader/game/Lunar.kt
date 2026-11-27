@@ -133,6 +133,12 @@ object Lunar {
     fun termName(term: Int) = TERMS[((term % 24) + 24) % 24]
     fun yearName(lunarYear: Int) = CAN[((lunarYear + 6) % 10 + 10) % 10] + " " + CHI[((lunarYear + 8) % 12 + 12) % 12]
 
+    /** "28/11 · mồng 8 tháng 10 âm lịch": the day plain, the lunar day under it. */
+    fun plainDate(dd: Int, mm: Int, d: Date): String {
+        val lday = if (d.day <= 10) "mồng ${d.day}" else "${d.day}"
+        return "$dd/$mm · $lday tháng ${d.month}" + (if (d.leap) " nhuận" else "") + " âm lịch"
+    }
+
     /** "Mạnh Đông · Vọng nhật": the month by season, the day the old way. */
     fun ancientMonthDay(d: Date): String {
         val day = when {

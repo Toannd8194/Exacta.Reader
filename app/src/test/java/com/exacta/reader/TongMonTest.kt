@@ -204,6 +204,21 @@ class TongMonTest {
     }
 
     @Test
+    fun lụcGiớiMônAtPhiThăng() {
+        Store.realmCap = 8
+        TuLuyen.subCap = 3
+        Store.totalWords = TuLuyen.floor(9)
+        assertEquals("Phi Thăng đại viên mãn", TuLuyen.name())
+        assertTrue(TuLuyen.canChooseGioi())
+        assertTrue(TuLuyen.needs().any { !it.met && it.text.startsWith("Chọn một trong sáu giới") })
+        assertTrue(TuLuyen.chooseGioi(1))
+        assertFalse(TuLuyen.chooseGioi(2))     // once
+        assertTrue(TuLuyen.parts().any { it.first.startsWith("Cửa tối của Ma giới") && it.second == -10 })
+        Store.realmCap = 9
+        assertTrue(TuLuyen.name().startsWith("Ma Tiên"))
+    }
+
+    @Test
     fun seventyTwoKỳNgộByRarity() {
         val counts = KyNgo.EVENTS.groupingBy { it.rarity }.eachCount()
         assertEquals(mapOf(0 to 36, 1 to 18, 2 to 9, 3 to 6, 4 to 3), counts)

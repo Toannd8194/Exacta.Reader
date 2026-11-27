@@ -265,7 +265,9 @@ class TuViActivity : TabActivity() {
             k.card(c, r)
             k.realmIcon(c, 9, r.left + pad, r.top + pad, 80 * u)
             k.text(c, "Đã phi thăng", r.left + 2 * pad + 80 * u, r.top + pad, k.ui12Bold)
-            k.text(c, "Tiên nhân không còn cửa ải. Tiên lộ để dành cho chương sau.", r.left + 2 * pad + 80 * u, r.top + pad + k.lineH(k.ui12Bold) + 6 * u, small)
+            k.text(c, k.fit("${TuLuyen.tienKind()} không còn cửa ải. Đường sau Lục Giới để dành cho chương sau.", r.width() - 3 * pad - 80 * u, small),
+                r.left + 2 * pad + 80 * u, r.top + pad + k.lineH(k.ui12Bold) + 6 * u, small)
+            if (TuLuyen.canChooseGioi()) gioiPicker(c, k, RectF(a.left, r.bottom + 18 * u, a.right, a.bottom), hits)
             return 1
         }
 
@@ -313,6 +315,12 @@ class TuViActivity : TabActivity() {
             }
         }
         y += 12 * u
+
+        // At Phi Thăng: the six realms come before the chance.
+        if (TuLuyen.canChooseGioi()) {
+            gioiPicker(c, k, RectF(a.left, y + 12 * u, a.right, a.bottom), hits)
+            return 2
+        }
 
         // The chance, part by part.
         y = k.section(c, a.left, y, a.width(), "TỈ LỆ ĐỘT PHÁ")
@@ -412,6 +420,49 @@ class TuViActivity : TabActivity() {
             }
         }
         return 2
+    }
+
+    /** Lục Giới Môn: six doors, each with its calling; one is chosen, once. */
+    private fun gioiPicker(c: Canvas, k: Ink, a: RectF, hits: Hits) {
+        val u = k.u
+        val small = k.small
+        val sl = k.lineH(small)
+        var y = k.section(c, a.left, a.top, a.width(), "LỤC GIỚI MÔN · CHỌN NƠI PHI THĂNG")
+        val gap = 10 * u
+        val cw = (a.width() - gap) / 2
+        val ch = ((a.bottom - y - 2 * gap) / 3).coerceAtMost(150 * u)
+        for (i in TuLuyen.GIOI.indices) {
+            val x = a.left + (i % 2) * (cw + gap)
+            val cy = y + (i / 2) * (ch + gap)
+            val r = RectF(x, cy, x + cw, cy + ch)
+            val called = TuLuyen.calling(i)
+            k.card(c, r, selected = called)
+            val pad = 12 * u
+            // The realm and its immortal on one line, the door on the right; the calling under them.
+            val tag = if (called) "lời gọi +10%" else "cửa tối −10%"
+            k.right(c, tag, r.right - pad, r.top + pad + (k.lineH(k.ui10Bold) - k.lineH(k.smallBold)) / 2, k.smallBold)
+            k.line(c, "${TuLuyen.GIOI[i]} · ${TuLuyen.TIEN_KIND[i]}", r.left + pad, r.top + pad,
+                r.width() - 2 * pad - k.smallBold.measureText(tag) - 10 * u, k.ui10Bold)
+            var ty = r.top + pad + k.lineH(k.ui10Bold) + 4 * u
+            for (l in k.wrap(TuLuyen.GIOI_CALL[i], r.width() - 2 * pad, small, ((r.bottom - pad - ty) / sl).toInt().coerceAtLeast(1))) {
+                k.text(c, l, r.left + pad, ty, small)
+                ty += sl
+            }
+            hits.add(r) { gioiDialog(i) }
+        }
+    }
+
+    private fun gioiDialog(i: Int) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Hướng về ${TuLuyen.GIOI[i]}?")
+            .setMessage(TuLuyen.GIOI_TEXT[i] + "\n\nLời gọi: " + TuLuyen.GIOI_CALL[i] + (if (TuLuyen.calling(i)) " (đã có)." else " (chưa có: qua cửa tối, đột phá −10%).") +
+                "\n\nMột đời tu chỉ chọn một giới.")
+            .setPositiveButton("Hướng về ${TuLuyen.GIOI[i]}") { _, _ ->
+                if (TuLuyen.chooseGioi(i)) result = "Đã hướng về ${TuLuyen.GIOI[i]}"
+                refresh()
+            }
+            .setNegativeButton("Nghĩ thêm", null)
+            .show()
     }
 
     /** Page 2 of Đột phá: the nine gates and what each asks, and what a failure costs. */

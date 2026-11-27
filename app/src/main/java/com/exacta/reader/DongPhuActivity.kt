@@ -64,9 +64,9 @@ class DongPhuActivity : TabActivity() {
         k.text(c, k.fit(title, tw - tagW, k.ui10Bold), r.left + pad, y, k.ui10Bold)
         if (tag.isNotEmpty()) k.right(c, tag, r.left + pad + tw, y + (k.lineH(k.ui10Bold) - k.lineH(k.smallBold)) / 2, k.smallBold)
         y += k.lineH(k.ui10Bold) + 2 * u
-        k.text(c, k.fit(line1, tw, k.small), r.left + pad, y, k.small)
+        k.line(c, line1, r.left + pad, y, tw, k.small)
         y += k.lineH(k.small)
-        k.text(c, k.fit(line2, tw, k.small), r.left + pad, y, k.small)
+        k.line(c, line2, r.left + pad, y, tw, k.small)
         if (button != null) {
             val b = RectF(r.right - pad - bw, r.centerY() - 24 * u, r.right - pad, r.centerY() + 24 * u)
             k.button(c, b, button, k.smallBold, enabled = enabled)
@@ -168,7 +168,7 @@ class DongPhuActivity : TabActivity() {
         var y = k.section(c, a.left, a.top, a.width(), "DƯỢC VIÊN · ${DongPhu.open()}/6 LUỐNG · +${DongPhu.yearsADay()} NĂM MỖI NGÀY ĐỌC 30 PHÚT")
         val gap = 12 * u
         val cw = (a.width() - gap) / 2
-        val ch = 150 * u
+        val ch = 138 * u
         for (i in 0 until 6) {
             val x = a.left + (i % 2) * (cw + gap)
             val cy = y + (i / 2) * (ch + gap)

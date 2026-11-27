@@ -276,7 +276,7 @@ class CongPhapActivity : TabActivity() {
         y = k.section(c, a.left, y, a.width(), "PHẨM CÔNG PHÁP")
         val g = TuLuyen.gate()
         val rules = listOf(
-            "Hoàng phẩm tu tới Trúc Cơ, Huyền tới Kim Đan, Địa tới Nguyên Anh, Thiên tới Hóa Thần; Linh giới cần Linh phẩm, Độ Kiếp cần Tiên phẩm.",
+            "Hoàng phẩm tu tới Trúc Cơ, Huyền tới Kim Đan, Địa tới Nguyên Anh, Thiên tới Hóa Thần; Linh giới cần Linh phẩm, Phi Thăng cần Tiên phẩm.",
             if (Store.realmCap in 0..8 && g >= 2) "Cửa kế tiếp ${Realm.baseName(g)} cần công pháp ${PhapMon.PHAM[PhapMon.phamFor(g)]} phẩm" +
                 (if (DaoPhap.canBreakWith(g)) ": đã đủ." else ": tìm ở kỳ ngộ, bí cảnh tuần, Tàng Kinh Các.") else "Cửa kế tiếp không đòi phẩm công pháp.",
             "Đổi công pháp không mất tầng: mỗi bộ giữ chữ đã luyện." + if (others().isNotEmpty()) " Trang sau là các bộ khác đã có." else "",
@@ -432,7 +432,7 @@ class CongPhapActivity : TabActivity() {
                 }
                 PhapMon.TAM -> PhapMon.TAM_PHAP[id].let { Triple(it.name, "Tâm pháp", it.text) }
                 PhapMon.DAN -> com.exacta.reader.game.DanDao.RECIPES[id].let {
-                    Triple(it.name, "Đan phương", "${com.exacta.reader.game.DanDao.GROUPS[it.group]} · ${it.text} · luyện đan sư ${com.exacta.reader.game.DanDao.CAP[it.cap - 1].lowercase()}")
+                    Triple(it.name, "Đan phương", "${com.exacta.reader.game.DanDao.GROUPS[it.group]} · ${it.text} · cần ${com.exacta.reader.game.DanDao.CAP[it.cap - 1].lowercase()}")
                 }
                 else -> PhapMon.THUAT_PHAP[id].let { Triple(it.name, "Thuật pháp", "${PhapMon.attrName(it.attr)} · ${PhapMon.KINDS[it.kind]} · ${it.text}") }
             }
@@ -444,7 +444,7 @@ class CongPhapActivity : TabActivity() {
             val tagW = k.smallBold.measureText(tag) + 12 * u
             k.text(c, k.fit(title, tw - tagW, k.ui10Bold), r.left + pad, r.top + pad, k.ui10Bold)
             k.right(c, tag, r.left + pad + tw, r.top + pad + (k.lineH(k.ui10Bold) - k.lineH(k.smallBold)) / 2, k.smallBold)
-            k.text(c, k.fit(line, tw, small), r.left + pad, r.top + pad + k.lineH(k.ui10Bold) + 2 * u, small)
+            k.line(c, line, r.left + pad, r.top + pad + k.lineH(k.ui10Bold) + 2 * u, tw, small)
             val b = RectF(r.right - pad - bw, r.centerY() - 22 * u, r.right - pad, r.centerY() + 22 * u)
             val ok = !have && Store.linhThach >= price
             k.button(c, b, if (have) "Đã có" else "Đổi · $price", k.smallBold, enabled = ok)

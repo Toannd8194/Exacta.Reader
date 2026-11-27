@@ -125,7 +125,9 @@ class BienNienActivity : TabActivity() {
             Era("2.2.1", "Kim Khung Ngọc Khuyết",
                 "Thẻ sách và thẻ tu vi có khung riêng: đai mực chạy theo % đọc và % cảnh giới, hoa văn góc lớn dần theo cảnh giới; thẻ trong game đẹp dần theo cấp; hết chữ bị cắt trên Home; nút Thư viện vuông; còn bốn kiểu Home."),
             Era("2.3", "Bái Nhập Sơn Môn",
-                "Năm tông môn, nhiệm vụ tuần, cống hiến, bảo khố, sư huynh đối thủ, đại bỉ mỗi quý; bí cảnh thành bản đồ có ngã rẽ và biến cố, trọng thương; thượng cổ di tích; 72 kỳ ngộ theo độ hiếm; tiểu đột phá từ Kim Đan; cảnh giới gọi theo kỳ; 12 giọng tiên hiệp; icon mới."),
+                "Năm tông môn, nhiệm vụ, đối thủ, đại bỉ; bí cảnh thành bản đồ biến cố; 72 kỳ ngộ theo độ hiếm; tiểu đột phá; cảnh giới gọi theo kỳ."),
+            Era("2.3.1", "Lục Giới Phân Đồ",
+                "Phi Thăng thành cảnh giới, Độ Kiếp là chặng đặc biệt; Lục Giới Môn chọn một trong sáu giới, thành một trong sáu loại tiên nhân; Home gọn lại, đạo hiệu lên thanh trên, tiết khí kèm lời bình."),
         )
     }
 }

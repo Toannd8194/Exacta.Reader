@@ -105,7 +105,7 @@ class TabView(context: Context, private val host: TabActivity) : View(context) {
         val h = height.toFloat()
         hits.list.clear()
         val today = LocalDate.now()
-        k.status(c, w, Lunar.ancientMonthDay(Lunar.fromSolar(today.dayOfMonth, today.monthValue, today.year)))
+        k.status(c, w, Lunar.plainDate(today.dayOfMonth, today.monthValue, Lunar.fromSolar(today.dayOfMonth, today.monthValue, today.year)))
         val m = Ink.MARGIN * u
 
         // Header: back, title, label.

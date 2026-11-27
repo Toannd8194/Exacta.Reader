@@ -118,7 +118,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(side, Widgets.dp(context, 10), side, Widgets.dp(context, 6))
-            addView(headerLeft, LinearLayout.LayoutParams(Widgets.dp(context, 70), -2))
+            addView(headerLeft, LinearLayout.LayoutParams(Widgets.dp(context, 118), -2))
             addView(headerTitle, LinearLayout.LayoutParams(0, -2, 1f))
             addView(headerRight, LinearLayout.LayoutParams(Widgets.dp(context, 118), -2))
         }

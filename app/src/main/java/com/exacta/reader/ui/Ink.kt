@@ -60,8 +60,22 @@ class Ink(private val context: Context, width: Int) {
     fun text(c: Canvas, s: String, x: Float, y: Float, p: Paint) = c.drawText(s, x, y - p.ascent(), p)
 
     fun centered(c: Canvas, s: String, x: Float, w: Float, y: Float, p: Paint) {
-        val t = fit(s, w, p)
-        text(c, t, x + (w - p.measureText(t)) / 2, y, p)
+        val q = shrink(s, w, p)
+        val t = fit(s, w, q)
+        text(c, t, x + (w - q.measureText(t)) / 2, y, q)
+    }
+
+    /** The paint, a little smaller (down to 80%) when `s` is too wide for `w`. */
+    fun shrink(s: String, w: Float, p: Paint, least: Float = 0.8f): Paint {
+        val m = p.measureText(s)
+        if (m <= w || m <= 0f) return p
+        return Paint(p).apply { textSize = p.textSize * (w / m).coerceAtLeast(least) }
+    }
+
+    /** One line from (x, y) within `w`: smaller type first, cut only when that is not enough. */
+    fun line(c: Canvas, s: String, x: Float, y: Float, w: Float, p: Paint) {
+        val q = shrink(s, w, p)
+        text(c, fit(s, w, q), x, y, q)
     }
 
     fun right(c: Canvas, s: String, xr: Float, y: Float, p: Paint) = text(c, s, xr - p.measureText(s), y, p)
@@ -344,8 +358,10 @@ class Ink(private val context: Context, width: Int) {
         val pb = smallBold
         val ly = base + 5 * u
         for (g in 0 until groups) {
-            val paint = if (g == here) pb else p
-            val lab = fit(labels[g], gw + gg - 2 * u, paint)
+            // Too narrow even for smaller type: "đại viên mãn" says "viên mãn" on the bar.
+            val word = labels[g].let { if (shrink(it, gw + gg - 2 * u, if (g == here) pb else p, 0.68f).measureText(it) > gw + gg - 2 * u) it.removePrefix("đại ") else it }
+            val paint = shrink(word, gw + gg - 2 * u, if (g == here) pb else p, 0.68f)
+            val lab = fit(word, gw + gg - 2 * u, paint)
             text(c, lab, x0 + g * (gw + gg) + (gw - paint.measureText(lab)) / 2, ly, paint)
         }
         return ly + lineH(p)

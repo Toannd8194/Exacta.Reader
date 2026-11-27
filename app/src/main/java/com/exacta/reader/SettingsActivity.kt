@@ -161,7 +161,7 @@ class SettingsActivity : TabActivity() {
             val tw = r.width() - 2 * pad - if (row.action != null) 30 * u else 0f
             k.text(c, k.fit(row.title, tw, k.ui10Bold), r.left + pad, r.top + 14 * u, k.ui10Bold)
             val vy = r.top + 18 * u + k.lineH(k.ui10Bold)
-            k.text(c, k.fit(row.value, tw, k.small), r.left + pad, vy, k.small)
+            k.line(c, row.value, r.left + pad, vy, tw, k.small)
             if (row.action != null) {
                 k.right(c, "›", r.right - pad, r.centerY() - k.lineH(k.big) / 2, k.big)
                 hits.add(r) {

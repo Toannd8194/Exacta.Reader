@@ -89,7 +89,7 @@ object TuLuyen {
         started = false; adj = 0; apChe = 0; subCap = 0; tamMa = 0; lastTick = -1; injuryUntil = -1; restUntil = -1
         tauHoaDay = -1; tamMaKiep = false; fails = 0; pill = false; trialDone = -1; trialBook = ""; attacks = 0
         coPham = -1; danPham = -1; breaks = 0; breakFails = 0; lastResult = ""; capDays.fill(-1); failDays.clear()
-        stageSeen = -1; ceilingSeen = -1; stuckSeen = -1; minorSeen = -1; minorRest = -1; minorFails = 0
+        stageSeen = -1; ceilingSeen = -1; stuckSeen = -1; minorSeen = -1; minorRest = -1; minorFails = 0; gioi = -1
         dayBest.clear(); dayLong.clear(); dayVeryLong.clear(); dayJumps.clear()
     }
 
@@ -157,12 +157,59 @@ object TuLuyen {
     /** At the top of the realm reached: đan điền full. */
     fun atCeiling() = Store.realmCap in 0..8 && Store.tuVi() >= floor(Store.realmCap + 1)
 
-    fun shortName(r: Int) = if (r == 8) "Độ Kiếp" else Realm.baseName(r)
+    fun shortName(r: Int) = Realm.baseName(r)
+
+    // --- Lục Giới Môn: from Phi Thăng, one of six realms and one of six kinds of immortal ---------
+
+    val GIOI = arrayOf("Tiên giới", "Ma giới", "Phật giới", "Yêu giới", "Minh giới", "Thần giới")
+    val TIEN_KIND = arrayOf("Thiên Tiên", "Ma Tiên", "Phật Tiên", "Yêu Tiên", "Quỷ Tiên", "Thần Tiên")
+    val GIOI_CALL = arrayOf(
+        "năm thước đo cân bằng: căn cơ từ 60, tâm cảnh Thanh Minh, thần thức Ngũ trọng, thể phách Thiết Cốt",
+        "đã ba lần đột phá hỏng mà vẫn đứng dậy, hoặc từng luyện Đạo Tâm Chủng Ma",
+        "tâm cảnh Vô Cấu, hoặc từng có chuỗi ngày đọc tròn một năm",
+        "thể phách Kim Thân trở lên",
+        "ba cuốn bỏ dở từ ba tháng trở lên rồi quay lại đọc xong",
+        "thần thức Cửu trọng, hoặc đã đọc trọn sách của 30 tác giả",
+    )
+    val GIOI_TEXT = arrayOf(
+        "Tiên quang tiếp dẫn, mây lành rải lối: thành Thiên Tiên, chín phẩm tiên lực.",
+        "Ma khí cuồn cuộn, tâm ma hóa sức: thành Ma Tiên, càng nghịch càng mạnh.",
+        "Kim quang Phật quốc, hoa sen nở dưới chân: thành Phật Tiên, lấy công đức làm tu vi.",
+        "Vạn yêu triều bái, huyết mạch thức tỉnh: thành Yêu Tiên, nhục thân bất hoại.",
+        "U Minh mở cửa, luân hồi trong tay: thành Quỷ Tiên, nhớ trọn các đời tu.",
+        "Thần quốc dựng trên tín niệm: thành Thần Tiên, thần thức bao trùm một phương.",
+    )
+    var gioi = -1
+
+    private fun lateFinished() = Store.books.values.count { it.finishDay >= 0 && it.firstDay >= 0 && it.finishDay - it.firstDay >= 90 }
+
+    /** The calling of a realm: the life of cultivation that leads to it. */
+    fun calling(i: Int): Boolean = when (i) {
+        0 -> canCo() >= 60 && tamCanhTier() >= 2 && trong() >= 4 && theTier() >= 2
+        1 -> breakFails >= 3 || PhapMon.TP_CHUNG_MA in DaoPhap.tam
+        2 -> tamCanhTier() >= 4 || Store.bestStreak() >= 365
+        3 -> theTier() >= 4
+        4 -> lateFinished() >= 3
+        else -> trong() >= 8 || authors() >= 30
+    }
+
+    /** The realm to ascend to is chosen at Phi Thăng (or by an immortal who never chose); once. */
+    fun canChooseGioi() = gioi < 0 && Store.realmCap >= 8
+
+    fun chooseGioi(i: Int): Boolean {
+        if (!canChooseGioi() || i !in GIOI.indices) return false
+        gioi = i
+        Store.note("Lục Giới Môn: hướng về ${GIOI[i]}" + if (calling(i)) ", lời gọi vang lên" else ", qua cửa tối")
+        Store.touch()
+        return true
+    }
+
+    fun tienKind() = if (gioi >= 0) TIEN_KIND[gioi] else "Tiên nhân"
 
     /** "Luyện Khí trung kỳ", "Kim Đan hậu kỳ", "Nguyên Anh đại viên mãn", "Tiên nhân tam phẩm". */
     fun name(): String {
         val r = realm()
-        if (r >= 9) return Realm.name(Store.level())
+        if (r >= 9) return Realm.name(Store.level()).replace("Tiên nhân", tienKind())
         val s = shownSub()
         return if (r == 0) "Luyện Khí " + (if (atCeiling()) TIEU[3] else LK_KY[s / 3]) else "${shortName(r)} ${TIEU[s]}"
     }
@@ -309,6 +356,7 @@ object TuLuyen {
             }
         }
         if (Store.realmCap >= 1) list.add(Need("Đã vào đại viên mãn (căn cơ từ 60 khi tới)", subCap >= 3))
+        if (g == 9) list.add(Need(if (gioi >= 0) "Hướng về ${GIOI[gioi]}" else "Chọn một trong sáu giới ở Lục Giới Môn", gioi >= 0))
         if (g >= 2) {
             val p = PhapMon.phamFor(g)
             val now = DaoPhap.activeDef()?.let { "${it.name}, ${PhapMon.PHAM[it.pham]} phẩm" } ?: "chưa vận"
@@ -354,6 +402,7 @@ object TuLuyen {
         if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
         if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])
         if (DongPhu.danDoc >= 4) list.add("Đan độc ${DongPhu.danDoc}, chia bốn" to -(DongPhu.danDoc / 4))
+        if (g == 9 && gioi >= 0) list.add((if (calling(gioi)) "Lời gọi của ${GIOI[gioi]}" else "Cửa tối của ${GIOI[gioi]}") to (if (calling(gioi)) 10 else -10))
         if (pill) list.add("Phá Cảnh Đan" to 15)
         if (fails > 0) list.add("Kiên trì, $fails lần trước" to minOf(30, 10 * fails))
         if (tamMa > 1) list.add("Tâm ma $tamMa, chia đôi" to -(tamMa / 2))
@@ -666,7 +715,7 @@ object TuLuyen {
         put("capDays", JSONArray().apply { capDays.forEach { put(it) } })
         put("failDays", JSONArray().apply { failDays.forEach { put(it) } })
         put("stageSeen", stageSeen); put("ceilingSeen", ceilingSeen); put("stuckSeen", stuckSeen)
-        put("minorSeen", minorSeen); put("minorRest", minorRest); put("minorFails", minorFails)
+        put("minorSeen", minorSeen); put("minorRest", minorRest); put("minorFails", minorFails); put("gioi", gioi)
         put("days", JSONObject().apply {
             for (d in dayBest.keys + dayLong.keys + dayVeryLong.keys + dayJumps.keys) {
                 put(d.toString(), JSONArray().put(dayBest[d] ?: 0).put(dayLong[d] ?: 0).put(dayVeryLong[d] ?: 0).put(dayJumps[d] ?: 0))
@@ -686,7 +735,7 @@ object TuLuyen {
         o.optJSONArray("capDays")?.let { a -> for (i in 0 until minOf(a.length(), capDays.size)) capDays[i] = a.getLong(i) }
         o.optJSONArray("failDays")?.let { a -> for (i in 0 until a.length()) failDays.add(a.getLong(i)) }
         stageSeen = o.optInt("stageSeen", -1); ceilingSeen = o.optInt("ceilingSeen", -1); stuckSeen = o.optInt("stuckSeen", -1)
-        minorSeen = o.optInt("minorSeen", -1); minorRest = o.optLong("minorRest", -1); minorFails = o.optInt("minorFails")
+        minorSeen = o.optInt("minorSeen", -1); minorRest = o.optLong("minorRest", -1); minorFails = o.optInt("minorFails"); gioi = o.optInt("gioi", -1)
         o.optJSONObject("days")?.let { m ->
             for (k in m.keys()) {
                 val v = m.getJSONArray(k)

@@ -36,6 +36,34 @@ object Texts {
         "Củng cố căn cơ",
         "Hỏi đạo trường sinh",
     )
+    /** For each tiết khí (in Lunar's order, Xuân phân first): what it means for the cultivator. */
+    val TERM_ADVICE = arrayOf(
+        "ngày đêm cân bằng, âm dương hòa hợp, hợp lúc phá tiểu cảnh",
+        "trời trong khí sáng, thần thức minh mẫn, nên đọc sách mới",
+        "mưa xuống trăm cốc, dược viên tươi tốt, nên gieo linh thảo",
+        "hạ khí bắt đầu, hỏa linh dần vượng, đan phòng dễ thành",
+        "vạn vật no đầy, linh lực sung túc, chớ vội phá cảnh",
+        "lúa mạch vào mùa, công phu gieo trồng đến lúc gặt",
+        "dương khí cực thịnh, kiếm ý sắc bén, hợp đột phá đại cảnh",
+        "nóng nhẹ còn dịu, nên tĩnh tọa dưỡng tâm, ngừa tâm ma",
+        "nóng gắt như lửa, hỏa độc dễ phát, bớt dùng đan dược",
+        "thu khí sơ sinh, kim linh nổi dậy, kiếm tu được lợi",
+        "nắng gắt lui dần, khí huyết điều hòa, hợp bế quan",
+        "sương trắng đọng lá, thủy linh trong trẻo, dưỡng thần thức",
+        "đêm ngày lại bằng, âm dương giao thoa, tâm cảnh dễ thăng",
+        "sương lạnh dày thêm, chân khí nên thu liễm, đọc chậm mà sâu",
+        "sương giáng muôn nơi, linh thảo già dặn, đến kỳ thu hoạch",
+        "đông khí khởi đầu, vạn vật tàng phong, nên bế quan dài",
+        "tuyết đầu mùa rơi, thiên địa tĩnh mịch, hợp ngộ đạo",
+        "tuyết lớn phủ núi, linh khí ngưng đọng, nền đạo vững thêm",
+        "âm cực dương sinh, một tia dương khí, hợp phá bình cảnh",
+        "lạnh nhẹ thấu xương, thể phách được rèn, nên đọc buổi dài",
+        "lạnh nhất trong năm, tâm như băng tuyết, trấn áp tâm ma",
+        "xuân về đất trời, sinh cơ bừng dậy, hợp mở đường tu mới",
+        "mưa xuân thấm đất, mộc linh dâng trào, dược viên đâm chồi",
+        "sấm đầu năm vang, côn trùng thức giấc, lôi kiếp dễ qua",
+    )
+
     val TERM_PHRASES = arrayOf(
         "linh khí ngưng tụ",
         "thiên địa giao hòa",

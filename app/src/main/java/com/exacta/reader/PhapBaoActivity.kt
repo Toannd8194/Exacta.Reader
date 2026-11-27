@@ -68,7 +68,7 @@ class PhapBaoActivity : TabActivity() {
                 ore.inKiep -> {
                     // Kiếp phá lô: the treasure waits behind a trial of days.
                     k.icon(c, "thienkiep", r.centerX() - pic * 0.35f, py, pic * 0.7f)
-                    k.centered(c, "Kiếp phá lô · ${Treasure.TIER_NAMES[ore.tier]}", r.left + 4 * u, r.width() - 8 * u, ty, sb); ty += sl
+                    k.centered(c, "Phá lô · ${Treasure.TIER_NAMES[ore.tier].removeSuffix(" phẩm")}", r.left + 4 * u, r.width() - 8 * u, ty, sb); ty += sl
                     k.centered(c, "ngày ${Store.kiepMet(ore)}/${Store.kiepDays(ore.tier)} · ${Store.kiepMinutes(ore.tier)} phút/ngày", r.left + 4 * u, r.width() - 8 * u, ty, small); ty += sl
                     k.centered(c, "hôm nay ${Store.minutes(Store.today())} phút", r.left, r.width(), ty, small)
                 }
@@ -211,8 +211,8 @@ class PhapBaoActivity : TabActivity() {
         k.card(c, purse, selected = true)
         k.art(c, "art_linhthach", purse.left + 12 * u, purse.top + 8 * u, 48 * u)
         k.text(c, "${Store.linhThach} linh thạch", purse.left + 72 * u, purse.top + 10 * u, k.ui12Bold)
-        val how = "Đọc mỗi vạn từ +5 · bế quan · bí cảnh · kỳ ngộ · vượt kiếp · Tết ×3, mồng một và rằm ×2"
-        k.text(c, k.fit(how, purse.width() - 84 * u, small), purse.left + 72 * u, purse.top + 14 * u + k.lineH(k.ui12Bold), small)
+        val how = "Mỗi vạn từ +5 · bế quan · bí cảnh · kỳ ngộ · vượt kiếp · lễ ×2, Tết ×3"
+        k.line(c, how, purse.left + 72 * u, purse.top + 14 * u + k.lineH(k.ui12Bold), purse.width() - 84 * u, small)
         var y = purse.bottom + 16 * u
 
         y = k.section(c, a.left, y, a.width(), "KHOÁNG THẠCH")
@@ -383,8 +383,14 @@ class PhapBaoActivity : TabActivity() {
             val r = RectF(x, y, x + cellW, y + cellH)
             k.card(c, r)
             k.badge(c, b.species, r.centerX() - art / 2, r.top + 10 * u, art)
-            k.centered(c, b.name, r.left + 4 * u, r.width() - 8 * u, r.top + 14 * u + art, sb)
-            k.centered(c, if (b.spirit.isNotEmpty()) "«${b.spirit}»" else Treasure.CLANS[b.tier], r.left + 4 * u, r.width() - 8 * u, r.top + 14 * u + art + k.lineH(sb), small)
+            // The name on two lines when it must; the clan or spirit under it.
+            val nl = k.wrap(b.name, r.width() - 8 * u, sb, 2)
+            var ny = r.top + 12 * u + art
+            for (l in nl) {
+                k.centered(c, l, r.left + 4 * u, r.width() - 8 * u, ny, sb)
+                ny += k.lineH(sb) - 2 * u
+            }
+            k.centered(c, if (b.spirit.isNotEmpty()) "«${b.spirit}»" else Treasure.CLANS[b.tier], r.left + 4 * u, r.width() - 8 * u, ny + 2 * u, small)
             hits.add(r) { showBeast(b) }
         }
         return pages
