@@ -284,6 +284,8 @@ class TuViActivity : TabActivity() {
             "Bí cảnh" to "${Store.biCanhCount} lần",
             "Pháp bảo" to "${Store.beasts.size} món · ${Store.kinds().size}/36 loại",
             "Bộ pháp bảo" to "${Store.setsCount()}/${Treasure.SETS} bộ",
+            "Linh thạch" to "${Store.linhThach} (đã nhận ${Store.linhThachEarned})",
+            "Bế quan viên mãn" to "${Store.beQuanDone} lần · ${HomeView.hours(Store.beQuanMinutes * 60)}",
         )
         var y = k.section(c, a.left, a.top, a.width(), "THỐNG KÊ")
         val cols = if (k.W >= 600) 2 else 1

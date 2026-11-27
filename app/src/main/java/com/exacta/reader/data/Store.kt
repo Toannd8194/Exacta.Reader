@@ -160,6 +160,15 @@ object Store {
     val bonusMinutes = HashMap<Long, Int>()  // Định Thần Phù: minutes added to a day
     val sealedDays = HashSet<Long>()         // Phong Ấn Phù: missed days the streak keeps
 
+    // 0.10: linh thạch and bế quan.
+    var linhThach = 0L
+    var linhThachEarned = 0L
+    var ltWords = 0L            // words toward the next 5 linh thạch
+    var beQuanTarget = 0        // minutes of the bế quan under way, 0 = none
+    var beQuanSeconds = 0L      // reading seconds in it so far
+    var beQuanDone = 0
+    var beQuanMinutes = 0L      // minutes of all bế quan completed
+
     // Niên kỷ: the lunar year whose summary was opened at Tết.
     var nienKySeen = -1
 
@@ -254,6 +263,11 @@ object Store {
         }
         o.optJSONObject("biCanh")?.let { biCanhWeek = it.optLong("week", -1); biCanhCount = it.optInt("count") }
         setsDone = o.optInt("sets"); nienKySeen = o.optInt("nienKySeen", -1)
+        o.optJSONObject("tienTe")?.let {
+            linhThach = it.optLong("lt"); linhThachEarned = it.optLong("ltEarned"); ltWords = it.optLong("ltWords")
+            beQuanTarget = it.optInt("bqTarget"); beQuanSeconds = it.optLong("bqSeconds")
+            beQuanDone = it.optInt("bqDone"); beQuanMinutes = it.optLong("bqMinutes")
+        }
         o.optJSONObject("omega2")?.let {
             it.optJSONArray("items")?.let { a -> for (i in 0 until minOf(a.length(), items.size)) items[i] = a.getInt(i) }
             fireWords = it.optLong("fire"); kyNgoWords = it.optLong("kyNgoWords"); kyNgoCount = it.optInt("kyNgo")
@@ -329,6 +343,8 @@ object Store {
                 .put("biWeek", biCanhBonusWeek).put("biDays", biCanhBonusDays)
                 .put("bonusMinutes", JSONObject().apply { bonusMinutes.forEach { (d, m) -> put(d.toString(), m) } })
                 .put("sealed", JSONArray().apply { sealedDays.forEach { put(it) } }))
+            put("tienTe", JSONObject().put("lt", linhThach).put("ltEarned", linhThachEarned).put("ltWords", ltWords)
+                .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes))
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -375,6 +391,7 @@ object Store {
         phaLoPassed = 0; phaLoFailed = 0; pillsUsed = 0; talismansUsed = 0; breakPillUsed = false; trialBonus = 0
         bonusTuVi = 0; trialSpare = 0; seekWords = 0; giftLuck = 0; biCanhBonusWeek = -1; biCanhBonusDays = 0
         bonusMinutes.clear(); sealedDays.clear()
+        linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -416,6 +433,10 @@ object Store {
         book.lastDay = d
         if (book.firstDay < 0) book.firstDay = d
         bestSession = maxOf(bestSession, session)
+        if (beQuanTarget > 0) {
+            beQuanSeconds += seconds
+            if (beQuanSeconds >= beQuanTarget * 60L) finishBeQuan()
+        }
         checkKiep()
         checkRealm()
         checkBiCanh()
@@ -481,6 +502,12 @@ object Store {
             fireWords = (fireWords - words).coerceAtLeast(0)
             burn *= 2
         }
+        if (beQuanTarget > 0) burn = burn * 3 / 2
+        ltWords += words
+        while (ltWords >= 10_000) {
+            ltWords -= 10_000
+            gainLinhThach(5L * feastMultiplier())
+        }
         val done = ArrayList<Ore>()
         for (ore in forge) {
             if (ore.inKiep) continue
@@ -544,6 +571,81 @@ object Store {
         }
     }
 
+    // --- Linh thạch -----------------------------------------------------------------------------------
+
+    /** Tết ×3, mồng một and rằm ×2. */
+    fun feastMultiplier(): Int {
+        val d = LocalDate.now()
+        val l = Lunar.fromSolar(d.dayOfMonth, d.monthValue, d.year)
+        return when {
+            !l.leap && l.month == 1 && l.day <= 3 -> 3
+            l.day == 1 || l.day == 15 -> 2
+            else -> 1
+        }
+    }
+
+    fun gainLinhThach(n: Long) {
+        if (n <= 0) return
+        linhThach += n
+        linhThachEarned += n
+        touch()
+    }
+
+    /** Phường thị: an ore of a grade, or an item, for linh thạch. */
+    val ORE_PRICES = longArrayOf(30, 70, 150, 320, 700, 1500)
+    val ITEM_PRICES = longArrayOf(120, 60, 300, 100, 50, 150, 250, 120, 600, 200, 300, 80, 120, 60, 200, 90, 100, 60)
+
+    fun buyOre(tier: Int): Boolean {
+        val price = ORE_PRICES[tier]
+        if (linhThach < price) return false
+        linhThach -= price
+        bag[tier]++
+        fillForge()
+        touch()
+        return true
+    }
+
+    fun buyItem(i: Int): Boolean {
+        val price = ITEM_PRICES[i]
+        if (linhThach < price) return false
+        linhThach -= price
+        items[i]++
+        touch()
+        return true
+    }
+
+    // --- Bế quan --------------------------------------------------------------------------------------
+
+    val BE_QUAN_CHOICES = intArrayOf(30, 60, 90, 120)
+    fun beQuanReward(minutes: Int): Long = when (minutes) {
+        30 -> 15; 60 -> 35; 90 -> 60; else -> 90
+    }
+
+    fun startBeQuan(minutes: Int) {
+        beQuanTarget = minutes
+        beQuanSeconds = 0
+        note("Bế quan $minutes phút: lò ×1,5, kỳ ngộ ×2")
+        touch()
+    }
+
+    fun cancelBeQuan() {
+        beQuanTarget = 0
+        beQuanSeconds = 0
+        touch()
+    }
+
+    private fun finishBeQuan() {
+        val m = beQuanTarget
+        beQuanDone++
+        beQuanMinutes += m
+        beQuanTarget = 0
+        beQuanSeconds = 0
+        val lt = beQuanReward(m) * feastMultiplier()
+        gainLinhThach(lt)
+        note("Bế quan viên mãn $m phút: nhận $lt linh thạch")
+        checkTitles()
+    }
+
     // --- Kiếp phá lô -------------------------------------------------------------------------------------
 
     fun kiepDays(tier: Int): Int = ((tier - 1).coerceIn(2, 4) - if (setActive(9)) 1 else 0).coerceAtLeast(1)
@@ -599,6 +701,7 @@ object Store {
                 }
                 kiepMet(slot) >= kiepDays(slot.tier) -> {
                     phaLoPassed++
+                    gainLinhThach(30L * (slot.tier - 1))
                     release(slot, title, Treasure.TRIAL_MARK)
                     touch()
                 }
@@ -651,7 +754,7 @@ object Store {
     // --- Kỳ ngộ -------------------------------------------------------------------------------------------
 
     private fun kyNgo(book: Book) {
-        val chance = (if (setActive(10)) 180 else 120) * (if (seekWords > 0) 3 else 1)
+        val chance = (if (setActive(10)) 180 else 120) * (if (seekWords > 0) 3 else 1) * (if (beQuanTarget > 0) 2 else 1)
         if (Random.nextInt(1000) >= chance) return
         kyNgoCount++
         val sleeping = beasts.filter { it.spirit.isEmpty() }
@@ -661,11 +764,16 @@ object Store {
                 hatch(Random.nextInt(2), book.title)
                 "nhặt được pháp bảo ${beasts.last().name}"
             }
-            r < 30 -> {
+            r < 22 -> {
                 val t = Treasure.rollTier()
                 bag[t]++
                 fillForge()
                 "nhặt được khoáng thạch ${Treasure.TIER_NAMES[t]}"
+            }
+            r < 32 -> {
+                val n = (20 + Random.nextInt(61)).toLong() * feastMultiplier()
+                gainLinhThach(n)
+                "nhặt được $n linh thạch"
             }
             r < 38 && sleeping.isNotEmpty() -> {
                 val b = sleeping.random()
@@ -876,6 +984,7 @@ object Store {
             setsDone = setsDone or (1 shl set)
             note("Gom đủ bộ ${Treasure.SET_NAMES[set]}: ${Treasure.SET_EFFECTS[set]}")
             giveOre(2, "Thưởng bộ pháp bảo")
+            gainLinhThach(50)
             touch()
         }
     }
@@ -1007,6 +1116,7 @@ object Store {
                 trialSpare = 0
                 trialPassed++
                 if (failCount > 0) passedAfterFail = true
+                gainLinhThach(50L * realmCap)
                 note("Vượt thiên kiếp: mở cảnh giới ${Realm.baseName(realmCap)}")
                 touch()
             }
@@ -1043,6 +1153,7 @@ object Store {
         val lift = if (setActive(14)) 1 else 0
         giveOre((maxOf(Treasure.rollTier(), 1) + lift).coerceAtMost(Treasure.TIERS - 1), "Qua bí cảnh tuần")  // never below Huyền
         if (setActive(5)) giveOre(maxOf(Treasure.rollTier(), 1), "Phong Thần Bảo Lục")
+        gainLinhThach(20)
         touch()
     }
 
@@ -1095,7 +1206,7 @@ object Store {
             kinds >= 54, kinds >= Treasure.SPECIES, setsCount() >= 9, beasts.map { it.tier }.toSet().size >= Treasure.TIERS,
             phaLoPassed >= 5, beasts.count { it.spirit.isNotEmpty() && it.spirit != Treasure.TRIAL_MARK } >= 5,
             // Kỳ duyên
-            giftsAwarded >= 20, totalSeconds >= 360_000, biCanhCount >= 10, trungThu, birthday, trialPassed >= 5,
+            giftsAwarded >= 20, beQuanDone >= 20 || totalSeconds >= 360_000, biCanhCount >= 10, trungThu, birthday, trialPassed >= 5,
             kyNgoCount >= 20, kyNgoCount >= 100, pillsUsed >= 10, talismansUsed >= 10, breakPillUsed, biCanhCount >= 30,
         )
         for (t in 0 until DaoHieu.COUNT) {

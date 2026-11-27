@@ -53,7 +53,7 @@ object DaoHieu {
         "Luyện thành 30 pháp bảo", "Gom đủ một bộ pháp bảo",
         "Có 54 loại pháp bảo", "Có đủ 72 loại pháp bảo", "Gom đủ 9 bộ pháp bảo", "Có pháp bảo đủ 6 phẩm",
         "Vượt kiếp phá lô 5 lần", "5 pháp bảo thức tỉnh khí linh",
-        "Nhận 20 khoáng thạch quà 10 vạn từ", "Tổng thời gian đọc 100 giờ", "Qua bí cảnh tuần 10 lần",
+        "Nhận 20 khoáng thạch quà 10 vạn từ", "Bế quan viên mãn 20 lần (hoặc tổng 100 giờ đọc)", "Qua bí cảnh tuần 10 lần",
         "Đọc từ 10 phút đêm Trung Thu (rằm tháng Tám)", "Đọc từ 10 phút đúng ngày sinh nhật", "Vượt thiên kiếp 5 lần",
         "Gặp kỳ ngộ 20 lần", "Gặp kỳ ngộ 100 lần", "Dùng 10 viên đan dược", "Dùng 10 lá phù", "Dùng Phá Cảnh Đan khi độ kiếp",
         "Qua bí cảnh tuần 30 lần",

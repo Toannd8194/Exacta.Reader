@@ -96,6 +96,8 @@ class ScreensTest {
         Store.items.fill(0)
         listOf(0, 1, 3, 4, 4, 7, 11, 13, 13, 16).forEach { Store.items[it]++ }
         Store.kyNgoCount = 7
+        Store.linhThach = 420
+        Store.beQuanDone = 3
         Store.kyNgoLog.clear()
         Store.kyNgoLog.addAll(listOf("27/11 · nhặt được Thiên Hỏa Phù", "25/11 · khí linh của Long Song kiếm thức tỉnh: «Ẩn Long»", "22/11 · nhặt được khoáng thạch Địa phẩm"))
         Store.forge.clear()

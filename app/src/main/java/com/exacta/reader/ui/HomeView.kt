@@ -782,7 +782,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.text(c, "PHÁP BẢO", x, r.top + pad, sb)
         if (Store.unseen > 0) k.right(c, "•${Store.unseen} mới", x + w, r.top + pad, sb)
         val footY = r.bottom - pad - sl
-        k.centered(c, "${Store.beasts.size} món · bộ ${Store.setsCount()}/${Treasure.SETS}", x, w, footY, small)
+        k.centered(c, "${Store.beasts.size} món · ${Store.linhThach} linh thạch", x, w, footY, small)
 
         // The forge: six slots in two rows, when the card is tall enough for them.
         val nb = k.ui10Bold

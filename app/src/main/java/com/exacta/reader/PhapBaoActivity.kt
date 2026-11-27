@@ -18,13 +18,13 @@ import java.time.LocalDate
  */
 class PhapBaoActivity : TabActivity() {
     override fun title() = "Pháp Bảo"
-    override fun right() = "${Store.beasts.size} món"
-    override fun tabs() = listOf("Lò luyện", "Túi đồ", "Bảo khố", "Bộ pháp bảo")
+    override fun right() = "${Store.linhThach} linh thạch"
+    override fun tabs() = listOf("Lò luyện", "Túi đồ", "Phường thị", "Bảo khố", "Bộ pháp bảo")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Store.checkSets()
-        if (Store.unseen > 0 && savedInstanceState == null && !intent.hasExtra(EXTRA_TAB)) selectTab(2)
+        if (Store.unseen > 0 && savedInstanceState == null && !intent.hasExtra(EXTRA_TAB)) selectTab(3)
         Store.unseen = 0
         Store.touch()
     }
@@ -32,7 +32,8 @@ class PhapBaoActivity : TabActivity() {
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int = when (tab) {
         0 -> forge(c, k, area, hits)
         1 -> bag(c, k, area, page, hits)
-        2 -> treasury(c, k, area, page, hits)
+        2 -> market(c, k, area, hits)
+        3 -> treasury(c, k, area, page, hits)
         else -> sets(c, k, area, page, hits)
     }
 
@@ -198,6 +199,78 @@ class PhapBaoActivity : TabActivity() {
     }
 
     private fun toast(t: String) = android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_SHORT).show()
+
+    /** Phường thị: ores and the eighteen items for linh thạch. */
+    private fun market(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        // The purse.
+        val purse = RectF(a.left, a.top, a.right, a.top + 64 * u)
+        k.card(c, purse, selected = true)
+        k.art(c, "art_linhthach", purse.left + 12 * u, purse.top + 8 * u, 48 * u)
+        k.text(c, "${Store.linhThach} linh thạch", purse.left + 72 * u, purse.top + 10 * u, k.ui12Bold)
+        val how = "Đọc mỗi vạn từ +5 · bế quan · bí cảnh · kỳ ngộ · vượt kiếp · Tết ×3, mồng một và rằm ×2"
+        k.text(c, k.fit(how, purse.width() - 84 * u, small), purse.left + 72 * u, purse.top + 14 * u + k.lineH(k.ui12Bold), small)
+        var y = purse.bottom + 16 * u
+
+        y = k.section(c, a.left, y, a.width(), "KHOÁNG THẠCH")
+        val cw = (a.width() - 5 * 10 * u) / 6
+        val ic = minOf(cw - 24 * u, 48 * u)
+        for (t in 0 until Treasure.TIERS) {
+            val x = a.left + t * (cw + 10 * u)
+            val price = Store.ORE_PRICES[t]
+            val cell = RectF(x, y, x + cw, y + ic + 2 * sl + 10 * u)
+            k.ore(c, t, 0, x + (cw - ic) / 2, y, ic, alpha = if (Store.linhThach >= price) 255 else 70)
+            k.centered(c, Treasure.TIER_NAMES[t].removeSuffix(" phẩm"), x - 4 * u, cw + 8 * u, y + ic + 2 * u, small)
+            k.centered(c, "$price", x, cw, y + ic + 2 * u + sl, sb)
+            hits.add(cell) { buy("khoáng thạch ${Treasure.TIER_NAMES[t]}", price, "Vào túi, rồi tự vào lò khi còn ô.") { Store.buyOre(t) } }
+        }
+        y += ic + 2 * sl + 22 * u
+
+        y = k.section(c, a.left, y, a.width(), "ĐAN DƯỢC · PHÙ CHÚ")
+        val gap = 8 * u
+        val cols = 3
+        val rows = (Treasure.ITEMS + cols - 1) / cols
+        val iw = (a.width() - (cols - 1) * gap) / cols
+        val ih = ((a.bottom - y - (rows - 1) * gap) / rows).coerceAtMost(90 * u)
+        for (i in 0 until Treasure.ITEMS) {
+            val r = RectF(a.left + (i % cols) * (iw + gap), y + (i / cols) * (ih + gap), a.left + (i % cols) * (iw + gap) + iw, y + (i / cols) * (ih + gap) + ih)
+            val price = Store.ITEM_PRICES[i]
+            val afford = Store.linhThach >= price
+            k.card(c, r)
+            val pic = minOf(ih - 14 * u, 60 * u)
+            k.art(c, "art_item_$i", r.left + 6 * u, r.centerY() - pic / 2, pic, if (afford) 255 else 80)
+            val tx = r.left + 10 * u + pic
+            val tw = r.right - 6 * u - tx
+            val name = k.wrap(Treasure.ITEM_NAMES[i], tw, sb, 2)
+            var ty = r.centerY() - (name.size * k.lineH(sb) + sl) / 2
+            for (l in name) {
+                k.text(c, l, tx, ty, sb)
+                ty += k.lineH(sb)
+            }
+            k.text(c, "$price linh thạch", tx, ty, small)
+            hits.add(r) { buy(Treasure.ITEM_NAMES[i], price, Treasure.ITEM_TEXTS[i]) { Store.buyItem(i) } }
+        }
+        return 1
+    }
+
+    private fun buy(what: String, price: Long, text: String, doIt: () -> Boolean) {
+        if (Store.linhThach < price) {
+            toast("Cần $price linh thạch, mới có ${Store.linhThach}")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Mua $what?")
+            .setMessage("$text\n\nGiá $price linh thạch · đang có ${Store.linhThach}.")
+            .setPositiveButton("Mua") { _, _ ->
+                if (doIt()) toast("Đã mua $what")
+                refresh()
+            }
+            .setNegativeButton("Thôi", null)
+            .show()
+    }
 
     /** One item: what it does, and Dùng when there is one. */
     private fun itemDialog(i: Int) {

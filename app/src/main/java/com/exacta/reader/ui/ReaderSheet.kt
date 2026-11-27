@@ -298,7 +298,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         val actions = listOf<Triple<String, String, () -> Unit>>(
             Triple("home", "Home") { host.go("home") },
             Triple("library", "Thư viện") { host.go("library") },
-            Triple("tuvi", "Tu vi") { host.go("tuvi") },
+            Triple("bequan", if (Store.beQuanTarget > 0) "Đang bế quan" else "Bế quan") { host.go("bequan") },
             Triple("refresh", "Làm sạch") { host.refreshScreen() },
         )
         val gap = 10 * u

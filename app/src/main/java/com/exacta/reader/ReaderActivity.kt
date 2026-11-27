@@ -409,6 +409,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         val mode = Store.footerMode
         val now = LocalTime.now()
         headerLeft.text = "${book.percent}%"
+        headerTitle.text = if (Store.beQuanTarget > 0) "Bế quan ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút" else book.title
         headerRight.text = now.hour.toString().padStart(2, '0') + ":" + now.minute.toString().padStart(2, '0')
         footer.visibility = if (mode == 2 && noticePages <= 0) View.INVISIBLE else View.VISIBLE
         footerLeft.text = when {
@@ -502,8 +503,33 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         when (where) {
             "library" -> startActivity(Intent(this, LibraryActivity::class.java))
             "tuvi" -> startActivity(Intent(this, TuViActivity::class.java))
+            "bequan" -> {
+                beQuanDialog()
+                return
+            }
         }
         if (where == "home") finish() else hideBars()
+    }
+
+    /** Bế quan: a reading session of a set length; reading in it makes the forge burn half again. */
+    private fun beQuanDialog() {
+        val b = androidx.appcompat.app.AlertDialog.Builder(this)
+        if (Store.beQuanTarget > 0) {
+            b.setTitle("Đang bế quan · ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút")
+                .setMessage("Đọc đủ ${Store.beQuanTarget} phút thì viên mãn, nhận ${Store.beQuanReward(Store.beQuanTarget)} linh thạch. Trong lúc bế quan, lò luyện cháy ×1,5 và kỳ ngộ ×2.")
+                .setPositiveButton("Tiếp tục", null)
+                .setNegativeButton("Xuất quan sớm") { _, _ -> Store.cancelBeQuan(); updateFooter(); sheet.invalidate() }
+        } else {
+            val labels = Store.BE_QUAN_CHOICES.map { "Bế quan $it phút · ${Store.beQuanReward(it)} linh thạch" }
+            b.setTitle("Bế quan")
+                .setItems(labels.toTypedArray()) { _, i ->
+                    Store.startBeQuan(Store.BE_QUAN_CHOICES[i])
+                    hideBars()
+                    updateFooter()
+                }
+                .setNegativeButton("Thôi", null)
+        }
+        b.show()
     }
 
     private fun preferences() = EpubPreferences(

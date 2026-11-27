@@ -4,7 +4,16 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Exacta-Reader-0.9.apk`](dist/Exacta-Reader-0.9.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Exacta-Reader-0.10.apk`](dist/Exacta-Reader-0.10.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 0.10
+
+- **Linh thạch**: đọc mỗi vạn từ +5 (Tết ×3, mồng một và rằm ×2), bế quan viên mãn (15/35/60/90), qua bí cảnh +20,
+  vượt thiên kiếp +50 × cảnh giới, vượt kiếp phá lô, gom đủ bộ +50, và kỳ ngộ (nhặt được 20–80 viên).
+- **Phường thị** (Pháp bảo › Phường thị): mua khoáng thạch 6 phẩm (30 → 1.500) và 18 loại đan phù bằng linh thạch.
+  Xem [`docs/phuong-thi.png`](docs/phuong-thi.png).
+- **Bế quan**: trong màn đọc, tab Khác › Bế quan, chọn 30/60/90/120 phút. Trong lúc bế quan lò luyện ×1,5, kỳ ngộ ×2,
+  dòng trên trang hiện tiến độ; đọc đủ giờ là viên mãn, nhận linh thạch. Đạo hiệu Bế Quan Khổ Tu: bế quan viên mãn 20 lần.
 
 ## Bản 0.9
 
