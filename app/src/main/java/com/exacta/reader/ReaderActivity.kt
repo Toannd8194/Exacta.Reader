@@ -118,9 +118,9 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(side, Widgets.dp(context, 10), side, Widgets.dp(context, 6))
-            addView(headerLeft, LinearLayout.LayoutParams(Widgets.dp(context, 70), -2))
+            addView(headerLeft, LinearLayout.LayoutParams(Widgets.dp(context, 118), -2))
             addView(headerTitle, LinearLayout.LayoutParams(0, -2, 1f))
-            addView(headerRight, LinearLayout.LayoutParams(Widgets.dp(context, 70), -2))
+            addView(headerRight, LinearLayout.LayoutParams(Widgets.dp(context, 118), -2))
         }
         container = FrameLayout(this).apply { id = View.generateViewId() }
         footerLeft = footerText(ui).apply { gravity = Gravity.START; ellipsize = TextUtils.TruncateAt.END }
@@ -132,12 +132,11 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
             addView(footerRight, LinearLayout.LayoutParams(-2, -2))
         }
         topBar = buildTopBar()
-        sheet = ReaderSheet(this, this).apply { visibility = View.GONE }
         val sheetH = (resources.displayMetrics.heightPixels * 0.56f).toInt()
+        sheet = ReaderSheet(this, this).apply { visibility = View.GONE; normalHeight = sheetH }
         val page = FrameLayout(this).apply {
             addView(container, FrameLayout.LayoutParams(-1, -1))
             addView(topBar, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
-            addView(sheet, FrameLayout.LayoutParams(-1, sheetH, Gravity.BOTTOM))
         }
         flash = View(this).apply {
             setBackgroundColor(Color.BLACK)
@@ -152,6 +151,8 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
                 addView(page, LinearLayout.LayoutParams(-1, 0, 1f))
                 addView(footer, LinearLayout.LayoutParams(-1, -2))
             }, FrameLayout.LayoutParams(-1, -1))
+            // Over the footer too: with the menu open the line under the page is not shown.
+            addView(sheet, FrameLayout.LayoutParams(-1, sheetH, Gravity.BOTTOM))
             addView(flash, FrameLayout.LayoutParams(-1, -1))
         })
         updateFooter()
@@ -385,7 +386,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         else -> 0.0
     }
 
-    private fun minutesText(minutes: Long) = if (minutes < 60) "~$minutes phút" else "~${minutes / 60} giờ " + (minutes % 60).toString().padStart(2, '0')
+    private fun minutesText(minutes: Long) = com.exacta.reader.game.ThoiThan.span(minutes)
 
     /** Time to the end of this chapter at the reader's pace. */
     private fun chapterLeft(): String? {
@@ -408,16 +409,16 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         if (!::footer.isInitialized) return
         val mode = Store.footerMode
         val now = LocalTime.now()
-        headerLeft.text = "${book.percent}%"
+        headerLeft.text = com.exacta.reader.game.ThoiThan.share(book.percent)
         headerTitle.text = if (Store.beQuanTarget > 0) "Bế quan ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút" else book.title
-        headerRight.text = now.hour.toString().padStart(2, '0') + ":" + now.minute.toString().padStart(2, '0')
+        headerRight.text = com.exacta.reader.game.ThoiThan.clock(now)
         footer.visibility = if (mode == 2 && noticePages <= 0) View.INVISIBLE else View.VISIBLE
         footerLeft.text = when {
             noticePages > 0 -> notice
             mode == 0 -> chapterTitle
             else -> ""
         }
-        val parts = listOfNotNull(HomeView.timeLeft(book)?.let { "sách còn $it" }, chapterLeft()?.let { "chương $it" })
+        val parts = listOfNotNull(HomeView.timeLeft(book)?.let { "quyển còn $it" }, chapterLeft()?.let { "chương còn $it" })
         footerRight.text = if (parts.isEmpty()) "" else "  " + parts.joinToString(" · ")
     }
 
@@ -452,11 +453,13 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
 
     // --- Sheet host ---------------------------------------------------------------------------
 
+    override fun close() = hideBars()
+
     override fun progress() = book.progress
 
     override fun progressLabel(): String {
-        val left = HomeView.timeLeft(book)?.let { " · còn $it" } ?: ""
-        return "${book.percent}% · ${Realm.tangName(Realm.tangOf(book.percent))}$left"
+        val left = HomeView.timeLeft(book)?.let { " · quyển còn $it" } ?: ""
+        return "${com.exacta.reader.game.ThoiThan.share(book.percent)} · ${Realm.tangName(Realm.tangOf(book.percent))}$left"
     }
 
     override fun seek(progression: Double) {

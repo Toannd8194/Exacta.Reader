@@ -240,21 +240,23 @@ class ScreensTest {
         a.resources.displayMetrics.xdpi = 300f
         val host = object : ReaderSheet.Host {
             override fun progress() = 0.37
-            override fun progressLabel() = "37% · Tứ tầng · còn ~5 giờ 20"
+            override fun progressLabel() = "Tam thành thất · Tứ tầng · quyển còn ~2 canh giờ 5 khắc"
             override fun seek(progression: Double) {}
             override fun chapter(delta: Int) {}
-            override fun toc() = (1..40).map { "Chương $it. Một cái tên chương khá dài để thử" to (if (it % 5 == 0) 0 else 1) }
-            override fun tocCurrent() = 12
+            override fun toc() = (1..400).map { "Chương $it. Một cái tên chương khá dài để thử" to (if (it % 5 == 0) 0 else 1) }
+            override fun tocCurrent() = 312
             override fun openToc(index: Int) {}
             override fun applyPrefs(rebuild: Boolean) {}
             override fun go(where: String) {}
             override fun fonts() = listOf("Bitter" to "Bitter", "Original" to "Font gốc của sách")
             override fun addFont() {}
             override fun refreshScreen() {}
+            override fun close() {}
         }
-        for (t in 0..3) {
-            val sheet = ReaderSheet(a, host).apply { tab = t }
-            val sh = (h * 0.56f).toInt()
+        for (t in 0..4) {
+            // 4: the contents' range grid.
+            val sheet = ReaderSheet(a, host).apply { tab = minOf(t, 3); if (t == 4) { tab = 0; rangePick = true } }
+            val sh = if (t == 0 || t == 4) h else (h * 0.56f).toInt()
             sheet.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(sh, View.MeasureSpec.EXACTLY))
             sheet.layout(0, 0, w, sh)
             val bmp = Bitmap.createBitmap(w, sh, Bitmap.Config.ARGB_8888)

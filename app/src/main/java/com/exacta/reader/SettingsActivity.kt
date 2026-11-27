@@ -116,8 +116,8 @@ class SettingsActivity : TabActivity() {
         )
         else -> {
             val list = mutableListOf(
-                Row("Vạn Quyển Tiên Đồ ${BuildConfigInfo.VERSION} · Vạn Pháp Quy Nhất", "Đọc vạn quyển, tu thành tiên đồ · máy đọc e-ink Android", null),
-                Row("Biên niên phát triển", "Tiền kiếp Exacta.OS trên Xteink X4 · 11 thế hệ, từ Nhất Quyển Sơ Khai tới Vạn Pháp Quy Nhất") { startActivity(android.content.Intent(this, BienNienActivity::class.java)) },
+                Row("Vạn Quyển Tiên Đồ ${BuildConfigInfo.VERSION} · ${BienNienActivity.CURRENT}", "Đọc vạn quyển, tu thành tiên đồ · máy đọc e-ink Android", null),
+                Row("Biên niên phát triển", "Tiền kiếp Exacta.OS trên Xteink X4 · ${BienNienActivity.COUNT} thế hệ, từ Nhất Quyển Sơ Khai tới ${BienNienActivity.CURRENT}") { startActivity(android.content.Intent(this, BienNienActivity::class.java)) },
                 Row("Sao lưu dữ liệu", "Chép tiến độ, tu vi, pháp bảo, đạo hiệu vào ExactaReader/backup") { backup() },
                 Row("Khôi phục từ bản sao lưu", "Thay toàn bộ dữ liệu bằng một bản sao lưu") { restore() },
                 Row("Mã nguồn mở dùng trong app", "Readium Kotlin Toolkit (BSD-3) · font Bitter (SIL OFL 1.1)", null),

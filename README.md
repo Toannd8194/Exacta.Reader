@@ -4,7 +4,17 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-1.0.apk`](dist/Van-Quyen-Tien-Do-1.0.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-1.0.1.apk`](dist/Van-Quyen-Tien-Do-1.0.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+
+## Bản 1.0.1 · Khắc Lậu Cổ Pháp
+
+- **Giờ và tiến độ kiểu xưa** khi đọc: góc trên phải là canh giờ và khắc (vd. "Giờ Thân 4 khắc"; mỗi canh giờ 2 tiếng,
+  mỗi khắc 15 phút); góc trên trái là phần đã đọc theo thành và phân ("Tam thành thất" = 37%, "Viên mãn" khi xong);
+  thời gian còn lại tính bằng canh giờ và khắc ("quyển còn ~8 canh giờ 4 khắc · chương còn ~2 khắc").
+- **Mục lục trọn trang**: mở ra chiếm cả màn hình, mỗi trang đúng 10 mục, không còn hàng chuyển chương. Chạm nút giữa
+  ("Mục 311 – 320 · trang 32/40") để chọn nhanh khoảng mục: 1 – 10, 11 – 20… Xem [`docs/muc-luc.png`](docs/muc-luc.png).
+- **Khác**: các tùy chọn thành thẻ, hai thẻ một hàng, chạm để đổi.
+- Khi mở menu đọc, thanh chân trang (chương, giờ còn lại) ẩn dưới menu.
 
 ## Bản 1.0 · Vạn Pháp Quy Nhất (bản chính thức)
 
@@ -29,6 +39,7 @@ Tải bản cài: [`dist/Van-Quyen-Tien-Do-1.0.apk`](dist/Van-Quyen-Tien-Do-1.0.
   | 0.9 | Đan Hương Phù Ảnh | 18 đan dược và phù chú |
   | 0.10 | Bế Quan Tụ Linh | linh thạch, Phường thị, bế quan |
   | 1.0 | Vạn Pháp Quy Nhất | hợp luyện, tối ưu, Biên niên |
+  | 1.0.1 | Khắc Lậu Cổ Pháp | giờ canh khắc, mục lục trọn trang, tùy chọn dạng thẻ |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

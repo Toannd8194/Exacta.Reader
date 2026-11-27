@@ -33,10 +33,14 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         fun fonts(): List<Pair<String, String>>  // font id, name shown
         fun addFont()
         fun refreshScreen()
+        fun close()
     }
 
     var tab = 1
     private var tocPage = -1
+    var rangePick = false          // the contents' page numbers as a grid of chapter ranges
+    private var rangePage = 0
+    var normalHeight = 0           // the sheet's height for the other tabs; the contents take the screen
     private var fontMenu = false
     private var fontPage = 0
     private var morePage = 0
@@ -56,8 +60,20 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
     /** Called when the sheet opens: the contents page shows the current chapter. */
     fun opened() {
         tocPage = -1
+        rangePick = false
         fontMenu = false
+        fitHeight()
         invalidate()
+    }
+
+    /** Mục lục takes the whole screen; the other tabs the lower part. */
+    private fun fitHeight() {
+        val lp = layoutParams ?: return
+        val want = if (tab == 0 || normalHeight <= 0) android.view.ViewGroup.LayoutParams.MATCH_PARENT else normalHeight
+        if (normalHeight > 0 && lp.height != want) {
+            lp.height = want
+            layoutParams = lp
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -73,10 +89,22 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         c.drawRect(0f, 0f, w, 2 * u, k.fill)
         val m = Ink.MARGIN * u
 
-        // Progress: the label, then ‹ track ›.
         var y = 12 * u
+        if (tab == 0) {
+            // Mục lục over the whole screen: its own heading with Đóng, no progress line.
+            track = RectF()
+            y += 6 * u
+            val close = RectF(w - m - 120 * u, y, w - m, y + 48 * u)
+            k.text(c, "Mục lục", m, y + (48 * u - k.lineH(k.big)) / 2, k.big)
+            k.button(c, close, "Đóng", k.smallBold)
+            hits.add(close) { host.close() }
+            y += 48 * u + 14 * u
+            c.drawRect(m, y, w - m, y + u, k.gray)
+            y += 14 * u
+        } else {
+        // Progress: the label, then ‹ track ›.
         val p = if (dragging) dragP else host.progress()
-        val label = if (dragging) "Tới ${(dragP * 100).toInt()}%" else host.progressLabel()
+        val label = if (dragging) "Tới ${com.exacta.reader.game.ThoiThan.share((dragP * 100).toInt())} (${(dragP * 100).toInt()}%)" else host.progressLabel()
         k.centered(c, label, m, w - 2 * m, y, k.smallBold)
         y += k.lineH(k.smallBold) + 6 * u
         val bh = 48 * u
@@ -99,6 +127,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
         y += bh + 12 * u
         c.drawRect(m, y, w - m, y + u, k.gray)
         y += 12 * u
+        }
 
         // The tabs along the bottom.
         val tabH = 70 * u
@@ -120,6 +149,8 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
                     tab = i
                     morePage = 0
                     fontMenu = false
+                    rangePick = false
+                    fitHeight()
                     invalidate()
                 }
             }
@@ -328,28 +359,32 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             },
             Triple("Báo tin tu tiên ở chân trang", if (Store.showNotices) "Bật" else "Tắt") { Store.showNotices = !Store.showNotices },
         )
-        val top = panel.top + ah + 10 * u
+        val top = panel.top + ah + 14 * u
         val pagerH = 48 * u
-        val rowH = 36 * u
-        var per = ((panel.bottom - top) / rowH).toInt().coerceAtLeast(1)
-        if (per < options.size) per = ((panel.bottom - top - pagerH - 6 * u) / rowH).toInt().coerceAtLeast(1)
+        val cols = 2
+        val cardH = 76 * u
+        var rowsFit = ((panel.bottom - top + gap) / (cardH + gap)).toInt().coerceAtLeast(1)
+        if (rowsFit * cols < options.size) rowsFit = ((panel.bottom - top - pagerH - 6 * u + gap) / (cardH + gap)).toInt().coerceAtLeast(1)
+        val per = rowsFit * cols
         val pages = (options.size + per - 1) / per
         morePage = morePage.coerceIn(0, pages - 1)
-        var y = top
-        for (o in options.drop(morePage * per).take(per)) {
-            val r = RectF(panel.left, y, panel.right, y + rowH)
-            k.text(c, k.fit(o.first, r.width() * 0.6f, k.small), r.left + 6 * u, r.centerY() - k.lineH(k.small) / 2, k.small)
-            val vw = k.smallBold.measureText(o.second) + 40 * u
-            val pill = RectF(r.right - vw, r.top + 6 * u, r.right, r.bottom - 6 * u)
-            c.drawRoundRect(pill, pill.height() / 2, pill.height() / 2, k.gray)
-            k.centered(c, o.second, pill.left, pill.width(), pill.centerY() - k.lineH(k.smallBold) / 2, k.smallBold)
-            c.drawRect(r.left, r.bottom - u, r.right, r.bottom, k.gray)
+        val cw = (panel.width() - (cols - 1) * gap) / cols
+        for ((j, o) in options.drop(morePage * per).take(per).withIndex()) {
+            val x = panel.left + (j % cols) * (cw + gap)
+            val y = top + (j / cols) * (cardH + gap)
+            val r = RectF(x, y, x + cw, y + cardH)
+            k.card(c, r)
+            val pad = 14 * u
+            val block = k.lineH(k.small) + 4 * u + k.lineH(k.ui10Bold)
+            val ty = r.top + (cardH - block) / 2
+            k.text(c, k.fit(o.first, r.width() - 2 * pad, k.small), r.left + pad, ty, k.small)
+            k.text(c, k.fit(o.second, r.width() - 2 * pad - 20 * u, k.ui10Bold), r.left + pad, ty + k.lineH(k.small) + 4 * u, k.ui10Bold)
+            k.right(c, "›", r.right - pad, r.centerY() - k.lineH(k.ui12Bold) / 2, k.ui12Bold)
             hits.add(r) {
                 o.third()
                 host.applyPrefs(false)
                 invalidate()
             }
-            y += rowH
         }
         if (pages > 1) pager(c, k, panel, morePage, pages) { morePage = it }
     }
@@ -375,25 +410,83 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             k.text(c, "Sách này không có mục lục.", panel.left, panel.top, k.ui10)
             return
         }
-        val pagerH = 48 * u
-        val rowH = 50 * u
-        val per = ((panel.height() - pagerH - 10 * u) / rowH).toInt().coerceAtLeast(1)
+        val pagerH = 56 * u
+        val per = TOC_PER_PAGE
         val pages = (toc.size + per - 1) / per
         val current = host.tocCurrent()
         if (tocPage < 0) tocPage = if (current >= 0) current / per else 0
         tocPage = tocPage.coerceIn(0, pages - 1)
+        if (rangePick) {
+            ranges(c, k, panel, pages, toc.size, current)
+            return
+        }
+        val rowH = (panel.height() - pagerH - 12 * u) / per
         var y = panel.top
         for (i in tocPage * per until minOf(toc.size, (tocPage + 1) * per)) {
             val (title, depth) = toc[i]
             val r = RectF(panel.left, y, panel.right, y + rowH - 6 * u)
-            if (i == current) k.card(c, r, selected = true)
+            if (i == current) k.card(c, r, selected = true) else c.drawRect(r.left, r.bottom + 2 * u, r.right, r.bottom + 3 * u, k.gray)
             val p = if (i == current) k.ui10Bold else k.ui10
             val x = r.left + 14 * u + depth * 22 * u
             k.text(c, k.fit(title, r.right - 14 * u - x, p), x, r.top + (r.height() - k.lineH(p)) / 2, p)
             hits.add(r) { host.openToc(i) }
             y += rowH
         }
-        if (pages > 1) pager(c, k, panel, tocPage, pages) { tocPage = it }
+        // The pager; its middle names the entries shown and opens the ranges.
+        val py = panel.bottom - pagerH
+        val bw = 130 * u
+        val prev = RectF(panel.left, py, panel.left + bw, panel.bottom)
+        val next = RectF(panel.right - bw, py, panel.right, panel.bottom)
+        val mid = RectF(prev.right + 12 * u, py, next.left - 12 * u, panel.bottom)
+        k.button(c, prev, "‹ Trước", k.smallBold, enabled = tocPage > 0)
+        k.button(c, next, "Sau ›", k.smallBold, enabled = tocPage < pages - 1)
+        val from = tocPage * per + 1
+        val to = minOf(toc.size, from + per - 1)
+        k.button(c, mid, "Mục $from – $to · trang ${tocPage + 1}/$pages  ▾", k.smallBold)
+        hits.add(prev) { if (tocPage > 0) { tocPage--; invalidate() } }
+        hits.add(next) { if (tocPage < pages - 1) { tocPage++; invalidate() } }
+        hits.add(mid) {
+            rangePick = true
+            rangePage = -1
+            invalidate()
+        }
+    }
+
+    /** The contents' pages as ranges of entries (1 – 10, 11 – 20 …), a grid at a time; the current one shaded. */
+    private fun ranges(c: Canvas, k: Ink, panel: RectF, pages: Int, entries: Int, current: Int) {
+        val u = k.u
+        val head = RectF(panel.left, panel.top, panel.right, panel.top + 44 * u)
+        k.text(c, "Chọn khoảng mục lục", head.left, head.centerY() - k.lineH(k.ui10Bold) / 2, k.ui10Bold)
+        val back = RectF(head.right - 150 * u, head.top, head.right, head.bottom)
+        k.button(c, back, "‹ Mục lục", k.smallBold)
+        hits.add(back) { rangePick = false; invalidate() }
+        val gap = 10 * u
+        val cols = 4
+        val cellH = 56 * u
+        val pagerH = 48 * u
+        val gridTop = head.bottom + 14 * u
+        val rowsFit = ((panel.bottom - gridTop - pagerH - 12 * u + gap) / (cellH + gap)).toInt().coerceAtLeast(1)
+        val per = rowsFit * cols
+        val gridPages = (pages + per - 1) / per
+        if (rangePage < 0) rangePage = tocPage / per
+        rangePage = rangePage.coerceIn(0, gridPages - 1)
+        val cw = (panel.width() - (cols - 1) * gap) / cols
+        val here = if (current >= 0) current / TOC_PER_PAGE else -1
+        for ((j, pg) in (rangePage * per until minOf(pages, (rangePage + 1) * per)).withIndex()) {
+            val x = panel.left + (j % cols) * (cw + gap)
+            val y = gridTop + (j / cols) * (cellH + gap)
+            val r = RectF(x, y, x + cw, y + cellH)
+            val from = pg * TOC_PER_PAGE + 1
+            val to = minOf(entries, from + TOC_PER_PAGE - 1)
+            k.button(c, r, "$from – $to", k.smallBold, selected = pg == tocPage)
+            if (pg == here && pg != tocPage) k.diamond(c, r.right - 12 * u, r.top + 12 * u, 5 * u)
+            hits.add(r) {
+                tocPage = pg
+                rangePick = false
+                invalidate()
+            }
+        }
+        if (gridPages > 1) pager(c, k, panel, rangePage, gridPages) { rangePage = it }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -420,7 +513,9 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
                     invalidate()
                 } else if (abs(e.x - downX) > 70 * u && (tab == 0 || tab == 3)) {
                     val d = if (e.x < downX) 1 else -1
-                    if (tab == 0) tocPage += d else morePage = (morePage + d).coerceAtLeast(0)
+                    if (tab == 0 && rangePick) rangePage = (rangePage + d).coerceAtLeast(0)
+                    else if (tab == 0) tocPage = (tocPage + d).coerceAtLeast(0)
+                    else morePage = (morePage + d).coerceAtLeast(0)
                     invalidate()
                 } else if (abs(e.x - downX) < 24 * u && abs(e.y - downY) < 24 * u) {
                     hits.list.lastOrNull { it.first.contains(e.x, e.y) }?.second?.invoke()
@@ -429,6 +524,10 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             MotionEvent.ACTION_CANCEL -> dragging = false
         }
         return true
+    }
+
+    companion object {
+        const val TOC_PER_PAGE = 10
     }
 
     private fun trackValue(x: Float): Double {

@@ -26,7 +26,7 @@ class BienNienActivity : TabActivity() {
         var top = area.top
         if (page == 0) {
             val intro = if (tab == 0) "Trước khi có app, trò tu tiên sống trong Exacta.OS: firmware nhẹ cho máy Xteink X4 Classic, tách từ CrossPoint 2.0.0, tự viết và tự nạp vào máy."
-                else "Chuyển kiếp sang Android cho iReader Neo 3. Mười một thế hệ, mỗi thế hệ một danh hiệu, từ bản dựng thử tới bản chính thức."
+                else "Chuyển kiếp sang Android cho iReader Neo 3. Mỗi thế hệ một danh hiệu riêng, từ bản dựng thử tới bản chính thức và những lần tu bổ sau đó."
             for (l in k.wrap(intro, area.width(), small, 3)) {
                 k.text(c, l, area.left, top, small)
                 top += sl
@@ -72,6 +72,10 @@ class BienNienActivity : TabActivity() {
     }
 
     companion object {
+        /** The newest generation's name, for Settings. */
+        val CURRENT get() = GENERATIONS.last().title
+        val COUNT get() = GENERATIONS.size
+
         private val PAST = listOf(
             Era("Khởi nguyên", "CrossPoint 2.0.0",
                 "Tách firmware mã nguồn mở CrossPoint cho Xteink X4 Classic, gọt thành Exacta.OS: hệ điều hành đọc sách nhẹ, menu gọn, chạy nhanh."),
@@ -110,6 +114,8 @@ class BienNienActivity : TabActivity() {
                 "Linh thạch và Phường thị để mua khoáng thạch, đan phù; bế quan 30 – 120 phút, lò cháy ×1,5 và kỳ ngộ ×2."),
             Era("1.0", "Vạn Pháp Quy Nhất",
                 "Bản chính thức. Hợp luyện ba pháp bảo dư thành khoáng thạch phẩm trên; rà soát và tối ưu cách vẽ; thêm Biên niên này."),
+            Era("1.0.1", "Khắc Lậu Cổ Pháp",
+                "Giờ tính theo canh giờ và khắc, tiến độ theo thành và phân; Mục lục trọn trang, mười mục một trang, chọn theo khoảng; tùy chọn dạng thẻ."),
         )
     }
 }

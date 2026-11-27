@@ -1050,7 +1050,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             if (b.words <= 0 || b.wordsRead < 2000 || b.seconds < 300 || b.finishDay >= 0) return null
             val perSecond = b.wordsRead.toDouble() / b.seconds
             val minutes = ((1 - b.progress) * b.words / perSecond / 60).toLong()
-            return if (minutes < 60) "~$minutes phút" else "~${minutes / 60} giờ " + (minutes % 60).toString().padStart(2, '0')
+            return com.exacta.reader.game.ThoiThan.span(minutes)
         }
 
         fun duration(seconds: Long): String {
