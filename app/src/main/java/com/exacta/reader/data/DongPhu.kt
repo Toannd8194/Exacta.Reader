@@ -156,7 +156,8 @@ object DongPhu {
     fun chance(r: Int): Int {
         val rec = RECIPES[r]
         val age = picks(r)?.sumOf { i -> (herbs[i].second - rec.herbs.first { it.first == herbs[i].first }.second) / 100 * 3 } ?: 0
-        return (60 + 8 * (cap() - rec.cap) + minOf(15, age) + (if (TongMon.perk(TongMon.BACH_THAO)) 10 else 0) + DaoLo.brewBonus() + TranPhap.brew()).coerceIn(20, 98)
+        return (60 + 8 * (cap() - rec.cap) + minOf(15, age) + (if (TongMon.perk(TongMon.BACH_THAO)) 10 else 0) + DaoLo.brewBonus() + TranPhap.brew() +
+            com.exacta.reader.game.PhapMon.effectValue(com.exacta.reader.game.PhapMon.E_DAN, DaoPhap.lv(com.exacta.reader.game.PhapMon.E_DAN))).coerceIn(20, 98)
     }
 
     fun startBrew(r: Int): Boolean {

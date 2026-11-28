@@ -175,6 +175,9 @@ object DoKiep {
             if (tam > 0) list.add(Triple("Tâm pháp nhập môn $tam", 4 * tam / half, 4))
         }
         if (kiepLuc() > 0) list.add(Triple("Kiếp lực", kiepLuc(), 5))
+        DaoPhap.lv(com.exacta.reader.game.PhapMon.E_DO_KIEP).takeIf { it > 0 }?.let {
+            list.add(Triple("Đặc hiệu công pháp", com.exacta.reader.game.PhapMon.effectValue(com.exacta.reader.game.PhapMon.E_DO_KIEP, it), 5))
+        }
         if (DongPhu.breakPill[8] > 0) list.add(Triple("Độ Kiếp Đan", DongPhu.breakPill[8], 5))
         if (fails[t.coerceIn(0, 8)] > 0) list.add(Triple("Kiên trì, ${fails[t.coerceIn(0, 8)]} lần trước", minOf(30, 10 * fails[t.coerceIn(0, 8)]), 5))
         lifeGamble()?.let { list.add(Triple(it.first, it.second, 5)) }

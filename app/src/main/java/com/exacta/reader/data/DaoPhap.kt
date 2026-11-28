@@ -56,7 +56,14 @@ object DaoPhap {
     var offerWeek = -1L
     val offers = ArrayList<Pair<Int, Int>>()
     var scrolls = 0
-    var gifted = 0                       // 1: the awakening's gifts, 2: the tâm pháp of Trúc Cơ
+    var gifted = 0
+    // 3.1 Vạn Pháp Trùng Tu.
+    var phu = -1                         // the công pháp of phụ tu, or -1
+    var xung = 0                         // the tầng a xung quan is breaking through (4, 7, 9), or 0
+    var xungCost = 0                     // the ngộ tính it holds, given back if it fails
+    val inherited = HashSet<Int>()       // công pháp that already took the words of their line
+    var wayWords = 0L                    // words read in the way of the công pháp running
+    var lastXung = ""                       // 1: the awakening's gifts, 2: the tâm pháp of Trúc Cơ
 
     private fun today() = Store.today()
 
@@ -64,6 +71,7 @@ object DaoPhap {
         started = false; roots.clear(); di = -1; awakenDay = -1; hoursAt.fill(0); washed = false
         ngo = 0; ngoEarned = 0; cong.clear(); active = -1; capNoted = -1; tam.clear(); tamOn.clear(); bangTamMonth = -1
         thuat.clear(); thuatOn.clear(); shields = 0; liemTucDay = -1; offerWeek = -1; offers.clear(); scrolls = 0; gifted = 0
+        phu = -1; xung = 0; xungCost = 0; inherited.clear(); wayWords = 0; lastXung = ""
     }
 
     // --- Linh căn ------------------------------------------------------------------------------------
@@ -194,7 +202,33 @@ object DaoPhap {
     // --- Công pháp -----------------------------------------------------------------------------------
 
     fun activeDef(): PhapMon.CongPhap? = if (active in cong) CONG_PHAP.getOrNull(active) else null
-    fun effect(e: Int) = activeDef()?.effect == e
+    fun phuDef(): PhapMon.CongPhap? = if (phu in cong && phu != active && phuOpen()) CONG_PHAP.getOrNull(phu) else null
+
+    /** Is đặc hiệu `slot` (0, 1, 2) of công pháp `id` open: tầng 1, 5, 9. */
+    fun slotOpen(id: Int, slot: Int) = id in cong && tang(id) >= intArrayOf(1, 5, 9)[slot]
+
+    /**
+     * The level of a kind of đặc hiệu: one for each open đặc hiệu of the công pháp running, two for
+     * its tuyệt học, one for the first đặc hiệu of the phụ tu.
+     */
+    fun lv(e: Int): Int {
+        if (e == PhapMon.E_NONE) return 0
+        var n = 0
+        activeDef()?.let { d ->
+            if (d.effect == e && slotOpen(active, 0)) n++
+            if (d.e2 == e && slotOpen(active, 1)) n++
+            if (d.e3 == e && slotOpen(active, 2)) n += 2
+        }
+        if (phuDef()?.effect == e) n++
+        return if (PhapMon.isSwitch(e)) minOf(n, 1) else n
+    }
+
+    fun effect(e: Int) = lv(e) > 0
+    /** The khuyết điểm of the công pháp running. */
+    fun flaw(f: Int) = f != PhapMon.F_NONE && activeDef()?.flaw == f
+
+    /** Everything the công pháp give now, kind by kind: (text, level). */
+    fun effectsNow(): List<Pair<Int, Int>> = (1..PhapMon.E_BI_CANH).mapNotNull { e -> lv(e).takeIf { it > 0 }?.let { e to it } }
 
     fun gainCong(id: Int): Boolean {
         if (id !in CONG_PHAP.indices || id in cong) return false
@@ -206,10 +240,129 @@ object DaoPhap {
 
     fun run(id: Int): Boolean {
         if (id !in cong || id == active) return false
+        if (phu == id) phu = -1
         active = id
         Store.note("Chuyển sang vận ${CONG_PHAP[id].name}")
+        inherit(id)
         Store.touch()
         return true
+    }
+
+    // --- Chuyển tu: a line carries on -------------------------------------------------------------------
+
+    /** The công pháp of the same line, lower phẩm, already viên mãn, that `id` would take words from. */
+    fun inheritFrom(id: Int): Int? {
+        if (id !in cong || id in inherited || (cong[id]?.words ?: 0) > 0) return null
+        val d = CONG_PHAP[id]
+        return cong.keys.filter { CONG_PHAP[it].mach == d.mach && CONG_PHAP[it].pham < d.pham && complete(it) }
+            .maxByOrNull { CONG_PHAP[it].pham }
+    }
+
+    /** The words carried: half the old one's, up to the new one's tầng 3. */
+    fun inheritWords(id: Int): Long = inheritFrom(id)?.let { from ->
+        minOf((cong[from]?.words ?: 0) * PhapMon.INHERIT_PERCENT / 100, (cong[id]?.opened ?: 3) * need(id))
+    } ?: 0
+
+    fun inherit(id: Int): Boolean {
+        val from = inheritFrom(id) ?: return false
+        val n = inheritWords(id)
+        cong[id]?.words = n
+        inherited.add(id)
+        Store.note("Chuyển tu ${CONG_PHAP[from].name} sang ${CONG_PHAP[id].name}: kế thừa ${com.exacta.reader.game.Realm.van(n)} vạn chữ, tới tầng ${tang(id)}")
+        Store.touch()
+        return true
+    }
+
+    // --- Phụ tu ----------------------------------------------------------------------------------------
+
+    /** From Kim Đan, a second công pháp of another line. */
+    fun phuOpen() = Store.realmCap >= 2
+    fun canPhu(id: Int) = phuOpen() && id in cong && id != active && activeDef()?.mach != CONG_PHAP[id].mach
+
+    fun setPhu(id: Int): Boolean {
+        if (!canPhu(id)) return false
+        phu = id
+        Store.note("Phụ tu ${CONG_PHAP[id].name}: ${PhapMon.effectText(CONG_PHAP[id].effect)}")
+        Store.touch()
+        return true
+    }
+
+    fun stopPhu() {
+        phu = -1
+        Store.touch()
+    }
+
+    // --- Lối vận công ------------------------------------------------------------------------------------
+
+    /** Is the reading now in the way of line `mach`. */
+    fun inWay(mach: Int, book: Book?, hour: Int = java.time.LocalTime.now().hour): Boolean {
+        val t = today()
+        return when (mach) {
+            in 0..4 -> PhapMon.hanhOfHour(hour) == mach
+            PhapMon.LOI -> hour in 0..2 || LocalDate.ofEpochDay(t).let { Lunar.fromSolar(it.dayOfMonth, it.monthValue, it.year).day == 15 }
+            PhapMon.BANG -> (TuLuyen.dayJumps[t] ?: 0) == 0 && Store.sessionNow >= 20 * 60
+            PhapMon.PHONG -> book != null && book.firstDay >= t - 6
+            PhapMon.KIEM -> book != null && book.maxProgress >= 0.5
+            PhapMon.THE -> Store.sessionNow >= 45 * 60
+            PhapMon.THAN -> book != null && book.author.isNotBlank() &&
+                Store.books.values.none { it.finishDay >= 0 && it.author.trim().equals(book.author.trim(), ignoreCase = true) }
+            else -> {
+                val hanh = HashSet<Int>()
+                for (d in t - 6..t) NhatKy.days[d]?.hours?.forEachIndexed { h, s -> if (s >= 300) hanh.add(PhapMon.hanhOfHour(h)) }
+                hanh.size >= 4
+            }
+        }
+    }
+
+    // --- Xung quan: tầng 4, 7, 9 break through in one sitting ---------------------------------------------
+
+    fun canXung(id: Int = active) = id == active && xung == 0 && waiting(id) && ngo >= openCost(id)
+
+    /** Ngộ tính is set down; the next sitting must hold the minutes of the tầng. */
+    fun startXung(): Boolean {
+        if (!canXung()) return false
+        val lock = nextLock() ?: return false
+        xungCost = openCost()
+        ngo -= xungCost
+        xung = lock
+        Store.note("Xung quan tầng $lock của ${CONG_PHAP[active].name}: buổi đọc tới phải liền ${PhapMon.xungMinutes(lock)} phút")
+        Store.touch()
+        return true
+    }
+
+    fun cancelXung() {
+        if (xung == 0) return
+        ngo += xungCost
+        xung = 0
+        xungCost = 0
+        Store.touch()
+    }
+
+    /** Seconds of the sitting so far: long enough, the tầng opens. */
+    fun onSeconds(session: Long) {
+        if (xung == 0 || session < PhapMon.xungMinutes(xung) * 60L) return
+        val lock = xung
+        xung = 0
+        xungCost = 0
+        val c = cong[active]
+        if (c != null && nextLock() == lock) {
+            c.opened = if (lock == 9) 9 else PhapMon.LOCKS[PhapMon.LOCKS.indexOf(lock) + 1] - 1
+            lastXung = "Xung quan thành: ${CONG_PHAP[active].name} lên tầng $lock"
+            Store.note(lastXung)
+        }
+        Store.touch()
+    }
+
+    /** The sitting ended short: khí nghịch, tâm ma +5; the ngộ tính comes back for another try. */
+    fun onSessionEnd(seconds: Long) {
+        if (xung == 0 || seconds < 60) return
+        lastXung = "Xung quan tầng $xung đứt ở ${seconds / 60} phút: khí nghịch, tâm ma +5"
+        ngo += xungCost
+        xung = 0
+        xungCost = 0
+        TuLuyen.stir(5)
+        Store.note(lastXung)
+        Store.touch()
     }
 
     private fun need(id: Int) = PhapMon.TANG_WORDS[CONG_PHAP[id].pham]
@@ -222,7 +375,7 @@ object DaoPhap {
     fun nextLock(id: Int = active): Int? = cong[id]?.let { c -> PhapMon.LOCKS.firstOrNull { it > c.opened } }
     fun waiting(id: Int = active): Boolean = cong[id]?.let { it.words >= it.opened * need(id) && nextLock(id) != null } ?: false
     fun complete(id: Int = active): Boolean = cong[id]?.let { it.opened >= 9 && it.words >= 9 * need(id) } ?: false
-    fun openCost(id: Int = active): Int = nextLock(id)?.let { PhapMon.ngoCost(CONG_PHAP[id].pham, it) } ?: 0
+    fun openCost(id: Int = active): Int = nextLock(id)?.let { PhapMon.ngoCost(CONG_PHAP[id].pham, it) + (if (id == active && flaw(PhapMon.F_NGO)) 1 else 0) } ?: 0
 
     /** Words to the next tầng (0 when waiting for ngộ tính or viên mãn), and the words of a tầng. */
     fun toNext(id: Int = active): Long {
@@ -245,10 +398,17 @@ object DaoPhap {
         return true
     }
 
-    fun onWords(words: Long) {
+    /** Words read: into the tầng of the công pháp running (more in its way), half into the phụ tu. */
+    fun onWords(words: Long, book: Book? = null) {
+        phuDef()?.let { _ ->
+            cong[phu]?.let { p -> p.words = minOf(p.words + words * PhapMon.PHU_PERCENT / 100, p.opened * need(phu)) }
+        }
         val c = cong[active] ?: return
         val before = tang()
-        c.words = minOf(c.words + words, c.opened * need(active))
+        val way = inWay(CONG_PHAP[active].mach, book)
+        if (way) wayWords += words
+        val n = words * (if (way) PhapMon.WAY_PERCENT else 100) / 100 * (100 + PhapMon.effectValue(PhapMon.E_VAN_CONG, lv(PhapMon.E_VAN_CONG))) / 100
+        c.words = minOf(c.words + n, c.opened * need(active))
         val after = tang()
         val name = CONG_PHAP[active].name
         if (after > before) Store.note("$name lên tầng $after")
@@ -265,13 +425,14 @@ object DaoPhap {
     }
 
     fun congBonus(): Int = activeDef()?.let { PhapMon.PHAM_BONUS[it.pham] + tang() - 1 } ?: 0
+    fun linhLucBonus(): Int = PhapMon.effectValue(PhapMon.E_LINH_LUC, lv(PhapMon.E_LINH_LUC))
     fun affinityBonus(): Int = activeDef()?.let { affinity(it.attr) } ?: 0
 
     /** Đạo Tâm Chủng Ma, with a công pháp of Kiếm: tâm ma / 5, 20% at most. */
     fun chungMa(): Int = if (tamWorks(PhapMon.TP_CHUNG_MA) && activeDef()?.attr == PhapMon.KIEM) minOf(20, TuLuyen.tamMa / 5) else 0
 
     /** Percent of linh lực the cultivator draws from a word (before bình cảnh and wounds). */
-    fun speed(): Int = (100 + rootBonus() + congBonus() + affinityBonus() + chungMa() + DongPhu.speedBonus() + DaoLo.speedBonus() + LinhGioi.speedBonus() + DoKiep.speedBonus() + TeLuyen.speedBonus() + TranPhap.speedBonus()).coerceIn(50, 250)
+    fun speed(): Int = (100 + rootBonus() + congBonus() + affinityBonus() + linhLucBonus() + chungMa() + DongPhu.speedBonus() + DaoLo.speedBonus() + LinhGioi.speedBonus() + DoKiep.speedBonus() + TeLuyen.speedBonus() + TranPhap.speedBonus()).coerceIn(50, 250)
 
     fun speedParts(): List<Pair<String, Int>> {
         val list = ArrayList<Pair<String, Int>>()
@@ -282,6 +443,7 @@ object DaoPhap {
             if (a > 0) list.add("Hợp linh căn (${PhapMon.attrName(d.attr)})" to a)
             if (a < 0) list.add("Khắc linh căn (${PhapMon.attrName(d.attr)})" to a)
         }
+        if (linhLucBonus() > 0) list.add("Đặc hiệu công pháp" to linhLucBonus())
         if (chungMa() > 0) list.add("Đạo Tâm Chủng Ma" to chungMa())
         if (DongPhu.speedBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.speedBonus())
         list.addAll(DaoLo.speedParts())
@@ -312,7 +474,7 @@ object DaoPhap {
 
     fun onFinish(book: Book) {
         if (!started) return
-        gainNgo(1 + (if (book.words >= TuLuyen.NGO_DAO_WORDS) 1 else 0) + (if (effect(PhapMon.E_NGO_TINH)) 1 else 0), "Đọc trọn «${book.title}»")
+        gainNgo(1 + (if (book.words >= TuLuyen.NGO_DAO_WORDS) 1 else 0) + lv(PhapMon.E_NGO_TINH), "Đọc trọn «${book.title}»")
     }
 
     // --- Tâm pháp ------------------------------------------------------------------------------------
@@ -362,11 +524,12 @@ object DaoPhap {
         if (tamOn.isNotEmpty()) Store.touch()
     }
 
-    fun tamCanhBonus() = 5 * tamOn.count { tamLevel(it) >= 2 }
-    fun canCoBonus() = (if (effect(PhapMon.E_CAN_CO)) 5 else 0) + if (tamWorks(PhapMon.TP_DUONG_KHI)) 5 else 0
+    fun tamCanhBonus() = 5 * tamOn.count { tamLevel(it) >= 2 } + PhapMon.effectValue(PhapMon.E_TAM_CANH, lv(PhapMon.E_TAM_CANH)) - (if (flaw(PhapMon.F_TAM_CANH)) 5 else 0)
+    fun canCoBonus() = PhapMon.effectValue(PhapMon.E_CAN_CO, lv(PhapMon.E_CAN_CO)) + (if (tamWorks(PhapMon.TP_DUONG_KHI)) 5 else 0) - (if (flaw(PhapMon.F_CAN_CO)) 5 else 0)
 
     /** Percent of a rise of tâm ma that comes through. */
-    fun stirPercent() = (if (tamWorks(PhapMon.TP_THANH_TAM)) 50 else 100) * (if (effect(PhapMon.E_TINH_TAM)) 70 else 100) / 100 *
+    fun stirPercent() = (if (tamWorks(PhapMon.TP_THANH_TAM)) 50 else 100) * (100 - PhapMon.effectValue(PhapMon.E_TINH_TAM, lv(PhapMon.E_TINH_TAM))).coerceAtLeast(40) / 100 *
+        (if (flaw(PhapMon.F_TAM_MA)) 120 else 100) / 100 *
         (if (TongMon.perk(TongMon.MINH_TAM)) 80 else 100) / 100
 
     /** Băng Tâm Quyết: the first broken streak of a month stirs nothing. */
@@ -500,7 +663,7 @@ object DaoPhap {
     class Fall(var kind: Int, var lossDiv: Int, var injuryDays: Int, var restDays: Int, var tamMa: Int, val saved: ArrayList<String> = ArrayList())
 
     fun soften(kind: Int): Fall {
-        val f = Fall(kind, 50, 5, if (effect(PhapMon.E_HOI_KHI)) 1 else 2, 10)
+        val f = Fall(kind, 50, 5, (if (effect(PhapMon.E_HOI_KHI)) 1 else 2) + (if (flaw(PhapMon.F_HOI_KHI)) 1 else 0), 10)
         if (f.kind == TuLuyen.TAU_HOA && on(PhapMon.T_HUYET_DON)) {
             f.kind = TuLuyen.KINH_MACH
             f.injuryDays = if (mastery(PhapMon.T_HUYET_DON) >= 2) 5 else 8
@@ -669,6 +832,8 @@ object DaoPhap {
         put("offerWeek", offerWeek)
         put("offers", JSONArray().apply { offers.forEach { put(JSONArray().put(it.first).put(it.second)) } })
         put("scrolls", scrolls); put("gifted", gifted)
+        put("phu", phu); put("xung", xung); put("xungCost", xungCost); put("wayWords", wayWords); put("lastXung", lastXung)
+        put("inherited", JSONArray().apply { inherited.forEach { put(it) } })
     }
 
     fun read(o: JSONObject) {
@@ -702,5 +867,8 @@ object DaoPhap {
         shields = o.optInt("shields"); liemTucDay = o.optLong("liemTuc", -1); offerWeek = o.optLong("offerWeek", -1)
         o.optJSONArray("offers")?.let { a -> for (i in 0 until a.length()) a.getJSONArray(i).let { offers.add(it.getInt(0) to it.getInt(1)) } }
         scrolls = o.optInt("scrolls"); gifted = o.optInt("gifted")
+        phu = o.optInt("phu", -1).takeIf { it in cong } ?: -1
+        xung = o.optInt("xung"); xungCost = o.optInt("xungCost"); wayWords = o.optLong("wayWords"); lastXung = o.optString("lastXung")
+        o.optJSONArray("inherited")?.let { a -> for (i in 0 until a.length()) inherited.add(a.getInt(i)) }
     }
 }

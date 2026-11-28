@@ -60,7 +60,9 @@ object PhapMon {
     val LOCKS = intArrayOf(4, 7, 9)
     fun ngoCost(pham: Int, lock: Int) = (LOCKS.indexOf(lock) + 1) + pham / 2
 
-    // Đặc hiệu: what a công pháp does besides its linh lực.
+    // Đặc hiệu: what a công pháp does besides its linh lực. From 3.1 each công pháp has three: the
+    // first from tầng 1, the second from tầng 5, the tuyệt học at tầng 9 (it counts twice). The same
+    // kind twice adds up: a level. EFFECTS reads the first level; "{}" takes the level's value.
     const val E_NONE = 0
     const val E_HOI_KHI = 1
     const val E_KIEP_NGAY = 2
@@ -76,71 +78,190 @@ object PhapMon {
     const val E_BINH_CANH = 12
     const val E_NUT_THAT = 13
     const val E_NGO_TINH = 14
-    val EFFECTS = arrayOf(
+    const val E_LINH_LUC = 15
+    const val E_TAM_CANH = 16
+    const val E_DAN = 17
+    const val E_TE_LUYEN = 18
+    const val E_DO_KIEP = 19
+    const val E_VAN_CONG = 20
+    const val E_BI_CANH = 21
+    private val EFFECT_TEXT = arrayOf(
         "Không có đặc hiệu",
         "Đột phá hỏng chỉ hồi khí 1 ngày",
-        "Ngưng đan, lôi kiếp, thiên kiếp tính sẵn 1 ngày",
-        "Tâm ma tăng chậm 30%",
-        "Căn cơ +5",
-        "Tỉ lệ đột phá +5%",
-        "Áp chế dày thêm 25%",
-        "Lò luyện cháy nhanh 20%",
-        "Kỳ ngộ nhiều thêm 30%",
-        "Linh thạch từ chữ đọc +20%",
-        "Thể phách +20%",
-        "Thần thức +5",
-        "Bình cảnh: 30% chữ thành linh lực thay vì 20%",
-        "Nút thắt: 70% chữ thành linh lực thay vì 50%",
-        "Đọc trọn một cuốn: ngộ tính +1",
+        "Ngưng đan, lôi kiếp, thiên kiếp tính sẵn {} ngày",
+        "Tâm ma tăng chậm {}%",
+        "Căn cơ +{}",
+        "Tỉ lệ đột phá +{}%",
+        "Áp chế dày thêm {}%",
+        "Lò luyện cháy nhanh {}%",
+        "Kỳ ngộ nhiều thêm {}%",
+        "Linh thạch từ chữ đọc +{}%",
+        "Thể phách +{}%",
+        "Thần thức +{}",
+        "Bình cảnh: thêm {}% chữ thành linh lực",
+        "Nút thắt: thêm {}% chữ thành linh lực",
+        "Đọc trọn một cuốn: ngộ tính +{}",
+        "Linh lực +{}%",
+        "Tâm cảnh +{}",
+        "Luyện đan +{}%",
+        "Tế luyện cấm chế nhanh {}%",
+        "Độ Kiếp +{}%",
+        "Chữ vào tầng công pháp +{}%",
+        "Bí cảnh tuần bớt 1 ngày",
+    )
+    /** The value of each kind at level 1. */
+    private val EFFECT_STEP = intArrayOf(0, 0, 1, 30, 5, 5, 25, 20, 30, 20, 20, 5, 10, 20, 1, 3, 5, 5, 20, 5, 25, 0)
+    /** Kinds that only switch on: a second level adds nothing. */
+    fun isSwitch(e: Int) = e == E_HOI_KHI || e == E_BI_CANH || e == E_NONE
+    fun effectValue(e: Int, level: Int) = EFFECT_STEP[e] * level
+    fun effectText(e: Int, level: Int = 1) = EFFECT_TEXT[e].replace("{}", effectValue(e, level).toString())
+    val EFFECTS get() = EFFECT_TEXT.indices.map { effectText(it) }
+
+    // Khuyết điểm: from Địa phẩm, a công pháp running asks something back.
+    const val F_NONE = 0
+    const val F_TAM_MA = 1
+    const val F_LINH_THACH = 2
+    const val F_CAN_CO = 3
+    const val F_NGO = 4
+    const val F_HOI_KHI = 5
+    const val F_THE_PHACH = 6
+    const val F_KY_NGO = 7
+    const val F_TAM_CANH = 8
+    val FLAWS = arrayOf(
+        "Không có khuyết điểm",
+        "Tâm ma tăng nhanh 20%",
+        "Linh thạch từ chữ đọc −20%",
+        "Căn cơ −5",
+        "Lĩnh ngộ tốn thêm 1 ngộ tính",
+        "Đột phá hỏng hồi khí thêm 1 ngày",
+        "Thể phách −15%",
+        "Kỳ ngộ ít đi 20%",
+        "Tâm cảnh −5",
     )
 
-    class CongPhap(val name: String, val pham: Int, val attr: Int, val effect: Int)
+    // Mạch: twelve lines of inheritance, six phẩm each; the line is the công pháp's attribute (Hỗn
+    // Nguyên for none). Each line is cultivated faster in its own way of reading.
+    const val HON_NGUYEN = 11
+    val MACH = arrayOf("Kim", "Mộc", "Thủy", "Hỏa", "Thổ", "Lôi", "Băng", "Phong", "Kiếm", "Thể", "Thần", "Hỗn Nguyên")
+    val WAY = arrayOf(
+        "đọc trong giờ Kim (5 – 9 giờ)",
+        "đọc trong giờ Mộc (9 – 13 giờ)",
+        "đọc trong giờ Thủy (23 – 5 giờ)",
+        "đọc trong giờ Hỏa (13 – 18 giờ)",
+        "đọc trong giờ Thổ (18 – 23 giờ)",
+        "đọc sau nửa đêm (0 – 3 giờ) hoặc đêm rằm",
+        "buổi đọc liền từ 20 phút trong ngày không nhảy chương",
+        "đọc cuốn mở chưa quá 7 ngày",
+        "đọc cuốn đã quá nửa, tới cùng",
+        "buổi đọc liền từ 45 phút",
+        "đọc sách của tác giả chưa đọc trọn cuốn nào",
+        "7 ngày qua đã đọc ở bốn khung giờ hành trở lên",
+    )
+    /** Words read in the line's way count this much more into its tầng (not into tu vi). */
+    const val WAY_PERCENT = 150
+
+    class CongPhap(val name: String, val pham: Int, val attr: Int, val effect: Int, val e2: Int = E_NONE, val e3: Int = E_NONE, val flaw: Int = F_NONE) {
+        val mach get() = if (attr < 0) HON_NGUYEN else attr
+        /** The three đặc hiệu and the tầng each opens at. */
+        val effects get() = listOf(effect to 1, e2 to 5, e3 to 9)
+    }
 
     const val DAN_KHI = 0
+    /** Ids 0 – 35 are the công pháp of 2.1, kept for old saves; 36 – 71 complete the twelve lines (3.1). */
     val CONG_PHAP = listOf(
-        // Hoàng: to Trúc Cơ viên mãn.
-        CongPhap("Dẫn Khí Quyết", 0, NONE, E_NONE),
-        CongPhap("Canh Kim Quyết", 0, KIM, E_AP_CHE),
-        CongPhap("Thanh Mộc Công", 0, MOC, E_CAN_CO),
-        CongPhap("Nhược Thủy Quyết", 0, THUY, E_TINH_TAM),
-        CongPhap("Liệt Hỏa Công", 0, HOA, E_LO_LUYEN),
-        CongPhap("Hậu Thổ Quyết", 0, THO, E_NUT_THAT),
-        // Huyền: to Kim Đan.
-        CongPhap("Phá Quân Kim Quyết", 1, KIM, E_LINH_THACH),
-        CongPhap("Trường Xuân Công", 1, MOC, E_HOI_KHI),
-        CongPhap("Huyền Thủy Chân Kinh", 1, THUY, E_THAN_THUC),
-        CongPhap("Xích Viêm Quyết", 1, HOA, E_KY_NGO),
-        CongPhap("Trấn Nhạc Công", 1, THO, E_CAN_CO),
-        CongPhap("Duệ Kim Kiếm Kinh", 1, KIEM, E_DOT_PHA),
-        CongPhap("Đồng Bì Thiết Cốt Công", 1, THE, E_THE_PHACH),
-        // Địa: to Nguyên Anh.
-        CongPhap("Tinh Kim Bất Hoại Công", 2, KIM, E_HOI_KHI),
-        CongPhap("Ất Mộc Sinh Sinh Quyết", 2, MOC, E_NGO_TINH),
-        CongPhap("Bích Hải Triều Sinh Quyết", 2, THUY, E_TINH_TAM),
-        CongPhap("Nam Minh Ly Hỏa Kinh", 2, HOA, E_KIEP_NGAY),
-        CongPhap("Mậu Thổ Huyền Công", 2, THO, E_BINH_CANH),
-        CongPhap("Ngũ Lôi Chính Pháp", 2, LOI, E_DOT_PHA),
-        CongPhap("Minh Tâm Quán Tưởng Pháp", 2, THAN, E_THAN_THUC),
-        // Thiên: to Hóa Thần.
-        CongPhap("Canh Kim Tru Tà Quyết", 3, KIM, E_DOT_PHA),
-        CongPhap("Thanh Đế Trường Sinh Kinh", 3, MOC, E_CAN_CO),
-        CongPhap("Huyền Minh Chân Thủy Kinh", 3, THUY, E_AP_CHE),
-        CongPhap("Đại Nhật Phần Thiên Quyết", 3, HOA, E_KIEP_NGAY),
-        CongPhap("Hoàng Đình Hậu Thổ Kinh", 3, THO, E_NUT_THAT),
-        CongPhap("Hàn Ngọc Băng Phách Quyết", 3, BANG, E_TINH_TAM),
-        CongPhap("Ngự Phong Lưu Vân Quyết", 3, PHONG, E_KY_NGO),
-        CongPhap("Thái Bạch Kiếm Điển", 3, KIEM, E_HOI_KHI),
-        // Linh: Linh giới to Đại Thừa.
-        CongPhap("Vạn Kiếm Quy Tông Lục", 4, KIEM, E_DOT_PHA),
-        CongPhap("Cửu Thiên Lôi Đế Kinh", 4, LOI, E_KIEP_NGAY),
-        CongPhap("Thái Âm Luyện Hình Kinh", 4, THUY, E_TINH_TAM),
-        CongPhap("Bất Diệt Kim Thân Quyết", 4, THE, E_THE_PHACH),
-        CongPhap("Hỗn Nguyên Ngũ Hành Kinh", 4, NONE, E_BINH_CANH),
-        // Tiên: to the gate of Tiên cảnh.
-        CongPhap("Hồng Mông Tạo Hóa Kinh", 5, NONE, E_AP_CHE),
-        CongPhap("Chu Thiên Tinh Thần Kinh", 5, THAN, E_THAN_THUC),
-        CongPhap("Thái Thượng Vong Tình Lục", 5, THUY, E_TINH_TAM),
+        CongPhap("Dẫn Khí Quyết", 0, NONE, E_VAN_CONG, E_LINH_LUC, E_VAN_CONG),
+        CongPhap("Canh Kim Quyết", 0, KIM, E_AP_CHE, E_LINH_THACH, E_DOT_PHA),
+        CongPhap("Thanh Mộc Công", 0, MOC, E_CAN_CO, E_HOI_KHI, E_CAN_CO),
+        CongPhap("Nhược Thủy Quyết", 0, THUY, E_TINH_TAM, E_THAN_THUC, E_TINH_TAM),
+        CongPhap("Liệt Hỏa Công", 0, HOA, E_LO_LUYEN, E_KY_NGO, E_LO_LUYEN),
+        CongPhap("Hậu Thổ Quyết", 0, THO, E_NUT_THAT, E_CAN_CO, E_NUT_THAT),
+        // Huyền phẩm.
+        CongPhap("Phá Quân Kim Quyết", 1, KIM, E_LINH_THACH, E_AP_CHE, E_LINH_THACH),
+        CongPhap("Trường Xuân Công", 1, MOC, E_HOI_KHI, E_DAN, E_CAN_CO),
+        CongPhap("Huyền Thủy Chân Kinh", 1, THUY, E_THAN_THUC, E_TINH_TAM, E_THAN_THUC),
+        CongPhap("Xích Viêm Quyết", 1, HOA, E_KY_NGO, E_LO_LUYEN, E_KY_NGO),
+        CongPhap("Trấn Nhạc Công", 1, THO, E_CAN_CO, E_BINH_CANH, E_CAN_CO),
+        CongPhap("Duệ Kim Kiếm Kinh", 1, KIEM, E_DOT_PHA, E_HOI_KHI, E_DOT_PHA),
+        CongPhap("Đồng Bì Thiết Cốt Công", 1, THE, E_THE_PHACH, E_CAN_CO, E_THE_PHACH),
+        // Địa phẩm.
+        CongPhap("Tinh Kim Bất Hoại Công", 2, KIM, E_HOI_KHI, E_AP_CHE, E_DOT_PHA, F_KY_NGO),
+        CongPhap("Ất Mộc Sinh Sinh Quyết", 2, MOC, E_NGO_TINH, E_CAN_CO, E_DAN, F_THE_PHACH),
+        CongPhap("Bích Hải Triều Sinh Quyết", 2, THUY, E_TINH_TAM, E_TAM_CANH, E_AP_CHE, F_LINH_THACH),
+        CongPhap("Nam Minh Ly Hỏa Kinh", 2, HOA, E_KIEP_NGAY, E_LO_LUYEN, E_DAN, F_TAM_MA),
+        CongPhap("Mậu Thổ Huyền Công", 2, THO, E_BINH_CANH, E_THE_PHACH, E_NUT_THAT, F_KY_NGO),
+        CongPhap("Ngũ Lôi Chính Pháp", 2, LOI, E_DOT_PHA, E_KIEP_NGAY, E_LINH_LUC, F_TAM_MA),
+        CongPhap("Minh Tâm Quán Tưởng Pháp", 2, THAN, E_THAN_THUC, E_NGO_TINH, E_TAM_CANH, F_THE_PHACH),
+        // Thiên phẩm.
+        CongPhap("Canh Kim Tru Tà Quyết", 3, KIM, E_DOT_PHA, E_TE_LUYEN, E_AP_CHE, F_TAM_CANH),
+        CongPhap("Thanh Đế Trường Sinh Kinh", 3, MOC, E_CAN_CO, E_NGO_TINH, E_CAN_CO, F_LINH_THACH),
+        CongPhap("Huyền Minh Chân Thủy Kinh", 3, THUY, E_AP_CHE, E_THAN_THUC, E_TINH_TAM, F_NGO),
+        CongPhap("Đại Nhật Phần Thiên Quyết", 3, HOA, E_KIEP_NGAY, E_KY_NGO, E_LO_LUYEN, F_TAM_MA),
+        CongPhap("Hoàng Đình Hậu Thổ Kinh", 3, THO, E_NUT_THAT, E_CAN_CO, E_BINH_CANH, F_NGO),
+        CongPhap("Hàn Ngọc Băng Phách Quyết", 3, BANG, E_TINH_TAM, E_TAM_CANH, E_AP_CHE, F_THE_PHACH),
+        CongPhap("Ngự Phong Lưu Vân Quyết", 3, PHONG, E_KY_NGO, E_BI_CANH, E_VAN_CONG, F_CAN_CO),
+        CongPhap("Thái Bạch Kiếm Điển", 3, KIEM, E_HOI_KHI, E_DOT_PHA, E_TE_LUYEN, F_TAM_MA),
+        // Linh phẩm.
+        CongPhap("Vạn Kiếm Quy Tông Lục", 4, KIEM, E_DOT_PHA, E_TE_LUYEN, E_LINH_LUC, F_TAM_CANH),
+        CongPhap("Cửu Thiên Lôi Đế Kinh", 4, LOI, E_KIEP_NGAY, E_DO_KIEP, E_DOT_PHA, F_TAM_MA),
+        CongPhap("Thái Âm Luyện Hình Kinh", 4, THUY, E_TINH_TAM, E_TAM_CANH, E_THAN_THUC, F_THE_PHACH),
+        CongPhap("Bất Diệt Kim Thân Quyết", 4, THE, E_THE_PHACH, E_DO_KIEP, E_NUT_THAT, F_NGO),
+        CongPhap("Hỗn Nguyên Ngũ Hành Kinh", 4, NONE, E_BINH_CANH, E_LINH_LUC, E_VAN_CONG, F_HOI_KHI),
+        // Tiên phẩm.
+        CongPhap("Hồng Mông Tạo Hóa Kinh", 5, NONE, E_AP_CHE, E_LINH_LUC, E_BINH_CANH, F_HOI_KHI),
+        CongPhap("Chu Thiên Tinh Thần Kinh", 5, THAN, E_THAN_THUC, E_VAN_CONG, E_NGO_TINH, F_THE_PHACH),
+        CongPhap("Thái Thượng Vong Tình Lục", 5, THUY, E_TINH_TAM, E_TAM_CANH, E_THAN_THUC, F_KY_NGO),
+        // 3.1: the twelve lines made whole.
+        CongPhap("Canh Kim Phá Thiên Lục", 4, KIM, E_AP_CHE, E_TE_LUYEN, E_DOT_PHA, F_TAM_CANH),
+        CongPhap("Thái Bạch Kim Tiên Kinh", 5, KIM, E_DOT_PHA, E_LINH_THACH, E_AP_CHE, F_TAM_MA),
+        CongPhap("Kiến Mộc Thông Thiên Kinh", 4, MOC, E_CAN_CO, E_DAN, E_NGO_TINH, F_LINH_THACH),
+        CongPhap("Vạn Mộc Hồi Xuân Tiên Quyết", 5, MOC, E_NGO_TINH, E_CAN_CO, E_DAN, F_THE_PHACH),
+        CongPhap("Chu Tước Ly Hỏa Kinh", 4, HOA, E_LO_LUYEN, E_DAN, E_KIEP_NGAY, F_TAM_MA),
+        CongPhap("Tam Muội Chân Hỏa Tiên Kinh", 5, HOA, E_KY_NGO, E_KIEP_NGAY, E_LO_LUYEN, F_TAM_MA),
+        CongPhap("Huyền Hoàng Đại Địa Kinh", 4, THO, E_BINH_CANH, E_THE_PHACH, E_CAN_CO, F_KY_NGO),
+        CongPhap("Tức Nhưỡng Tạo Hóa Tiên Kinh", 5, THO, E_NUT_THAT, E_CAN_CO, E_BINH_CANH, F_NGO),
+        CongPhap("Dẫn Lôi Quyết", 0, LOI, E_DOT_PHA, E_LINH_LUC, E_DOT_PHA),
+        CongPhap("Thanh Lôi Kinh", 1, LOI, E_KIEP_NGAY, E_DOT_PHA, E_KIEP_NGAY),
+        CongPhap("Tử Tiêu Thần Lôi Quyết", 3, LOI, E_LINH_LUC, E_DO_KIEP, E_DOT_PHA, F_TAM_MA),
+        CongPhap("Cửu Tiêu Thiên Lôi Tiên Kinh", 5, LOI, E_DO_KIEP, E_LINH_LUC, E_KIEP_NGAY, F_TAM_MA),
+        CongPhap("Hàn Băng Quyết", 0, BANG, E_TINH_TAM, E_TAM_CANH, E_TINH_TAM),
+        CongPhap("Sương Hoa Công", 1, BANG, E_TAM_CANH, E_AP_CHE, E_TAM_CANH),
+        CongPhap("Huyền Băng Ngưng Phách Kinh", 2, BANG, E_AP_CHE, E_TINH_TAM, E_TAM_CANH, F_THE_PHACH),
+        CongPhap("Vạn Tái Huyền Băng Kinh", 4, BANG, E_TAM_CANH, E_AP_CHE, E_TINH_TAM, F_KY_NGO),
+        CongPhap("Bắc Minh Băng Hoàng Tiên Kinh", 5, BANG, E_TINH_TAM, E_TAM_CANH, E_AP_CHE, F_THE_PHACH),
+        CongPhap("Khinh Phong Quyết", 0, PHONG, E_VAN_CONG, E_KY_NGO, E_VAN_CONG),
+        CongPhap("Tật Phong Công", 1, PHONG, E_BI_CANH, E_VAN_CONG, E_KY_NGO),
+        CongPhap("Thanh Phong Tiêu Dao Kinh", 2, PHONG, E_KY_NGO, E_LINH_THACH, E_VAN_CONG, F_CAN_CO),
+        CongPhap("Cửu U Cuồng Phong Kinh", 4, PHONG, E_VAN_CONG, E_BI_CANH, E_KY_NGO, F_TAM_MA),
+        CongPhap("Côn Bằng Ngự Phong Tiên Kinh", 5, PHONG, E_KY_NGO, E_VAN_CONG, E_LINH_THACH, F_CAN_CO),
+        CongPhap("Tam Xích Kiếm Quyết", 0, KIEM, E_DOT_PHA, E_TE_LUYEN, E_DOT_PHA),
+        CongPhap("Thanh Liên Kiếm Kinh", 2, KIEM, E_TE_LUYEN, E_DOT_PHA, E_LINH_LUC, F_TAM_CANH),
+        CongPhap("Thiên Đạo Kiếm Tiên Lục", 5, KIEM, E_LINH_LUC, E_DOT_PHA, E_TE_LUYEN, F_TAM_MA),
+        CongPhap("Luyện Bì Quyết", 0, THE, E_THE_PHACH, E_CAN_CO, E_THE_PHACH),
+        CongPhap("Kim Cương Luyện Cốt Kinh", 2, THE, E_CAN_CO, E_THE_PHACH, E_NUT_THAT, F_NGO),
+        CongPhap("Bàn Thạch Chiến Thể Kinh", 3, THE, E_NUT_THAT, E_DO_KIEP, E_THE_PHACH, F_KY_NGO),
+        CongPhap("Hồng Hoang Bất Diệt Tiên Thể", 5, THE, E_DO_KIEP, E_THE_PHACH, E_CAN_CO, F_NGO),
+        CongPhap("Ngưng Thần Quyết", 0, THAN, E_THAN_THUC, E_NGO_TINH, E_THAN_THUC),
+        CongPhap("Tĩnh Tâm Quán Tưởng Công", 1, THAN, E_NGO_TINH, E_TAM_CANH, E_THAN_THUC),
+        CongPhap("Thái Hư Thần Hồn Kinh", 3, THAN, E_TAM_CANH, E_THAN_THUC, E_VAN_CONG, F_THE_PHACH),
+        CongPhap("Vạn Tượng Thần Thức Kinh", 4, THAN, E_VAN_CONG, E_NGO_TINH, E_THAN_THUC, F_THE_PHACH),
+        CongPhap("Ngũ Khí Triều Nguyên Công", 1, NONE, E_LINH_LUC, E_BINH_CANH, E_LINH_LUC),
+        CongPhap("Ngũ Hành Luân Chuyển Quyết", 2, NONE, E_VAN_CONG, E_LINH_LUC, E_BINH_CANH, F_HOI_KHI),
+        CongPhap("Thái Cực Lưỡng Nghi Kinh", 3, NONE, E_BINH_CANH, E_KY_NGO, E_LINH_LUC, F_HOI_KHI),
     )
+
+    /** The công pháp of a line, by phẩm (null when none). */
+    fun ofLine(mach: Int, pham: Int): Int? = CONG_PHAP.indices.firstOrNull { CONG_PHAP[it].mach == mach && CONG_PHAP[it].pham == pham }
+
+    /** Xung quan: the minutes of the sitting that breaks through tầng 4, 7, 9. */
+    fun xungMinutes(lock: Int) = when (lock) {
+        4 -> 30
+        7 -> 60
+        else -> 90
+    }
+    /** Chuyển tu: a line's next phẩm keeps this share of the words of the one completed. */
+    const val INHERIT_PERCENT = 50
+    /** Phụ tu: its words grow at this share, its first đặc hiệu counts. */
+    const val PHU_PERCENT = 50
 
     // --- Tâm pháp ----------------------------------------------------------------------------------
 

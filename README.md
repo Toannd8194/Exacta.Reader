@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.0.1.apk`](dist/Van-Quyen-Tien-Do-3.0.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.1.apk`](dist/Van-Quyen-Tien-Do-3.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,28 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.1 · Vạn Pháp Trùng Tu
+
+- **72 công pháp trong 12 mạch** (Kim, Mộc, Thủy, Hỏa, Thổ, Lôi, Băng, Phong, Kiếm, Thể, Thần, Hỗn Nguyên), mỗi mạch đủ sáu phẩm
+  Hoàng → Tiên. 36 bộ cũ giữ nguyên, thêm 36 bộ mới.
+- **Ba đặc hiệu mỗi bộ**: mở ở tầng 1, tầng 5, và **tuyệt học** ở tầng 9 (tính gấp đôi). Cùng một loại đặc hiệu thì cộng dồn
+  (ví dụ Liệt Hỏa Công viên mãn: lò luyện nhanh 60%). Thêm loại mới: linh lực, tâm cảnh, luyện đan, tế luyện, Độ Kiếp, chữ vào
+  tầng công pháp, bí cảnh tuần bớt một ngày.
+- **Khuyết điểm** từ Địa phẩm: tâm ma tăng nhanh, linh thạch ít đi, căn cơ hay tâm cảnh −5, lĩnh ngộ tốn thêm, hồi khí lâu hơn,
+  thể phách giảm, kỳ ngộ ít đi.
+- **Lối vận công**: mỗi mạch một lối đọc (giờ hành của năm hành; sau nửa đêm hay đêm rằm cho Lôi; buổi liền không nhảy chương
+  cho Băng; sách mới mở cho Phong; sách đã quá nửa cho Kiếm; buổi từ 45 phút cho Thể; tác giả mới cho Thần; đọc đủ bốn khung
+  giờ trong tuần cho Hỗn Nguyên). Đọc đúng lối: chữ tính ×1,5 vào tầng công pháp (không vào tu vi).
+- **Xung quan** thay lĩnh ngộ ở tầng 4, 7, 9: đặt ngộ tính, rồi một buổi đọc liền 30, 60, 90 phút. Dừng sớm là khí nghịch: tâm
+  ma +5, ngộ tính trả lại để thử lần sau.
+- **Chuyển tu**: bộ viên mãn truyền một nửa số chữ cho bộ phẩm cao hơn cùng mạch (tới tầng 3), một lần.
+- **Phụ tu** từ Kim Đan: vận thêm một bộ khác mạch, nhận đặc hiệu tầng 1 của nó, nó lên tầng bằng nửa số chữ.
+- Màn Công pháp: trang 1 bộ đang vận (tầng, ba đặc hiệu, khuyết điểm, lối vận công, phụ tu), trang 2 tốc độ tu và mọi đặc hiệu
+  đang có, các trang sau là các bộ khác (chạm «Xem» để vận hay đặt phụ tu).
+- **Khoáng thạch vẽ lại** kiểu pixel như linh thạch: đá thô, tinh thể phá đá, hốc tinh thể, ngọc giác cắt, cầu Âm Dương, tinh thể
+  Hỗn Độn.
+- versionCode 310.
 
 ## Bản 3.0.1 · Sơn Môn Định Phận
 
@@ -337,6 +359,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.8 | Tàng Kinh Lưu Ảnh | Sổ đọc theo ngày cho phần hai, Niên kỷ › Lối đọc, tài nguyên dự tính |
   | 3.0 | Cửu Tiêu Khai Thiên | Phần hai: Cửu Tiêu, chín bậc tiên vị, tiên lực, Thiên Đình |
   | 3.0.1 | Sơn Môn Định Phận | Tông môn mở theo cảnh giới, chức vụ theo thời gian, bổng ngày, phản tông |
+  | 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, lối vận công, xung quan, chuyển tu, phụ tu |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

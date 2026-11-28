@@ -48,7 +48,9 @@ Bản kế hoạch, chưa có code. Mọi con số là điểm xuất phát, s�
   Đọc đúng lối: chữ tính ×1,5 vào tầng công pháp, **không** cộng vào tu vi.
 - **Xung quan ở tầng 4, 7, 9**: vẫn cần ngộ tính, và thêm một buổi xung quan, tức một buổi đọc liền theo lối vận công: 30 phút ở tầng 4, 60 ở tầng 7, 90 ở tầng 9. Dừng sớm thì khí nghịch: tâm ma +5, lần sau làm lại.
 - **Chuyển tu cùng mạch**: bộ đã đại thành lên bộ phẩm kế giữ 50% chữ công pháp. Đổi sang mạch khác là **tán công**: trả lại một nửa ngộ tính đã dùng, tầng về 0.
+  *Bản 3.1 làm khác*: phần kế thừa tối đa tới tầng 3 của bộ mới; đổi bộ vẫn giữ tầng từng bộ như cũ, chưa có tán công.
 - **Phụ tu** (từ Kim Đan): một ô thứ hai, nhận 30% đặc hiệu thứ nhất của bộ phụ; tầng bộ phụ lên chậm một nửa.
+  *Bản 3.1 làm khác*: bộ phụ tu cho trọn đặc hiệu tầng 1 (một cấp), phải khác mạch với bộ đang vận.
 - **Tự sáng công pháp** (từ Hóa Thần): ghép hai bộ đã đại thành và 10 ngộ tính thành một bộ mang tên người tu đặt. Bộ mới chọn mỗi bên một đặc hiệu, phẩm bằng bộ thấp hơn cộng một.
 
 ## B. Tâm pháp: 18 bộ, 4 trường phái, 5 cảnh
@@ -123,7 +125,7 @@ Làm loạt này **trước** năm giới còn lại của phần hai: công ph�
 
 | Bản | Tên | Nội dung |
 |---|---|---|
-| 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, khuyết điểm, lối vận công, xung quan, chuyển tu, phụ tu |
+| 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, khuyết điểm, lối vận công, xung quan, chuyển tu, phụ tu (**đã làm**) |
 | 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, 4 trường phái, 5 cảnh, vận chuyển theo lối đọc, xung khắc, 3 ô |
 | 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, thi triển trong bí cảnh và kiếp, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông |
 | 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn theo chức, tham ngộ bằng chữ đọc, tàn quyển, đồ phổ, tự sáng công pháp |

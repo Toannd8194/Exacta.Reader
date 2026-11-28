@@ -130,11 +130,11 @@ object TuLuyen {
     fun authors(): Int = Store.books.values.filter { it.finishDay >= 0 }.map { it.author.trim().lowercase() }.filter { it.isNotEmpty() }.toSet().size
 
     /** Thần thức: 5 an author read through, 1 a book. */
-    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + (if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0) + DongPhu.thanBonus) * DaoLo.thanPercent() / 100 * LinhGioi.thanPercent() / 100
+    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + PhapMon.effectValue(PhapMon.E_THAN_THUC, DaoPhap.lv(PhapMon.E_THAN_THUC)) + DongPhu.thanBonus) * DaoLo.thanPercent() / 100 * LinhGioi.thanPercent() / 100
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
-    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }.let { it * DaoLo.thePercent() / 100 * LinhGioi.thePercent() / 100 }
+    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { it * (100 + PhapMon.effectValue(PhapMon.E_THE_PHACH, DaoPhap.lv(PhapMon.E_THE_PHACH)) - (if (DaoPhap.flaw(PhapMon.F_THE_PHACH)) 15 else 0)) / 100 }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }.let { it * DaoLo.thePercent() / 100 * LinhGioi.thePercent() / 100 }
     fun theTier(v: Int = thePhach()) = THE_AT.indexOfLast { v >= it }
 
     // --- Realms and tiểu cảnh ----------------------------------------------------------------------
@@ -342,8 +342,8 @@ object TuLuyen {
     /** Percent of the words read that become linh lực now. */
     fun rate(): Int = (if (atCeiling()) ceilingRate() else if (stuck()) knotRate() else 100) * (if (injured()) 70 else 100) / 100 *
         (if (BiCanh.hurt()) 85 else 100) / 100
-    fun ceilingRate() = if (DaoPhap.effect(PhapMon.E_BINH_CANH)) 30 else 20
-    fun knotRate() = if (DaoPhap.effect(PhapMon.E_NUT_THAT)) 70 else 50
+    fun ceilingRate() = 20 + PhapMon.effectValue(PhapMon.E_BINH_CANH, DaoPhap.lv(PhapMon.E_BINH_CANH))
+    fun knotRate() = (50 + PhapMon.effectValue(PhapMon.E_NUT_THAT, DaoPhap.lv(PhapMon.E_NUT_THAT))).coerceAtMost(90)
 
     /** Kim Đan phẩm speeds the way to Nguyên Anh: 2% a phẩm, Vô Hà 25%. */
     fun danBonus(): Int = if (Store.realmCap == 2 && danPham >= 0) (if (danPham >= 9) 25 else 2 * (danPham + 1)) else 0
@@ -360,7 +360,7 @@ object TuLuyen {
         val (pct, ceiling) = state
         val kept = gain * pct / 100 * (100 + danBonus()) / 100 * DaoPhap.speed() / 100
         adj += kept - gain
-        if (ceiling) apChe += gain * (if (DaoPhap.effect(PhapMon.E_AP_CHE)) 100 else 80) / 100
+        if (ceiling) apChe += gain * (80 + 4 * PhapMon.effectValue(PhapMon.E_AP_CHE, DaoPhap.lv(PhapMon.E_AP_CHE)) / 5) / 100
     }
 
     /** Tâm ma rises by `n`, less with Thanh Tâm Quyết and a công pháp that calms. */
@@ -462,7 +462,7 @@ object TuLuyen {
         if (apCheBonus() > 0) list.add("Áp chế cảnh giới" to apCheBonus())
         DaoPhap.activeDef()?.let { d ->
             if (DaoPhap.breakPart() > 0) list.add("Công pháp ${PhapMon.PHAM[d.pham]} phẩm tầng ${DaoPhap.tang()}" to DaoPhap.breakPart())
-            if (d.effect == PhapMon.E_DOT_PHA) list.add("Đặc hiệu ${d.name}" to 5)
+            if (DaoPhap.lv(PhapMon.E_DOT_PHA) > 0) list.add("Đặc hiệu công pháp" to PhapMon.effectValue(PhapMon.E_DOT_PHA, DaoPhap.lv(PhapMon.E_DOT_PHA)))
         }
         if (DaoPhap.phapTuong() > 0) list.add("Pháp Tướng Thiên Địa" to DaoPhap.phapTuong())
         if (DongPhu.breakBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.breakBonus())
@@ -488,7 +488,7 @@ object TuLuyen {
     fun startTrial(): Boolean {
         if (!canStartTrial()) return false
         Store.trialStart = today()
-        Store.trialBonus = if (DaoPhap.effect(PhapMon.E_KIEP_NGAY)) 1 else 0
+        Store.trialBonus = DaoPhap.lv(PhapMon.E_KIEP_NGAY).coerceAtMost(2)
         Store.trialSpare = 0
         attacks = 0
         trialBook = ""

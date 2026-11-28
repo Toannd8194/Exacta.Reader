@@ -32,11 +32,15 @@ class CongPhapActivity : TabActivity() {
 
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int = when (tab) {
         0 -> linhCan(c, k, area, hits)
-        1 -> if (page == 0) congPhap(c, k, area, hits) else owned(c, k, area, page - 1, hits) + 1
+        1 -> when (page) {
+            0 -> congPhap(c, k, area, hits)
+            1 -> speedPage(c, k, area)
+            else -> owned(c, k, area, page - 2, hits) + 2
+        }
         2 -> tamPhap(c, k, area, page, hits)
         3 -> thuatPhap(c, k, area, page, hits)
         else -> tangKinh(c, k, area, page, hits)
-    }.let { if (tab == 1) maxOf(it, 1 + ownedPages(k, area)) else it }
+    }.let { if (tab == 1) maxOf(it, 2 + ownedPages(k, area)) else it }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 
@@ -205,29 +209,29 @@ class CongPhapActivity : TabActivity() {
             aff < 0 -> " · khắc linh căn −20%"
             else -> ""
         }
-        val reach = PhapMon.REACH[d.pham].let { if (it >= 9) "chạm Tiên cảnh" else "${TuLuyen.shortName(it)} đại viên mãn" }
+        val reach = PhapMon.REACH[d.pham].let { if (it >= 9) "chạm Tiên cảnh" else "tu tới ${TuLuyen.shortName(it)}" }
+        val lock = DaoPhap.nextLock()
         val status = when {
-            DaoPhap.complete() -> "Tầng 9 viên mãn: công pháp đã luyện tới cùng."
-            DaoPhap.waiting() -> "Đủ chữ: lĩnh ngộ tầng ${DaoPhap.nextLock()} cần ${DaoPhap.openCost()} ngộ tính (đang có ${DaoPhap.ngo})."
-            else -> "Tầng $tang · còn ${Realm.van(DaoPhap.toNext())} vạn chữ tới tầng ${tang + 1}" +
-                (DaoPhap.nextLock()?.let { " · tầng $it cần lĩnh ngộ" } ?: "")
+            DaoPhap.complete() -> "Tầng 9 viên mãn: tuyệt học đã thành. Bộ phẩm cao hơn cùng mạch sẽ kế thừa một nửa số chữ."
+            DaoPhap.xung > 0 -> "Đang xung quan tầng ${DaoPhap.xung}: buổi đọc tới phải liền ${PhapMon.xungMinutes(DaoPhap.xung)} phút; dừng sớm là khí nghịch."
+            DaoPhap.waiting() -> "Đủ chữ: xung quan tầng $lock cần ${DaoPhap.openCost()} ngộ tính (đang có ${DaoPhap.ngo}) và một buổi đọc liền ${PhapMon.xungMinutes(lock ?: 9)} phút."
+            else -> "Tầng $tang · còn ${Realm.van(DaoPhap.toNext())} vạn chữ tới tầng ${tang + 1}" + (lock?.let { " · tầng $it phải xung quan" } ?: "")
         }
         val statusLines = k.wrap(status, a.width() - 2 * pad, small, 2).size
-        val cardH = 2 * pad + k.lineH(k.ui12Bold) + 4 * u + 2 * sl + 16 * u + 36 * u + 10 * u + statusLines * sl + (if (DaoPhap.waiting()) 64 * u else 0f)
+        val button = DaoPhap.waiting() || DaoPhap.xung > 0
+        val cardH = 2 * pad + k.lineH(k.ui12Bold) + 4 * u + sl + 16 * u + 36 * u + 10 * u + statusLines * sl + (if (button) 64 * u else 0f)
         val card = RectF(a.left, y, a.right, y + cardH)
-        k.card(c, card, selected = false)
+        k.card(c, card, selected = DaoPhap.xung > 0)
         val x = a.left + pad
         val w = a.width() - 2 * pad
         y += pad
-        k.text(c, k.fit(d.name, w - 140 * u, k.ui12Bold), x, y, k.ui12Bold)
+        k.text(c, k.fit(d.name, w - 160 * u, k.ui12Bold), x, y, k.ui12Bold)
         k.right(c, "${PhapMon.PHAM[d.pham]} phẩm", card.right - pad, y + (k.lineH(k.ui12Bold) - k.lineH(sb)) / 2, sb)
         y += k.lineH(k.ui12Bold) + 4 * u
-        k.text(c, k.fit("Thuộc tính ${PhapMon.attrName(d.attr)}$affText · tu tới $reach", w, small), x, y, small)
-        y += sl
-        k.text(c, k.fit("Đặc hiệu: ${PhapMon.EFFECTS[d.effect]}", w, sb), x, y, sb)
+        k.text(c, k.fit("Mạch ${PhapMon.MACH[d.mach]}$affText · $reach", w, small), x, y, small)
         y += sl + 16 * u
 
-        // Nine tầng; 4, 7, 9 wait for ngộ tính.
+        // Nine tầng; 4, 7, 9 are broken through.
         val gap = 8 * u
         val cw = (w - 8 * gap) / 9
         val need = PhapMon.TANG_WORDS[d.pham]
@@ -245,23 +249,71 @@ class CongPhapActivity : TabActivity() {
                     if (f > 0f && i <= tang) c.drawRect(cx + u, y + u, cx + u + (cw - 2 * u) * f, y + 23 * u, k.fill)
                 }
             }
-            k.centered(c, if (locked) "ngộ" else "$i", cx, cw, y + 26 * u, if (i == tang) sb else small)
+            k.centered(c, if (locked) "quan" else "$i", cx, cw, y + 26 * u, if (i == tang) sb else small)
         }
         y += 36 * u + 10 * u
         y = para(c, k, status, x, y, w, small, 2)
-        if (DaoPhap.waiting()) {
+        if (button) {
             val b = RectF(x, y + 10 * u, card.right - pad, y + 60 * u)
-            val ok = DaoPhap.ngo >= DaoPhap.openCost()
-            k.button(c, b, if (ok) "Lĩnh ngộ tầng ${DaoPhap.nextLock()} · ${DaoPhap.openCost()} ngộ tính" else "Thiếu ngộ tính: đọc sách tới tầng 4, 7 và đọc trọn", sb, enabled = ok)
-            if (ok) hits.add(b) {
-                if (DaoPhap.open()) toast("${d.name} lên tầng ${DaoPhap.tang()}")
-                refresh()
+            when {
+                DaoPhap.xung > 0 -> {
+                    k.button(c, b, "Thu công, trả lại ngộ tính", sb)
+                    hits.add(b) { DaoPhap.cancelXung(); refresh() }
+                }
+                DaoPhap.canXung() -> {
+                    k.button(c, b, "Xung quan tầng $lock · ${DaoPhap.openCost()} ngộ tính", k.ui10Bold)
+                    hits.add(b) {
+                        if (DaoPhap.startXung()) toast("Đọc liền ${PhapMon.xungMinutes(DaoPhap.xung)} phút để phá quan")
+                        refresh()
+                    }
+                }
+                else -> k.button(c, b, "Thiếu ngộ tính: đọc sách tới tầng 4, 7 và đọc trọn", sb, enabled = false)
             }
         }
-        y = card.bottom + 18 * u
+        y = card.bottom + 16 * u
 
-        // The speed of cultivation.
-        y = k.section(c, a.left, y, a.width(), "TỐC ĐỘ TU LUYỆN")
+        // The three đặc hiệu, and what the công pháp asks back.
+        y = k.section(c, a.left, y, a.width(), "ĐẶC HIỆU")
+        val labels = arrayOf("Tầng 1", "Tầng 5", "Tầng 9 · tuyệt học")
+        for ((slot, pair) in d.effects.withIndex()) {
+            val open = DaoPhap.slotOpen(id, slot)
+            val text = PhapMon.effectText(pair.first, if (slot == 2 && !PhapMon.isSwitch(pair.first)) 2 else 1)
+            k.check(c, a.left, y + 2 * u, sl - 4 * u, open)
+            k.pair(c, labels[slot], text, a.left + sl + 6 * u, y, a.width() - sl - 6 * u, small, if (open) sb else small)
+            y += sl + 6 * u
+        }
+        if (d.flaw != PhapMon.F_NONE) {
+            k.pair(c, "Khuyết điểm", PhapMon.FLAWS[d.flaw], a.left + sl + 6 * u, y, a.width() - sl - 6 * u, small, sb)
+            y += sl + 6 * u
+        }
+        y += 10 * u
+
+        // The way of the line.
+        y = k.section(c, a.left, y, a.width(), "LỐI VẬN CÔNG · MẠCH ${PhapMon.MACH[d.mach].uppercase()}")
+        val now = DaoPhap.inWay(d.mach, Store.current())
+        y = para(c, k, "${PhapMon.WAY[d.mach].replaceFirstChar { it.uppercase() }}: chữ tính ×1,5 vào tầng công pháp (không vào tu vi). " +
+            (if (now) "Lúc này đang đúng lối." else "Lúc này chưa đúng lối.") + " Đã đọc đúng lối ${Realm.van(DaoPhap.wayWords)} vạn chữ.",
+            a.left, y, a.width(), small, 3) + 14 * u
+
+        // Phụ tu.
+        y = k.section(c, a.left, y, a.width(), "PHỤ TU")
+        val p = DaoPhap.phuDef()
+        val text = when {
+            !DaoPhap.phuOpen() -> "Từ Kim Đan vận thêm một bộ khác mạch: nhận đặc hiệu tầng 1 của nó, và nó lên tầng bằng nửa số chữ."
+            p == null -> "Chưa đặt. Chạm một bộ ở các trang sau để đặt làm phụ tu (khác mạch với bộ đang vận)."
+            else -> "${p.name} (${PhapMon.PHAM[p.pham]}, mạch ${PhapMon.MACH[p.mach]}) tầng ${DaoPhap.tang(DaoPhap.phu)}: ${PhapMon.effectText(p.effect)}."
+        }
+        para(c, k, text, a.left, y, a.width(), small, 3)
+        return 1
+    }
+
+    /** Page 2: the speed of cultivation and what the gates ask. */
+    private fun speedPage(c: Canvas, k: Ink, a: RectF): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        var y = k.section(c, a.left, a.top, a.width(), "TỐC ĐỘ TU LUYỆN")
         val parts = DaoPhap.speedParts() + listOfNotNull(TuLuyen.danBonus().takeIf { it > 0 }?.let { "${com.exacta.reader.data.DaoLo.form(2) ?: "Kim Đan"} ${TuLuyen.DAN_PHAM[TuLuyen.danPham].lowercase()}" to it })
         for ((label, v) in parts) {
             k.pair(c, label, if (v >= 0) "+$v%" else "−${-v}%", a.left, y, a.width())
@@ -272,14 +324,26 @@ class CongPhapActivity : TabActivity() {
         k.pair(c, "Mỗi chữ thành linh lực (trước bình cảnh, thương thế)", "${DaoPhap.speed() * (100 + TuLuyen.danBonus()) / 100}%", a.left, y, a.width(), sb, k.ui10Bold)
         y += k.lineH(k.ui10Bold) + 16 * u
 
-        // What the gates ask.
-        y = k.section(c, a.left, y, a.width(), "PHẨM CÔNG PHÁP")
+        // Every đặc hiệu at work now, added up.
+        val now = DaoPhap.effectsNow()
+        if (now.isNotEmpty()) {
+            y = k.section(c, a.left, y, a.width(), "ĐẶC HIỆU ĐANG CÓ (CỘNG DỒN)")
+            for ((e, lv) in now) {
+                if (y + sl > a.bottom - 6 * sl) break
+                k.diamond(c, a.left + 6 * u, y + sl * 0.5f, 4 * u)
+                k.text(c, k.fit(PhapMon.effectText(e, lv), a.width() - 20 * u, small), a.left + 20 * u, y, small)
+                y += sl + 4 * u
+            }
+            y += 12 * u
+        }
+
+        y = k.section(c, a.left, y, a.width(), "PHẨM VÀ MẠCH")
         val g = TuLuyen.gate()
         val rules = listOf(
             "Hoàng phẩm tu tới Trúc Cơ, Huyền tới Kim Đan, Địa tới Nguyên Anh, Thiên tới Hóa Thần; Linh giới cần Linh phẩm, Phi Thăng cần Tiên phẩm.",
             if (Store.realmCap in 0..8 && g >= 2) "Cửa kế tiếp ${Realm.baseName(g)} cần công pháp ${PhapMon.PHAM[PhapMon.phamFor(g)]} phẩm" +
                 (if (DaoPhap.canBreakWith(g)) ": đã đủ." else ": tìm ở kỳ ngộ, bí cảnh tuần, Tàng Kinh Các.") else "Cửa kế tiếp không đòi phẩm công pháp.",
-            "Đổi công pháp không mất tầng: mỗi bộ giữ chữ đã luyện." + if (others().isNotEmpty()) " Trang sau là các bộ khác đã có." else "",
+            "Mười hai mạch, mỗi mạch sáu phẩm. Bộ viên mãn truyền một nửa số chữ cho bộ phẩm cao hơn cùng mạch (chuyển tu).",
         )
         for (r in rules) {
             if (y + sl > a.bottom) break
@@ -289,7 +353,7 @@ class CongPhapActivity : TabActivity() {
         return 1
     }
 
-    private fun others() = DaoPhap.cong.keys.filter { it != DaoPhap.active }.sortedWith(compareBy<Int>({ -PhapMon.CONG_PHAP[it].pham }, { it }))
+    private fun others() = DaoPhap.cong.keys.filter { it != DaoPhap.active }.sortedWith(compareBy<Int>({ it != DaoPhap.phu }, { -PhapMon.CONG_PHAP[it].pham }, { it }))
 
     private fun ownedPer(k: Ink, a: RectF): Int {
         val top = k.lineH(k.smallBold) + 14 * k.u
@@ -308,14 +372,31 @@ class CongPhapActivity : TabActivity() {
             val d = PhapMon.CONG_PHAP[id]
             val aff = DaoPhap.affinity(d.attr)
             val tang = DaoPhap.tang(id)
-            val on = id == DaoPhap.active
-            val line1 = "Thuộc tính ${PhapMon.attrName(d.attr)}" + (if (aff > 0) " · hợp +20%" else if (aff < 0) " · khắc −20%" else "") +
-                " · tầng $tang" + (if (DaoPhap.waiting(id)) " (chờ lĩnh ngộ)" else "") + " · linh lực +${PhapMon.PHAM_BONUS[d.pham] + tang - 1 + aff}%"
-            row(c, k, RectF(a.left, y, a.right, y + h), d.name, "${PhapMon.PHAM[d.pham]} phẩm", line1, PhapMon.EFFECTS[d.effect],
-                if (on) "Đang vận" else "Vận", !on, on, hits) { DaoPhap.run(id) }
+            val isPhu = id == DaoPhap.phu
+            val line1 = "Mạch ${PhapMon.MACH[d.mach]}" + (if (aff > 0) " · hợp +20%" else if (aff < 0) " · khắc −20%" else "") +
+                " · tầng $tang" + (if (isPhu) " · đang phụ tu" else "") + (if (DaoPhap.inheritFrom(id) != null) " · kế thừa được" else "")
+            val line2 = d.effects.joinToString(" · ") { (e, at) -> "$at: ${PhapMon.effectText(e, if (at == 9 && !PhapMon.isSwitch(e)) 2 else 1)}" }
+            row(c, k, RectF(a.left, y, a.right, y + h), d.name, "${PhapMon.PHAM[d.pham]} phẩm", line1, line2,
+                "Xem", true, isPhu, hits) { congDialog(id) }
             y += h + 10 * u
         }
         return (list.size + per - 1) / per
+    }
+
+    /** A công pháp in full: run it, set it as phụ tu, or close. */
+    private fun congDialog(id: Int) {
+        val d = PhapMon.CONG_PHAP[id]
+        val labels = arrayOf("Tầng 1", "Tầng 5", "Tầng 9 (tuyệt học)")
+        val lines = d.effects.mapIndexed { i, (e, _) -> "${labels[i]}: ${PhapMon.effectText(e, if (i == 2 && !PhapMon.isSwitch(e)) 2 else 1)}" }
+        val inherit = DaoPhap.inheritFrom(id)?.let { "\n\nChuyển tu: vận bộ này sẽ kế thừa ${Realm.van(DaoPhap.inheritWords(id))} vạn chữ từ ${PhapMon.CONG_PHAP[it].name}." } ?: ""
+        val msg = "${PhapMon.PHAM[d.pham]} phẩm · mạch ${PhapMon.MACH[d.mach]} · tầng ${DaoPhap.tang(id)}\n\n" + lines.joinToString("\n") +
+            (if (d.flaw != PhapMon.F_NONE) "\nKhuyết điểm: ${PhapMon.FLAWS[d.flaw]}" else "") +
+            "\n\nLối vận công: ${PhapMon.WAY[d.mach]}." + inherit
+        val b = AlertDialog.Builder(this).setTitle(d.name).setMessage(msg)
+            .setPositiveButton("Vận") { _, _ -> if (DaoPhap.run(id)) toast("Đang vận ${d.name}"); refresh() }
+        if (id == DaoPhap.phu) b.setNeutralButton("Bỏ phụ tu") { _, _ -> DaoPhap.stopPhu(); refresh() }
+        else if (DaoPhap.canPhu(id)) b.setNeutralButton("Phụ tu") { _, _ -> if (DaoPhap.setPhu(id)) toast("Phụ tu ${d.name}"); refresh() }
+        b.setNegativeButton("Đóng", null).show()
     }
 
     // --- Tâm pháp ------------------------------------------------------------------------------------
@@ -427,14 +508,14 @@ class CongPhapActivity : TabActivity() {
             val (title, tag, line) = when (kind) {
                 PhapMon.CONG -> PhapMon.CONG_PHAP[id].let {
                     val aff = DaoPhap.affinity(it.attr)
-                    Triple(it.name, "Công pháp ${PhapMon.PHAM[it.pham]}", "${PhapMon.attrName(it.attr)}" +
-                        (if (aff > 0) " · hợp" else if (aff < 0) " · khắc" else "") + " · ${PhapMon.EFFECTS[it.effect]}")
+                    Triple(it.name, "Công pháp ${PhapMon.PHAM[it.pham]}", "Mạch ${PhapMon.MACH[it.mach]}" +
+                        (if (aff > 0) " · hợp" else if (aff < 0) " · khắc" else "") + " · ${PhapMon.effectText(it.effect)}")
                 }
                 PhapMon.TAM -> PhapMon.TAM_PHAP[id].let { Triple(it.name, "Tâm pháp", it.text) }
                 PhapMon.DAN -> com.exacta.reader.game.DanDao.RECIPES[id].let {
                     Triple(it.name, "Đan phương", "${com.exacta.reader.game.DanDao.GROUPS[it.group]} · ${it.text} · cần ${com.exacta.reader.game.DanDao.CAP[it.cap - 1].lowercase()}")
                 }
-                else -> PhapMon.THUAT_PHAP[id].let { Triple(it.name, "Thuật pháp", "${PhapMon.attrName(it.attr)} · ${PhapMon.KINDS[it.kind]} · ${it.text}") }
+                else -> PhapMon.THUAT_PHAP[id].let { Triple(it.name, PhapMon.KINDS[it.kind], "${PhapMon.attrName(it.attr)} · ${it.text}") }
             }
             val r = RectF(a.left, y, a.right, y + h)
             val pad = 12 * u

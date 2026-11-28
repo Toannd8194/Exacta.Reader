@@ -54,8 +54,10 @@ object TeLuyen {
     }
 
     /** The words of a page also fire the refining; at a gate they wait for the ore. */
-    fun onWords(n: Long) {
-        if (active < 0 || n <= 0) return
+    fun onWords(read: Long) {
+        if (active < 0 || read <= 0) return
+        // 3.1: a công pháp of tế luyện speeds the furnace.
+        val n = read * (100 + com.exacta.reader.game.PhapMon.effectValue(com.exacta.reader.game.PhapMon.E_TE_LUYEN, DaoPhap.lv(com.exacta.reader.game.PhapMon.E_TE_LUYEN))) / 100
         val b = LinhGioi.beast(active)
         if (b == null) { stop(); return }
         var left = n

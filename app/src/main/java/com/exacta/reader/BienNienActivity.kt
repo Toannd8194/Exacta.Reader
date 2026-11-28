@@ -146,6 +146,8 @@ class BienNienActivity : TabActivity() {
                 "Phần hai mở: Cửu Tiêu Vân Khuyết, chín bậc tiên vị theo chữ và tiên lực; thiên quy tuần, tiên chức, Tiên phủ ba gian, ba thế lực, ba tiên kiếp; linh thạch vẽ lại."),
             Era("3.0.1", "Sơn Môn Định Phận",
                 "36 tông môn mở cửa dần theo cảnh giới; chức vụ cần ở tông đủ lâu; bổng linh thạch mỗi ngày đọc theo chức và cống hiến; phản tông bị phạt."),
+            Era("3.1", "Vạn Pháp Trùng Tu",
+                "72 công pháp trong 12 mạch; ba đặc hiệu mở ở tầng 1, 5, 9 và khuyết điểm; lối vận công theo cách đọc; xung quan; chuyển tu cùng mạch; phụ tu; khoáng thạch vẽ lại."),
         )
     }
 }

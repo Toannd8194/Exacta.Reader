@@ -138,6 +138,8 @@ object Store {
     // Habits for the titles.
     val hourSeconds = LongArray(24)
     var bestSession = 0L
+    /** 3.1: the length of the sitting under way (s), for the lối vận công. */
+    var sessionNow = 0L
     var tangCount = 0
 
     // Thiên kiếp.
@@ -555,7 +557,9 @@ object Store {
 
     /** A sitting is over: `seconds` long (the tâm ma kiếp counts the ones given up early). */
     fun endSession(seconds: Long) {
+        sessionNow = 0
         NhatKy.onSitting(seconds)
+        DaoPhap.onSessionEnd(seconds)
         TuLuyen.onSessionEnd(seconds)
         DongPhu.onSessionEnd(seconds)
         PhuLuc.onSessionEnd(seconds)
@@ -581,6 +585,7 @@ object Store {
         if (newBook) book.firstDay = d
         moments(d, dayBefore, dayBefore + seconds, session - seconds, session, hour, newBook)
         bestSession = maxOf(bestSession, session)
+        sessionNow = session
         if (beQuanTarget > 0) {
             beQuanSeconds += seconds
             if (beQuanSeconds >= beQuanTarget * 60L) finishBeQuan()
@@ -588,6 +593,7 @@ object Store {
         TuLuyen.onSeconds(book, seconds, session)
         DongPhu.onSeconds(session)
         PhuLuc.onSeconds(session)
+        DaoPhap.onSeconds(session)
         checkKiep()
         checkRealm()
         checkBiCanh()
@@ -692,19 +698,19 @@ object Store {
         totalWords += words
         if (totalWords / 10_000 > vanBefore) fortune(KyNgo.T_VAN)
         TuLuyen.convert(tuViRaw() - before, state)
-        DaoPhap.onWords(words)
+        DaoPhap.onWords(words, book)
         TeLuyen.onWords(words)
         TienLo.onWords(words)
         // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
         var burn = if (setActive(6) && feastDay()) words * 2 else words
-        if (DaoPhap.effect(PhapMon.E_LO_LUYEN)) burn = burn * 6 / 5
+        burn = burn * (100 + PhapMon.effectValue(PhapMon.E_LO_LUYEN, DaoPhap.lv(PhapMon.E_LO_LUYEN))) / 100
         if (fireWords > 0) {
             fireWords = (fireWords - words).coerceAtLeast(0)
             burn *= 2
         }
         if (beQuanTarget > 0) burn = burn * beQuanBurn() / 10
         burn = burn * TranPhap.burnPercent() / 100
-        ltWords += if (DaoPhap.effect(PhapMon.E_LINH_THACH)) words * 6 / 5 else words
+        ltWords += words * (100 + PhapMon.effectValue(PhapMon.E_LINH_THACH, DaoPhap.lv(PhapMon.E_LINH_THACH)) - (if (DaoPhap.flaw(PhapMon.F_LINH_THACH)) 20 else 0)) / 100
         while (ltWords >= 10_000) {
             ltWords -= 10_000
             gainLinhThach(5L * feastMultiplier())
@@ -992,7 +998,7 @@ object Store {
     fun luck(permille: Int): Int {
         if (permille >= 1000) return 1000
         val v = permille.toLong() * (if (setActive(10)) 15 else 10) / 10 * (if (seekWords > 0) 3 else 1) *
-            (if (beQuanTarget > 0) 2 else 1) * (if (DaoPhap.effect(PhapMon.E_KY_NGO)) 13 else 10) / 10
+            (if (beQuanTarget > 0) 2 else 1) * (100 + PhapMon.effectValue(PhapMon.E_KY_NGO, DaoPhap.lv(PhapMon.E_KY_NGO)) - (if (DaoPhap.flaw(PhapMon.F_KY_NGO)) 20 else 0)) / 100
         return v.coerceAtMost(950).toInt()
     }
 
@@ -1517,7 +1523,7 @@ object Store {
     const val BI_CANH_SCROLL = 35
     const val BI_CANH_SEED = 40
     const val BI_CANH_RECIPE = 15
-    fun biCanhNeed() = if (setActive(2)) 4 else 5
+    fun biCanhNeed() = (if (setActive(2)) 4 else 5) - (if (DaoPhap.effect(PhapMon.E_BI_CANH)) 1 else 0)
 
     fun weekStart(day: Long): Long = LocalDate.ofEpochDay(day).with(DayOfWeek.MONDAY).toEpochDay()
     fun biCanhDays(): Int {
