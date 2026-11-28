@@ -150,7 +150,7 @@ object DaoLo {
         if (!canChoose() || w !in WAYS.indices) return false
         way = w
         wayDay = today()
-        Store.note("Đạo lộ: bước vào ${WAYS[w].name}")
+        Store.note("Tiên lộ: bước vào ${WAYS[w].name}")
         Store.touch()
         return true
     }
@@ -373,7 +373,7 @@ object DaoLo {
             list.add("Thể phách ${TuLuyen.THE_TIERS[tier]}" + (if (per > 1) ", thân đỡ kiếp" else "") to per * tier)
         }
         if (kiep(g) && main(PHAP)) list.add("Pháp tu, nhục thân yếu" to -5)
-        if (way >= 0 && TongMon.family() == way) list.add("Đạo lộ hợp tông môn" to 2)
+        if (way >= 0 && TongMon.family() == way) list.add("Tiên lộ hợp tông môn" to 2)
         if (songAnh) list.add("Song Anh" to 5)
         danOn()?.let { if (g == 3 && it.anh != 0) list.add("${it.name} phá đan thành anh" to it.anh) }
         thanOn()?.let {

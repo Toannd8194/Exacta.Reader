@@ -130,6 +130,9 @@ object BookCss {
         // The :not(#…) parts weigh like ids, so the rule wins over a book's own id or !important rules.
         sb.append(":root:not(#x1):not(#x2)[style*=\"--USER__lineHeight\"] body, :root:not(#x1):not(#x2)[style*=\"--USER__lineHeight\"] body *")
             .append(" { line-height: var(--USER__lineHeight) !important; }")
+        // 3.6: the margins in em of the text, not Readium's gutter in px times a factor.
+        sb.append(":root:not(#x1):not(#x2)[style*=\"--USER__pageMargins\"] body")
+            .append(" { padding-left: calc(var(--USER__pageMargins) * 1em) !important; padding-right: calc(var(--USER__pageMargins) * 1em) !important; }")
         // The weight stroke, carried by --USER__wordSpacing; the spacing itself stays normal.
         sb.append(each(":root[style*=\"--USER__wordSpacing\"] &"))
             .append(" { word-spacing: normal !important; -webkit-text-stroke: var(--USER__wordSpacing) currentColor; }")

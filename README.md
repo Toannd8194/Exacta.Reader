@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.5.apk`](dist/Van-Quyen-Tien-Do-3.5.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.6.apk`](dist/Van-Quyen-Tien-Do-3.6.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,28 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.6 · Cổ Vận Thanh Phong
+
+- **Kỳ ngộ lục** (Niên kỷ › Kỳ ngộ) xếp hai cột: kỳ ngộ đã hữu duyên có khung, chữ đậm, chạm để đọc lại tích truyện; kỳ ngộ
+  chưa gặp xám mờ. **Giấu duyên khởi và tỉ lệ**: không còn ghi điều kiện gặp hay phần trăm, kể cả trong lời báo khi gặp.
+- **Lối đọc** viết lại theo giọng cổ phong: Đạo tích ba mươi ngày (đèn khuya, đọc sớm, tĩnh tọa, lật vượt trang, ngũ đạo quân
+  bình, ôn cố tri tân, cố thư trùng duyên, kinh quyển, môn loại, văn tự), Canh giờ đèn sách.
+- **Đạo lộ đổi thành Tiên lộ** ở mọi nơi (nút Home, màn, lời nhắc). Tab chín bậc của phần hai đổi thành **Tiên vị** cho khỏi
+  trùng tên.
+- **Câu chữ cổ phong**: bỏ các câu ngạn ngữ tiếng Anh, Pháp, La-tinh…; thay bằng 60 châm ngôn Hán Việt có giải nghĩa (Lão Tử,
+  Trang Tử, Khổng Tử, Mạnh Tử, Tuân Tử, Kinh Dịch, Gia Cát Lượng, Trần Nhân Tông, Mãn Giác thiền sư…). «Hỏi đạo trường sinh»
+  thành «Vấn đạo trường sinh»; câu chào Home theo canh giờ («Giờ Mão, tử khí đông lai»…); gọi người tu là «đạo hữu» thay cho
+  «bạn».
+- **Pháp bảo vẽ lại** theo pixel của khoáng thạch: một phi kiếm hộ thủ vàng, tua đỏ, cưỡi tường vân, ở ô lò trống, Bảo khố
+  trống và Home. Icon «Pháp bảo» là chính hình ấy chuyển đen trắng.
+- **Icon app vẽ lại** cùng phong cách pixel: ba cuốn sách đỏ, lam, vàng thành bậc thang lên vầng trăng, mây và sao.
+- **Trình đọc**: giãn dòng, giãn đoạn, lề hai bên và thụt đầu dòng đều tính bằng **em** (lề trước đây là phần trăm của lề
+  Readium tính bằng px). Thụt đầu dòng chỉnh 0 – 4 em. Mở menu không còn hiện thêm dòng tên truyện dưới thanh trên.
+- **Home kiểu bảng**: hàng nút dưới còn 5 (Công pháp, Tiên lộ, Động phủ, Tông môn, Đạo hiệu/giới), to hơn; Niên kỷ và Cài
+  đặt lên cột phải dưới ô pháp bảo (ô pháp bảo thấp lại).
+- Sửa một test phụ thuộc giờ chạy (chữ đọc đúng giờ hành được nhân 1,5).
+- versionCode 360.
 
 ## Bản 3.5 · Huyết Nguyệt Đương Không
 
@@ -482,6 +504,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, khống chế, thi triển, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông |
   | 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn, án tham ngộ, tàn quyển, phế công, đồ phổ, tự sáng công pháp |
   | 3.5 | Huyết Nguyệt Đương Không | Huyết Nguyệt Trầm Uyên: ma khí, ma công đặt cược, phản phệ, Ma Cung, Tâm ma đại kiếp; logo mới |
+  | 3.6 | Cổ Vận Thanh Phong | Câu chữ cổ phong, kỳ ngộ lục hai cột, Tiên lộ, pháp bảo và icon pixel, trình đọc tính bằng em, Home cân lại |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

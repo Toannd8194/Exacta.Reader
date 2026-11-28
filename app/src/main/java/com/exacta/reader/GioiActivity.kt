@@ -24,7 +24,7 @@ import java.time.LocalDate
 class GioiActivity : TabActivity() {
     override fun title() = TienLo.seat()
     override fun right() = TienLo.viName()
-    override fun tabs() = listOf("Tiên lộ", "Cơ sở", "Luật", "Thế lực", "Kiếp")
+    override fun tabs() = listOf("Tiên vị", "Cơ sở", "Luật", "Thế lực", "Kiếp")
 
     private var greeting = false
     private var ending = false
@@ -108,7 +108,7 @@ class GioiActivity : TabActivity() {
                 y = r.bottom + 18 * u
             }
             greeting -> {
-                val text = "${rl.GREET} ${TuLuyen.GIOI[TienLo.gioi]} đón đạo hữu vào tiên lộ: chữ đọc từ ngày qua cửa tính đủ, " +
+                val text = "${rl.GREET} ${TuLuyen.GIOI[TienLo.gioi]} đón đạo hữu vào chín bậc tiên vị: chữ đọc từ ngày qua cửa tính đủ, " +
                     "những ngày ở tiền đình quy ra ${TienLo.retro} ${resName()}" +
                     (if (TienLo.fromLt > 0) ", ${TienLo.fromLt * 100} linh thạch đổi thành ${TienLo.fromLt} tiên thạch" else "") + "."
                 val lines = k.wrap(text, a.width() - 2 * pad, small, 5)

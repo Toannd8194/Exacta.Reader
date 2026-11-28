@@ -58,7 +58,7 @@ object LucGioi {
             append("\n\nCách tính:\n· Linh căn $attrs: căn mạnh nhất 30, rồi 18, 12, 8, 6")
             append("\n· Công pháp $attrs đang vận: 20, đại thành thêm 5")
             if (tam.isNotEmpty()) append("\n· Tâm pháp $tam nhập môn: ${if (i == 1) 15 else 8}")
-            if (way != null) append("\n· Đạo lộ $way: 20, kiêm tu 10")
+            if (way != null) append("\n· Tiên lộ $way: 20, kiêm tu 10")
             append("\n· Đời tu: ${TuLuyen.GIOI_LIFE[i]}")
             if (sect != null) append("\n· Tông môn $sect: 10")
             val dans = DaoLo.DANS.filter { it.gioi == i }.joinToString(", ") { it.name }

@@ -428,6 +428,14 @@ class Ink(private val context: Context, width: Int) {
 
     /** A drawable icon (res/drawable-nodpi/ic_<name>.png), drawn black. */
     fun icon(c: Canvas, name: String, x: Float, y: Float, size: Float, color: Int = Color.BLACK) {
+        // 3.6: an icon drawn as art in grays (icart_<name>) keeps its drawing; only a white one is tinted.
+        if (color == Color.BLACK) {
+            val art = drawable("icart_$name")
+            if (art != 0) {
+                c.drawBitmap(bitmap(art), null, RectF(x, y, x + size, y + size), pixels)
+                return
+            }
+        }
         val id = drawable("ic_$name")
         if (id == 0) return
         val p = tints.getOrPut(color) {

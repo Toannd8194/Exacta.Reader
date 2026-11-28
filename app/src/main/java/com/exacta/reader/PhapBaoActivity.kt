@@ -189,7 +189,7 @@ class PhapBaoActivity : TabActivity() {
             when {
                 ore == null -> {
                     k.art(c, "art_crystal", r.centerX() - pic / 2, py, pic, 90)
-                    k.centered(c, "Linh tinh chờ luyện", r.left + 4 * u, r.width() - 8 * u, ty, sb); ty += sl
+                    k.centered(c, "Pháp bảo chờ luyện", r.left + 4 * u, r.width() - 8 * u, ty, sb); ty += sl
                     k.centered(c, "chạm để khai lô", r.left, r.width(), ty, small)
                 }
                 ore.inKiep -> {

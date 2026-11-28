@@ -136,7 +136,7 @@ class KetActivity : TabActivity() {
             }
             steps.add(Triple(r, Realm.baseName(r) + (if (d >= 0) " · ${date(d)}" else ""), what))
         }
-        if (DaoLo.way >= 0) steps.add(Triple(2, "Đạo lộ", DaoLo.WAYS[DaoLo.way].name + if (DaoLo.way2 >= 0) ", kiêm ${DaoLo.WAYS[DaoLo.way2].name}" else ""))
+        if (DaoLo.way >= 0) steps.add(Triple(2, "Tiên lộ", DaoLo.WAYS[DaoLo.way].name + if (DaoLo.way2 >= 0) ", kiêm ${DaoLo.WAYS[DaoLo.way2].name}" else ""))
         if (TongMon.joined()) steps.add(Triple(1, "Tông môn", "${TongMon.SECTS[TongMon.sect].name} · ${TongMon.rankName()}"))
         if (DoKiep.rebirths > 0) steps.add(Triple(0, "Chuyển thế", "${DoKiep.rebirths} lần"))
         var y = k.section(c, a.left, a.top, a.width(), "ĐẠO ĐỒ · TỪ LUYỆN KHÍ TỚI LỤC GIỚI MÔN")

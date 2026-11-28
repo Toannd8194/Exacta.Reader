@@ -274,7 +274,9 @@ class DaoPhapTest {
         DaoPhap.read(o)
         assertEquals(roots, DaoPhap.roots)
         assertEquals(active, DaoPhap.active)
-        assertEquals(20_000, DaoPhap.cong[active]!!.words)
+        // Read in the hour of its line, the words count half again into the tầng (3.1).
+        val way = DaoPhap.inWay(PhapMon.CONG_PHAP[active].mach, null)
+        assertEquals(if (way) 30_000L else 20_000L, DaoPhap.cong[active]!!.words)
         assertEquals(7, DaoPhap.ngo)
         assertEquals(12, DaoPhap.tam[PhapMon.TP_VONG_NGA])
         assertEquals(offers, DaoPhap.offers)

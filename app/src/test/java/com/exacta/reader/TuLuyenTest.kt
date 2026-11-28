@@ -163,7 +163,7 @@ class TuLuyenTest {
         days(30, 30)
         assertFalse(TuLuyen.canStartTrial())       // 2.1: Kim Đan asks for a công pháp of Huyền phẩm
         DaoPhap.gainCong(6)
-        assertFalse(TuLuyen.canStartTrial())       // 2.4: the đạo lộ first
+        assertFalse(TuLuyen.canStartTrial())       // 2.4: the tiên lộ first
         assertTrue(com.exacta.reader.data.DaoLo.choose(com.exacta.reader.data.DaoLo.PHAP))
         assertTrue(TuLuyen.canStartTrial())
         assertFalse(TuLuyen.canBreak())

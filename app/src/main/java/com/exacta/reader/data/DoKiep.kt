@@ -157,7 +157,7 @@ object DoKiep {
             if (best >= 0) list.add(Triple("Pháp bảo đeo mạnh nhất, phẩm ${best + 1}", 3 * (best + 1) / half, 0))
             if (TrangBi.guard() > 0) list.add(Triple("Pháp bảo hộ thân", TrangBi.guard() / half, 0))
             if (LinhGioi.banMenhLevel() > 0) list.add(Triple("Bản mệnh tầng ${LinhGioi.banMenhLevel()}", 2 * LinhGioi.banMenhLevel() / half, 0))
-            val body = DaoLo.breakParts(8).filter { it.second != 0 && !it.first.startsWith("Đạo lộ hợp") && !it.first.startsWith("Song Anh") }
+            val body = DaoLo.breakParts(8).filter { it.second != 0 && !it.first.startsWith("Tiên lộ hợp") && !it.first.startsWith("Song Anh") }
             for (p in body) list.add(Triple(p.first, p.second / half, if (p.first.startsWith("Thể phách")) 1 else 0))
             if (LinhGioi.learned(LinhGioi.LOI)) list.add(Triple("Tử Lôi pháp tắc", 5, 2))
             if (TeLuyen.bestGrade() > 0) list.add(Triple("${TeLuyen.GRADES[TeLuyen.bestGrade()]} cấm chế tầng ${TeLuyen.bestLevel()}", 2 * TeLuyen.bestGrade() / half, 0))

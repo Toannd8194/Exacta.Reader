@@ -14,11 +14,11 @@ import com.exacta.reader.ui.Ink
 import com.exacta.reader.ui.TabActivity
 import java.time.LocalDate
 
-/** 2.4 Đạo lộ, in tabs: the way, the twelve Kim Đan, the six Hóa Thần, body and mind, kiêm tu and Song Anh, Lục Giới. */
+/** 2.4 Tiên lộ, in tabs: the way, the twelve Kim Đan, the six Hóa Thần, body and mind, kiêm tu and Song Anh, Lục Giới. */
 class DaoLoActivity : TabActivity() {
-    override fun title() = "Đạo Lộ"
+    override fun title() = "Tiên Lộ"
     override fun right() = if (DaoLo.way >= 0) DaoLo.WAYS[DaoLo.way].name + (if (DaoLo.way2 >= 0) " · kiêm ${DaoLo.WAYS[DaoLo.way2].name}" else "") else "Chưa chọn đường"
-    override fun tabs() = listOf("Đạo lộ", "Kim Đan", "Hóa Thần", "Thể · Thần", "Kiêm tu", "Lục Giới")
+    override fun tabs() = listOf("Tiên lộ", "Kim Đan", "Hóa Thần", "Thể · Thần", "Kiêm tu", "Lục Giới")
 
     private var armed = false
     private var result: String? = null
@@ -28,7 +28,7 @@ class DaoLoActivity : TabActivity() {
         super.onCreate(savedInstanceState)
     }
 
-    /** Đạo lộ and Kim Đan open at Trúc Cơ, Hóa Thần and kiêm tu at Nguyên Anh, Lục Giới in Linh giới. */
+    /** Tiên lộ and Kim Đan open at Trúc Cơ, Hóa Thần and kiêm tu at Nguyên Anh, Lục Giới in Linh giới. */
     override fun opensAt(tab: Int) = when (tab) {
         0 -> if (DaoLo.way >= 0) -1 else 1
         1 -> 1
@@ -61,9 +61,9 @@ class DaoLoActivity : TabActivity() {
         y = para(c, k, "Đan kết ra tùy cả đời tu: Sinh Tử trước, rồi Âm Dương, biến dị, cuối cùng ngũ hành theo linh căn và công pháp. " +
             "Nguyên Anh kế thừa đan: tên, tỉ lệ kết anh, và tốc độ của đan tăng thêm một nửa.", a.left, y, a.width(), k.small, 3) + 10 * u
         val items = DaoLo.DANS.mapIndexed { i, d ->
-            Item("", d.name, if (i == mine) (if (formed) "đan của bạn" else "sẽ kết") else d.group, listOf("Khi: ${d.how}", d.good.replaceFirstChar { it.uppercase() }), i == mine) {
+            Item("", d.name, if (i == mine) (if (formed) "đan của đạo hữu" else "sẽ kết") else d.group, listOf("Khi: ${d.how}", d.good.replaceFirstChar { it.uppercase() }), i == mine) {
                 AlertDialog.Builder(this).setTitle(d.name).setMessage("${d.group}.\n\nKết khi: ${d.how}.\n\nĐược: ${d.good}.\n\nNguyên Anh thành ${d.prefix} " +
-                    (if (DaoLo.way >= 0) DaoLo.WAYS[DaoLo.way].forms[1] else "Nguyên Anh") + ".\n\nBạn đang:\n" + DaoLo.danStatus(i).joinToString("\n") { (t, ok) -> (if (ok) "✓ " else "✗ ") + t } +
+                    (if (DaoLo.way >= 0) DaoLo.WAYS[DaoLo.way].forms[1] else "Nguyên Anh") + ".\n\nĐạo hữu đang:\n" + DaoLo.danStatus(i).joinToString("\n") { (t, ok) -> (if (ok) "✓ " else "✗ ") + t } +
                     "\n\nĐan xét theo thứ tự: Sinh Tử, Âm Dương, biến dị, ngũ hành; đủ điều kiện nhóm trước thì kết đan nhóm trước.").setPositiveButton("Đóng", null).show()
             }
         }
@@ -74,12 +74,12 @@ class DaoLoActivity : TabActivity() {
         val u = k.u
         val formed = Store.realmCap >= 4 && DaoLo.than >= 0
         val mine = DaoLo.thanNow()
-        var y = k.section(c, a.left, a.top, a.width(), "SÁU HÓA THẦN · " + if (formed) "ĐÃ THÀNH" else "THEO ĐẠO LỘ")
-        y = para(c, k, "Hóa Thần theo đạo lộ chính; ai thành Song Anh thì thành Song Thần. Mỗi loại một lợi một hại, đè lên cửa Hợp Thể và Độ Kiếp về sau.",
+        var y = k.section(c, a.left, a.top, a.width(), "SÁU HÓA THẦN · " + if (formed) "ĐÃ THÀNH" else "THEO TIÊN LỘ")
+        y = para(c, k, "Hóa Thần theo tiên lộ chính; ai thành Song Anh thì thành Song Thần. Mỗi loại một lợi một hại, đè lên cửa Hợp Thể và Độ Kiếp về sau.",
             a.left, y, a.width(), k.small, 3) + 10 * u
         val icons = DaoLo.WAYS.map { it.icon } + "daolo"
         val items = DaoLo.THANS.mapIndexed { i, t ->
-            Item(icons[i], t.name, if (i == mine) (if (formed) "của bạn" else "đang hướng") else "", listOf("Từ ${t.from}", t.good.replaceFirstChar { it.uppercase() }), i == mine) {
+            Item(icons[i], t.name, if (i == mine) (if (formed) "của đạo hữu" else "đang hướng") else "", listOf("Từ ${t.from}", t.good.replaceFirstChar { it.uppercase() }), i == mine) {
                 AlertDialog.Builder(this).setTitle(t.name).setMessage("Thành từ ${t.from}.\n\n${t.good.replaceFirstChar { it.uppercase() }}.").setPositiveButton("Đóng", null).show()
             }
         }
@@ -91,7 +91,7 @@ class DaoLoActivity : TabActivity() {
     private fun lucGioi(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
         val u = k.u
         var y = k.section(c, a.left, a.top, a.width(), "LỤC GIỚI CẢM ỨNG · DO ĐỜI TU QUYẾT ĐỊNH")
-        y = para(c, k, "Không ai chọn được giới để phi thăng. Linh căn, công pháp, tâm pháp, đạo lộ, Kim Đan, Hóa Thần, đời tu, tông môn " +
+        y = para(c, k, "Không ai chọn được giới để phi thăng. Linh căn, công pháp, tâm pháp, tiên lộ, Kim Đan, Hóa Thần, đời tu, tông môn " +
             "và nghiệp lực đều là lời đáp; giới đáp lại mạnh nhất sẽ tiếp dẫn. Chạm một giới để xem cách tính.", a.left, y, a.width(), k.small, 4) + 6 * u
         k.line(c, com.exacta.reader.ui.LucGioi.summary(), a.left, y, a.width(), k.smallBold)
         y += k.lineH(k.smallBold) + 4 * u
@@ -170,15 +170,15 @@ class DaoLoActivity : TabActivity() {
         return pages.size.coerceAtLeast(1)
     }
 
-    // --- Đạo lộ ---------------------------------------------------------------------------------------
+    // --- Tiên lộ ---------------------------------------------------------------------------------------
 
     private fun choose(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
         val u = k.u
         val best = DaoLo.suggested()
         var y = a.top
         run {
-            y = k.section(c, a.left, y, a.width(), if (DaoLo.canChoose()) "CHỌN ĐẠO LỘ · MỘT LẦN CHO CẢ ĐỜI TU" else "NĂM ĐƯỜNG TU · CHỌN Ở TRÚC CƠ")
-            val text = if (DaoLo.canChoose()) "Đường tu quyết định cách kết đan, kết anh, hóa thần. Chọn trước khi ngưng đan; đường hợp với cách đọc của bạn có dấu «hợp nhất»."
+            y = k.section(c, a.left, y, a.width(), if (DaoLo.canChoose()) "CHỌN TIÊN LỘ · MỘT LẦN CHO CẢ ĐỜI TU" else "NĂM ĐƯỜNG TU · CHỌN Ở TRÚC CƠ")
+            val text = if (DaoLo.canChoose()) "Đường tu quyết định cách kết đan, kết anh, hóa thần. Chọn trước khi ngưng đan; đường hợp với cách đọc của đạo hữu có dấu «hợp nhất»."
                 else "Lên Trúc Cơ thì chọn một trong năm đường, trước khi ngưng đan. Mỗi đường sống bằng một cách đọc riêng."
             y = para(c, k, text, a.left, y, a.width(), k.small, 3) + 12 * u
         }
@@ -310,7 +310,7 @@ class DaoLoActivity : TabActivity() {
         run {
             y = k.section(c, a.left, y, a.width(), "KIÊM TU · ĐƯỜNG THỨ HAI TỪ NGUYÊN ANH")
             val text = when {
-                DaoLo.way < 0 -> "Chọn đạo lộ trước (ở Trúc Cơ). Tới Nguyên Anh thì kiêm tu thêm một đường."
+                DaoLo.way < 0 -> "Chọn tiên lộ trước (ở Trúc Cơ). Tới Nguyên Anh thì kiêm tu thêm một đường."
                 DaoLo.way2 >= 0 -> "Đang kiêm tu ${DaoLo.WAYS[DaoLo.way2].name} từ ngày ${dayText(DaoLo.way2Day)}: có cái mạnh và cách sống của đường này, không mang cái yếu; linh lực −${DaoLo.KIEM_TU_COST}%."
                 Store.realmCap < 3 -> "Tới Nguyên Anh thì kiêm tu được một đường thứ hai: có cái mạnh và cách sống của đường đó, không mang cái yếu, đổi lại linh lực −${DaoLo.KIEM_TU_COST}%."
                 else -> "Chọn một đường thứ hai: có cái mạnh và cách sống của đường đó, không mang cái yếu, đổi lại linh lực −${DaoLo.KIEM_TU_COST}%. Chỉ một lần."

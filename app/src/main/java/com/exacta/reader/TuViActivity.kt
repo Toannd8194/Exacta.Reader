@@ -418,7 +418,7 @@ class TuViActivity : TabActivity() {
                 hits.add(main) { startActivity(Intent(this, LinhGioiActivity::class.java).putExtra(EXTRA_TAB, 4)) }
             }
             g == 2 && com.exacta.reader.data.DaoLo.canChoose() -> {
-                k.button(c, main, "Chọn đạo lộ trước khi ngưng đan ›", k.ui10Bold)
+                k.button(c, main, "Chọn tiên lộ trước khi ngưng đan ›", k.ui10Bold)
                 hits.add(main) { startActivity(Intent(this, DaoLoActivity::class.java)) }
             }
             else -> {
@@ -466,7 +466,7 @@ class TuViActivity : TabActivity() {
         val asks = { g: Int ->
             when (g) {
                 1 -> "Căn cơ từ 30. Căn cơ lúc đột phá định phẩm Trúc Cơ, theo suốt đời tu."
-                2 -> "Chọn đạo lộ, rồi ngưng đan ${Store.trialNeed(2)} ngày, mỗi ngày một buổi liền ${Store.trialMinutes(2)} phút."
+                2 -> "Chọn tiên lộ, rồi ngưng đan ${Store.trialNeed(2)} ngày, mỗi ngày một buổi liền ${Store.trialMinutes(2)} phút."
                 3 -> "Lôi kiếp ${Store.trialNeed(3)} ngày × ${Store.trialMinutes(3)} phút, kèm tâm ma kiếp: đọc một cuốn tới nơi tới chốn."
                 4 -> "Thần thức Lục trọng và ngộ đạo ba lần: ba cuốn từ 20 vạn chữ, mỗi cuốn đọc trọn trong 30 ngày."
                 9 -> "Lục Giới cảm ứng rõ một giới, rồi thiên kiếp ${Store.trialNeed(9)} ngày × ${Store.trialMinutes(9)} phút."

@@ -437,7 +437,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         // The menu opens on Khác, whatever tab was used last.
         sheet.tab = 3
         sheet.opened()
-        topBar.visibility = View.VISIBLE
+        // 3.6: no bar with the title over the page; the header line already shows it.
         sheet.visibility = View.VISIBLE
     }
 
@@ -584,7 +584,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         },
         textAlign = if (Store.justify) TextAlign.JUSTIFY else TextAlign.START,
         hyphens = Store.hyphens,
-        paragraphIndent = if (Store.indent) 1.0 else null,
+        paragraphIndent = Store.indentEm.takeIf { it > 0 },
         paragraphSpacing = Store.paraSpacing,
         wordSpacing = BookCss.strokeCarrier(),
         publisherStyles = false,

@@ -297,7 +297,7 @@ class LinhGioiActivity : TabActivity() {
             .setMessage("Mở khi: ${law.opens}.\nĐược: ${law.good}" + (if (i in LinhGioi.vuc) ", gấp đôi trong đạo vực" else "") + ".\n\nBa thử thách, tính từ ngày tham ngộ:\n" +
                 steps.joinToString("\n") + when {
                     LinhGioi.learned(i) -> "\n\nĐã lĩnh ngộ."
-                    !LinhGioi.opens(i) -> "\n\nChưa hợp với linh căn, công pháp, đạo lộ của bạn."
+                    !LinhGioi.opens(i) -> "\n\nChưa hợp với linh căn, công pháp, tiên lộ của đạo hữu."
                     LinhGioi.active >= 0 && LinhGioi.active != i -> "\n\nĐang tham ngộ ${LinhGioi.LAWS[LinhGioi.active].name}: đổi sang thì mất tiến độ."
                     else -> ""
                 })

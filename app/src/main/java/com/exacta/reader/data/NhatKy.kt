@@ -192,12 +192,12 @@ object NhatKy {
     val RESOURCE = arrayOf("tiên lực", "ma khí", "công đức", "khí huyết", "hồn lực", "văn khí")
     /** The way of reading each giới lives on, in a line. */
     val WAY = arrayOf(
-        "Mỗi 2.500 chữ, nhân độ cân bằng của năm thước đo.",
-        "Đọc từ 22 tới 4 giờ, đêm rằm gấp đôi; tâm ma từ 40; ngã là có lời.",
-        "Ngày đủ 30 phút không nhảy chương, chuỗi ngày, sách đọc trọn.",
-        "Buổi đọc liền từ 45 phút; từ 90 phút gấp đôi, từ 120 phút gấp ba.",
-        "Đọc lại sách đã trọn, đọc tiếp sách bỏ dở từ 90 ngày.",
-        "Tác giả mới đọc trọn, thể loại và ngôn ngữ mới.",
+        "Mỗi 2.500 chữ một điểm, nhân độ quân bình của ngũ đạo.",
+        "Đèn khuya từ 22 tới 4 giờ, đêm rằm gấp đôi; tâm ma từ 40; ngã là có lời.",
+        "Ngày đủ nửa canh giờ chẳng lật vượt trang, ngày nối ngày, kinh quyển đọc trọn.",
+        "Tĩnh tọa liền từ 45 phút; từ 90 phút gấp đôi, từ 120 phút gấp ba.",
+        "Ôn lại kinh đã trọn, đọc tiếp cố thư bỏ dở từ 90 ngày.",
+        "Đọc trọn tác giả mới, môn loại mới, văn tự mới.",
     )
     /** Days the journal did not keep count this much a day read (the design's 1,5 points). */
     const val FILL_TENTHS = 15

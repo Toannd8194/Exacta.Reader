@@ -215,6 +215,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
 
     private fun pct(v: Double) = "${(v * 100).roundToInt()}%"
     private fun num(v: Double) = String.format(Locale.US, "%.1f", v).replace('.', ',')
+    private fun em(v: Double) = num(v) + " em"
     private fun step(v: Double, d: Int, by: Double, lo: Double, hi: Double) = (Math.round((v + d * by) / by) * by).coerceIn(lo, hi)
 
     // --- Tabs ---------------------------------------------------------------------------------
@@ -291,14 +292,14 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
 
     private fun page(c: Canvas, k: Ink, panel: RectF) {
         val r = rows(k, panel, 5)
-        stepper(c, k, r[0], "Giãn dòng", num(Store.lineHeight), { d ->
+        stepper(c, k, r[0], "Giãn dòng", em(Store.lineHeight), { d ->
             Store.lineHeight = step(Store.lineHeight, d, 0.1, 1.0, 2.6)
             host.applyPrefs(false)
         }) {
             Store.lineHeight = 1.7
             host.applyPrefs(false)
         }
-        stepper(c, k, r[1], "Lề hai bên", pct(Store.margins), { d ->
+        stepper(c, k, r[1], "Lề hai bên", em(Store.margins), { d ->
             Store.margins = step(Store.margins, d, 0.1, 0.0, 3.0)
             host.applyPrefs(false)
         }) {
@@ -306,7 +307,7 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             host.applyPrefs(false)
         }
         val ps = Store.paraSpacing
-        stepper(c, k, r[2], "Giãn đoạn", if (ps == null) "Theo sách" else num(ps), { d ->
+        stepper(c, k, r[2], "Giãn đoạn", if (ps == null) "Theo sách" else em(ps), { d ->
             Store.paraSpacing = step(ps ?: 0.5, if (ps == null) 0 else d, 0.1, 0.0, 2.5)
             host.applyPrefs(false)
         }) {
@@ -317,8 +318,13 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             Store.justify = it == 0
             host.applyPrefs(false)
         }
-        choices(c, k, r[4], "Thụt đầu dòng", listOf("Tắt", "Bật"), if (Store.indent) 1 else 0) {
-            Store.indent = it == 1
+        stepper(c, k, r[4], "Thụt đầu dòng", if (Store.indentEm <= 0) "Tắt" else em(Store.indentEm), { d ->
+            Store.indentEm = step(Store.indentEm, d, 0.5, 0.0, 4.0)
+            Store.indent = Store.indentEm > 0
+            host.applyPrefs(false)
+        }) {
+            Store.indentEm = 0.0
+            Store.indent = false
             host.applyPrefs(false)
         }
     }

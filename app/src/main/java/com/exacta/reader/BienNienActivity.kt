@@ -129,7 +129,7 @@ class BienNienActivity : TabActivity() {
             Era("2.3.1", "Lục Giới Phân Đồ",
                 "Phi Thăng thành cảnh giới, Độ Kiếp là chặng đặc biệt; sáu giới, sáu loại tiên nhân; Home gọn lại, đạo hiệu lên thanh trên, tiết khí kèm lời bình."),
             Era("2.4", "Ngũ Lộ Đồng Quy",
-                "Năm đạo lộ; mười hai Kim Đan, Nguyên Anh kế thừa đan; sáu Hóa Thần đè lên Hợp Thể, Độ Kiếp; luyện thể, luyện thần, kiêm tu, Song Anh; Lục Giới do đời tu và nghiệp lực quyết định."),
+                "Năm tiên lộ; mười hai Kim Đan, Nguyên Anh kế thừa đan; sáu Hóa Thần đè lên Hợp Thể, Độ Kiếp; luyện thể, luyện thần, kiêm tu, Song Anh; Lục Giới do đời tu và nghiệp lực quyết định."),
             Era("2.5", "Phá Toái Hư Không",
                 "Phi thăng Linh giới: tiết điểm, trảm trần duyên, phi thăng kiếp; bản mệnh, di bảo; tám pháp tắc, đạo vực; 36 tông môn; độ đậm theo %; cửa chưa tới thì khóa."),
             Era("2.6", "Cửu Cửu Quy Nhất",
@@ -158,6 +158,8 @@ class BienNienActivity : TabActivity() {
                 "Tàng Kinh chín tầng lầu, kinh các tông môn mở theo cống hiến và chức vụ; án tham ngộ: đọc đủ chữ mới học được ngọc giản; tàn quyển Linh, Tiên phẩm; phản tông thì phế công; đồ phổ; tự sáng công pháp."),
             Era("3.5", "Huyết Nguyệt Đương Không",
                 "Huyết Nguyệt Trầm Uyên mở: ma khí từ đọc đêm và tâm ma, ma công đặt cược lời thề, phản phệ, Ma Cung ba gian, ba thế lực, Tâm ma đại kiếp; logo mới tối giản."),
+            Era("3.6", "Cổ Vận Thanh Phong",
+                "Câu chữ cổ phong; kỳ ngộ lục hai cột, giấu duyên khởi; Đạo lộ thành Tiên lộ; pháp bảo và icon app vẽ pixel; trình đọc tính lề, giãn dòng, giãn đoạn, thụt đầu dòng bằng em; Home hàng nút cân lại."),
         )
     }
 }

@@ -48,7 +48,7 @@ class NienKyActivity : TabActivity() {
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int {
         if (tab == years) return stats(c, k, area)
         if (tab == years + 1) return way(c, k, area, page)
-        if (tab == years + 2) return kyNgo(c, k, area, page)
+        if (tab == years + 2) return kyNgo(c, k, area, page, hits)
         val u = k.u
         val r = report(tab)
         val small = k.small
@@ -174,22 +174,22 @@ class NienKyActivity : TabActivity() {
         val s = NhatKy.summary(d - 29, d)
         val jumps = (d - 29..d).sumOf { TuLuyen.dayJumps[it] ?: 0 }
         val rows = listOf(
-            "Đọc đêm (22 – 4 giờ)" to HomeView.duration(s.night),
-            "Sáng sớm (4 – 7 giờ)" to HomeView.duration(s.dawn),
-            "Buổi đọc" to "${s.sittings} buổi",
-            "Buổi dài nhất" to HomeView.duration(s.longest.toLong()),
-            "Buổi từ 45 phút" to "${s.long45} buổi",
-            "Buổi từ 90 phút" to "${s.long90} buổi",
-            "Nhảy chương" to "$jumps lần",
-            "Cân bằng năm thước đo" to "${NhatKy.balance()}%",
-            "Chữ đọc lại" to "${Realm.van(s.reread)} vạn",
-            "Sách quay lại sau 90 ngày" to "${s.comeBack} cuốn",
-            "Chữ ở sách quay lại" to "${Realm.van(s.back)} vạn",
-            "Sách đã đọc" to "${s.books} cuốn · ${s.authors} tác giả",
-            "Thể loại" to "${s.genres}",
-            "Ngôn ngữ" to "${s.langs}",
+            "Đèn khuya (22 – 4 giờ)" to HomeView.duration(s.night),
+            "Đọc sớm (4 – 7 giờ)" to HomeView.duration(s.dawn),
+            "Số lần tĩnh tọa" to "${s.sittings} lần",
+            "Lần tĩnh tọa lâu nhất" to HomeView.duration(s.longest.toLong()),
+            "Tĩnh tọa từ 45 phút" to "${s.long45} lần",
+            "Tĩnh tọa từ 90 phút" to "${s.long90} lần",
+            "Lật vượt trang" to "$jumps lần",
+            "Ngũ đạo quân bình" to "${NhatKy.balance()}%",
+            "Ôn cố tri tân" to "${Realm.van(s.reread)} vạn chữ",
+            "Cố thư trùng duyên" to "${s.comeBack} cuốn",
+            "Chữ nơi cố thư" to "${Realm.van(s.back)} vạn",
+            "Kinh quyển đã duyệt" to "${s.books} cuốn · ${s.authors} tác giả",
+            "Môn loại" to "${s.genres}",
+            "Văn tự" to "${s.langs}",
         )
-        var y = k.section(c, a.left, a.top, a.width(), "LỐI ĐỌC 30 NGÀY QUA")
+        var y = k.section(c, a.left, a.top, a.width(), "ĐẠO TÍCH BA MƯƠI NGÀY")
         val cols = if (k.W >= 600) 2 else 1
         val colW = (a.width() - (cols - 1) * 28 * u) / cols
         val per = (rows.size + cols - 1) / cols
@@ -198,7 +198,7 @@ class NienKyActivity : TabActivity() {
         y += per * rowH + 18 * u
 
         // The hours of the last 30 days.
-        y = k.section(c, a.left, y, a.width(), "GIỜ ĐỌC 30 NGÀY QUA (PHÚT)")
+        y = k.section(c, a.left, y, a.width(), "CANH GIỜ ĐÈN SÁCH (PHÚT)")
         val hours = LongArray(24)
         for (day in d - 29..d) NhatKy.days[day]?.hours?.forEachIndexed { i, v -> hours[i] += v }
         val noteH = 2 * sl + 10 * u
@@ -214,7 +214,7 @@ class NienKyActivity : TabActivity() {
         }
         y += chartH + sl + 14 * u
         val since = if (NhatKy.since >= 0) date(NhatKy.since) else "hôm nay"
-        val note = "Sổ ghi theo ngày từ $since (bản 2.8): giờ đọc, từng buổi, chữ đọc lại, thể loại và ngôn ngữ sách. Phần hai dùng sổ này để tính tài nguyên mỗi giới."
+        val note = "Đạo tích được chép từng ngày từ $since: canh giờ đèn sách, từng lần tĩnh tọa, chữ ôn lại, môn loại và văn tự của kinh quyển. Lục Giới lấy đó mà định tài nguyên."
         for (l in k.wrap(note, a.width(), small, 2)) {
             k.text(c, l, a.left, y, small)
             y += sl
@@ -228,7 +228,7 @@ class NienKyActivity : TabActivity() {
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
-        var y = k.section(c, a.left, a.top, a.width(), "NẾU ĐÃ Ở LỤC GIỚI · 30 NGÀY QUA")
+        var y = k.section(c, a.left, a.top, a.width(), "NẾU ĐÃ VÀO LỤC GIỚI · BA MƯƠI NGÀY QUA")
         val est = (0 until 6).map { NhatKy.estimate(it, d - 29, d) }
         val best = est.indices.maxByOrNull { est[it].points } ?: 0
         val pad = 12 * u
@@ -251,7 +251,7 @@ class NienKyActivity : TabActivity() {
             y = r.bottom + gap
         }
         val measured = est.firstOrNull()?.measured ?: 0
-        val note = "Dự tính theo luật nháp của phần hai, có sổ $measured/30 ngày; ngày chưa có sổ tính 1,5 điểm. Giới thật do cảm ứng định, không do chọn."
+        val note = "Ước theo thiên quy Lục Giới, đạo tích chép được $measured/30 ngày; ngày chưa chép tính 1,5 điểm. Vào giới nào do cảm ứng mà định, người tu không tự chọn."
         for (l in k.wrap(note, a.width(), sb, 3)) {
             k.text(c, l, a.left, y, sb)
             y += sl
@@ -259,42 +259,62 @@ class NienKyActivity : TabActivity() {
         return 2
     }
 
-    // --- Kỳ ngộ: the 36, met or still waiting ---------------------------------------------------------
+    // --- Kỳ ngộ: the 72 in two columns; those met framed and dark, the rest faint, their moments kept secret ---
 
-    private fun kyNgo(c: Canvas, k: Ink, a: RectF, page: Int): Int {
+    private fun kyNgo(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
         val u = k.u
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
         val met = KyNgo.EVENTS.indices.count { Store.kyNgoMet[it] > 0 }
-        var y = k.section(c, a.left, a.top, a.width(), "KỲ NGỘ LỤC · ĐÃ GẶP $met/${KyNgo.EVENTS.size} · ${Store.kyNgoCount} LẦN")
+        var y = k.section(c, a.left, a.top, a.width(), "KỲ NGỘ LỤC · HỮU DUYÊN $met/${KyNgo.EVENTS.size} · ${Store.kyNgoCount} LẦN")
         if (page == 0) {
-            val recent = Store.kyNgoLog.take(3)
-            for (l in recent.ifEmpty { listOf("Chưa gặp kỳ ngộ nào. Đọc đều, đọc lâu, đọc vào giờ lành ngày lễ.") }) {
+            val recent = Store.kyNgoLog.take(2)
+            for (l in recent.ifEmpty { listOf("Cơ duyên chưa tới. Đèn sách bền lâu, giờ lành ngày tốt, ắt có ngày gặp.") }) {
                 k.text(c, k.fit(l, a.width(), small), a.left, y, small)
                 y += sl
             }
             y += 10 * u
         }
-        val rowH = k.lineH(k.ui10Bold) + sl + 18 * u
-        val top = y
-        val per = ((a.bottom - top) / rowH).toInt().coerceAtLeast(1)
-        val perRest = ((a.bottom - a.top - k.lineH(sb) - 14 * u) / rowH).toInt().coerceAtLeast(1)
-        val from = if (page == 0) 0 else per + (page - 1) * perRest
-        val count = if (page == 0) per else perRest
-        // From the easiest to meet to the rarest.
-        for (i in KyNgo.ORDER.drop(from).take(count)) {
+        val gap = 12 * u
+        val cw = (a.width() - gap) / 2
+        val pad = 12 * u
+        val ch = 2 * pad + k.lineH(k.ui10Bold) + 4 * u + sl
+        val rowsFirst = ((a.bottom - y + gap) / (ch + gap)).toInt().coerceAtLeast(1)
+        val rowsRest = ((a.bottom - (a.top + k.lineH(sb) + 14 * u) + gap) / (ch + gap)).toInt().coerceAtLeast(1)
+        val perFirst = 2 * rowsFirst
+        val perRest = 2 * rowsRest
+        val from = if (page == 0) 0 else perFirst + (page - 1) * perRest
+        val count = if (page == 0) perFirst else perRest
+        val faintText = k.paint(Ink.SMALL, color = Ink.DARK)
+        // From the most often met to the rarest.
+        for ((j, i) in KyNgo.ORDER.drop(from).take(count).withIndex()) {
             val e = KyNgo.EVENTS[i]
             val n = Store.kyNgoMet[i]
-            val p = if (n > 0) k.ui10Bold else k.ui10
-            val right = KyNgo.RARITY[e.rarity] + if (n > 0) " · gặp $n lần" else " · chưa gặp"
-            k.text(c, k.fit(e.name, a.width() - sb.measureText(right) - 16 * u, p), a.left, y, p)
-            k.right(c, right, a.right, y + (k.lineH(p) - k.lineH(sb)) / 2, if (n > 0) sb else small)
-            k.text(c, k.fit("${e.text} · mỗi lần ${(Store.luck(e.permille) + 5) / 10}%", a.width(), small), a.left, y + k.lineH(p) + 2 * u, small)
-            c.drawRect(a.left, y + rowH - 6 * u, a.right, y + rowH - 5 * u, k.gray)
-            y += rowH
+            val x = a.left + (j % 2) * (cw + gap)
+            val r = RectF(x, y + (j / 2) * (ch + gap), x + cw, y + (j / 2) * (ch + gap) + ch)
+            if (n > 0) {
+                k.card(c, r, selected = false)
+                k.text(c, k.fit(e.name, cw - 2 * pad, k.ui10Bold), r.left + pad, r.top + pad, k.ui10Bold)
+                k.text(c, k.fit("${KyNgo.RARITY[e.rarity]} · hữu duyên $n lần", cw - 2 * pad, small), r.left + pad, r.top + pad + k.lineH(k.ui10Bold) + 4 * u, small)
+                hits.add(r) { tale(i) }
+            } else {
+                c.drawRoundRect(k.inset(r, u), 12 * u, 12 * u, k.faint)
+                k.text(c, k.fit(e.name, cw - 2 * pad, faintText), r.left + pad, r.top + pad + (k.lineH(k.ui10Bold) - sl) / 2, faintText)
+                k.text(c, k.fit("${KyNgo.RARITY[e.rarity]} · chưa hữu duyên", cw - 2 * pad, faintText), r.left + pad, r.top + pad + k.lineH(k.ui10Bold) + 4 * u, faintText)
+            }
         }
-        val rest = KyNgo.EVENTS.size - per
+        val rest = KyNgo.EVENTS.size - perFirst
         return if (rest <= 0) 1 else 1 + (rest + perRest - 1) / perRest
+    }
+
+    /** A kỳ ngộ met: its tale again. */
+    private fun tale(i: Int) {
+        val e = KyNgo.EVENTS[i]
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(e.name)
+            .setMessage("${e.tale}\n\n${KyNgo.RARITY[e.rarity]} · đã hữu duyên ${Store.kyNgoMet[i]} lần.")
+            .setPositiveButton("Đóng", null)
+            .show()
     }
 }

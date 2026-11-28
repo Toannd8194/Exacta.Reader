@@ -213,8 +213,8 @@ object Store {
     // Reader preferences.
     /** Shown as a %: 100% is the base size, which is 130% of Readium's. */
     var fontSize = 1.0
-    var lineHeight = 1.7
-    var margins = 1.0
+    var lineHeight = 1.7       // em
+    var margins = 1.0          // em on each side (3.6; before, a share of Readium's gutter)
     var fontFamily = "Bitter"   // "Original", "Bitter", "serif", "sans-serif"
     var justify = true
     var swapTaps = false
@@ -231,6 +231,7 @@ object Store {
     var showNotices = true      // the cultivation's lines in the footer
     var hyphens = false
     var indent = false
+    var indentEm = 0.0          // 3.6: the first line's indent in em, 0 = none
     var showProverb = true
     var dailyGoal = 30          // minutes, 0 = none
     var librarySort = 0         // 0 recent, 1 title, 2 author
@@ -380,7 +381,9 @@ object Store {
             if (!it.optBoolean("homeStyles4")) homeStyle = intArrayOf(0, 0, 1, 2, 1, 3).getOrElse(homeStyle) { 0 }
             homeStyle = homeStyle.coerceIn(0, 3)
             showNotices = it.optBoolean("showNotices", showNotices); hyphens = it.optBoolean("hyphens", hyphens)
-            indent = it.optBoolean("indent", indent); showProverb = it.optBoolean("showProverb", showProverb)
+            indent = it.optBoolean("indent", indent)
+            indentEm = if (it.has("indentEm")) it.optDouble("indentEm") else if (indent) 1.0 else 0.0
+            showProverb = it.optBoolean("showProverb", showProverb)
             dailyGoal = it.optInt("dailyGoal", dailyGoal); librarySort = it.optInt("librarySort", librarySort)
             idleMinutes = it.optInt("idleMinutes", idleMinutes)
             paraSpacing = if (it.has("paraSpacing")) it.optDouble("paraSpacing") else null
@@ -456,7 +459,7 @@ object Store {
                 .put("uiScale", uiScale).put("birthDay", birthDay).put("birthMonth", birthMonth)
                 .put("textWeight", textWeight).put("footerMode", footerMode).put("weightRef", weightRef).put("weightPct", weightPct).put("chanTu", chanTu)
                 .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
-                .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
+                .put("hyphens", hyphens).put("indent", indentEm > 0).put("indentEm", indentEm).put("showProverb", showProverb)
                 .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes)
                 .put("refreshEvery", refreshEvery).put("sizeBase156", true).put("kyNgoPopup", kyNgoPopup).put("homeStyles4", true)
                 .apply { paraSpacing?.let { v -> put("paraSpacing", v) } })
@@ -1057,7 +1060,8 @@ object Store {
         kyNgoLog.add(0, "${d.dayOfMonth}/${d.monthValue} · ${e.name}: $text")
         while (kyNgoLog.size > 40) kyNgoLog.removeAt(kyNgoLog.size - 1)
         note("Kỳ ngộ ${e.name}: $text")
-        popups.addLast(e.name to "${e.tale}\n\nThu được: $text.\n${KyNgo.RARITY[e.rarity]} · cơ duyên phẩm «${KyNgo.TIERS[tier]}» · duyên khởi: ${e.text.replaceFirstChar { it.lowercase() }}.")
+        // 3.6: the moment that brought it stays a secret.
+        popups.addLast(e.name to "${e.tale}\n\nThu được: $text.\n${KyNgo.RARITY[e.rarity]} · cơ duyên phẩm «${KyNgo.TIERS[tier]}».")
         while (popups.size > 3) popups.removeFirst()
         checkTitles()
         touch()

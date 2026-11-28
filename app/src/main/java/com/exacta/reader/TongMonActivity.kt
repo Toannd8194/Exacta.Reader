@@ -163,10 +163,10 @@ class TongMonActivity : TabActivity() {
         k.text(c, k.fit(TongMon.rivalName, card.width() - 2 * pad - 220 * u, k.ui10Bold), card.left + pad, card.top + pad, k.ui10Bold)
         k.right(c, TongMon.rivalRealm(), card.right - pad, card.top + pad + (k.lineH(k.ui10Bold) - sl) / 2, sb)
         var cy = card.top + pad + k.lineH(k.ui10Bold) + 2 * u
-        k.text(c, "Tu vi ${Realm.van(theirs)} vạn · bạn ${Realm.van(mine)} vạn", card.left + pad, cy, small); cy += sl
+        k.text(c, "Tu vi ${Realm.van(theirs)} vạn · đạo hữu ${Realm.van(mine)} vạn", card.left + pad, cy, small); cy += sl
         val diff = mine - theirs
-        k.text(c, if (diff >= 0) "Bạn đang dẫn trước ${Realm.van(diff)} vạn" else "Còn kém ${Realm.van(-diff)} vạn", card.left + pad, cy, sb); cy += sl
-        k.line(c, "Tu theo nhịp đọc 30 ngày của bạn, nhanh hơn một phần mười.", card.left + pad, cy, card.width() - 2 * pad, small)
+        k.text(c, if (diff >= 0) "Đạo hữu đang dẫn trước ${Realm.van(diff)} vạn" else "Còn kém ${Realm.van(-diff)} vạn", card.left + pad, cy, sb); cy += sl
+        k.line(c, "Tu theo nhịp đọc 30 ngày của đạo hữu, nhanh hơn một phần mười.", card.left + pad, cy, card.width() - 2 * pad, small)
         y = card.bottom + 18 * u
 
         val b = RectF(a.left, a.bottom - 50 * u, a.right, a.bottom)
@@ -272,7 +272,7 @@ class TongMonActivity : TabActivity() {
         val from = maxOf(TongMon.quarterStart(q), TongMon.joinDay)
         val end = TongMon.quarterStart(q + 1) - 1
         var y = k.section(c, a.left, a.top, a.width(), "TÔNG MÔN ĐẠI BỈ · MỖI QUÝ")
-        y = para(c, k, "Cuối mỗi quý, chữ đọc trong quý của bạn đọ với bảy đồng môn (mỗi người đọc như một người đều tay 7.000 chữ một ngày, hơn kém tùy tài). " +
+        y = para(c, k, "Cuối mỗi quý, chữ đọc trong quý của đạo hữu đọ với bảy đồng môn (mỗi người đọc như một người đều tay 7.000 chữ một ngày, hơn kém tùy tài). " +
             "Hạng nhất 200 cống hiến và một ngọc giản; hạng 2 – 3: 120 và một đan phương; 4 – 5: 60; còn lại 20.", a.left, y, a.width(), small, 4) + 12 * u
         k.pair(c, "Quý này (tới ${date(end)})", "${Realm.van(Store.wordsBetween(from, Store.today()))} vạn chữ", a.left, y, a.width(), sb, sb)
         y += sl + 6 * u

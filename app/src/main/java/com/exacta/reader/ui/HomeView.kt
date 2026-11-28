@@ -128,10 +128,14 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         drawBook(c, k, bookRect); bookTarget(bookRect); libraryButton(c, k, bookRect)
         val twoThirds = (a.width() - g) * 2 / 3
         val realm = RectF(a.left, bookRect.bottom + g, a.left + twoThirds, row.top - g)
-        val treasures = RectF(realm.right + g, realm.top, a.right, realm.bottom)
+        // 3.6: two of the seven buttons go up under the treasures, so the row below keeps five, larger.
+        val side = RectF(realm.right + g, realm.bottom - 2 * DOCK_H * u - g, a.right, realm.bottom)
+        val treasures = RectF(realm.right + g, realm.top, a.right, side.top - g)
         on(realm, Action.TU_VI)
         drawRealmFull(c, k, realm, today, lunar)
         drawTreasures(c, k, treasures); on(treasures, Action.PHAP_BAO)
+        drawDock(c, k, RectF(side.left, side.top, side.right, side.top + DOCK_H * u), listOf(Action.NIEN_KY))
+        drawDock(c, k, RectF(side.left, side.bottom - DOCK_H * u, side.right, side.bottom), listOf(Action.SETTINGS))
     }
 
     /** The realm card with the trials inside: greeting, realm, road, the day's numbers, thiên kiếp, bí cảnh. */
@@ -155,7 +159,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val nameP = if (k.big.measureText(name) <= w - icon - 14 * u) k.big else k.ui12Bold
         val tl = com.exacta.reader.data.TienLo
         val sub = if (tl.opened) shortest(k, w - icon - 14 * u, small, listOf(
-            "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]} · ${Realm.van(tl.words())} vạn chữ tiên lộ",
+            "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]} · ${Realm.van(tl.words())} vạn chữ tiên đồ",
             "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]}",
         )) else shortest(k, w - icon - 14 * u, small, listOf(
             "Tu vi ${Realm.van(Store.tuVi())} vạn từ · căn cơ ${TuLuyen.canCo()} · tâm ma ${TuLuyen.tamMa}",
@@ -241,9 +245,9 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         }
     }
 
-    /** Seven even buttons: Công pháp, Đạo lộ, Động phủ, Tông môn, Đạo hiệu, Niên kỷ, Cài đặt. */
+    /** Five even buttons: Công pháp, Tiên lộ, Động phủ, Tông môn, Đạo hiệu (Niên kỷ and Cài đặt sit by the treasures). */
     private fun drawBottomRow(c: Canvas, k: Ink, r: RectF) {
-        drawDock(c, k, r, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.DAO_HIEU, Action.NIEN_KY, Action.SETTINGS))
+        drawDock(c, k, r, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.DAO_HIEU))
     }
 
 
@@ -371,7 +375,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         k.centered(c, TuLuyen.name(), x, w, y, nameP)
         y += k.lineH(nameP)
         val tl = com.exacta.reader.data.TienLo
-        val heroSub = if (tl.opened) "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]} · ${Realm.van(tl.words())} vạn chữ tiên lộ · tiên thạch ${tl.tienThach}"
+        val heroSub = if (tl.opened) "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]} · ${Realm.van(tl.words())} vạn chữ tiên đồ · tiên thạch ${tl.tienThach}"
             else "Tu vi ${Realm.van(words)} vạn từ · căn cơ ${TuLuyen.canCo()} · tâm ma ${TuLuyen.tamMa}"
         k.centered(c, heroSub, x, w, y, k.ui10Bold)
         y += k.lineH(k.ui10Bold) + 18 * u
@@ -742,7 +746,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             Action.CONG_PHAP to ("congphap" to "Công pháp"),
             Action.DONG_PHU to ("dongphu" to "Động phủ"),
             Action.TONG_MON to ("tongmon" to "Tông môn"),
-            Action.DAO_LO to ("daolo" to "Đạo lộ"),
+            Action.DAO_LO to ("daolo" to "Tiên lộ"),
             Action.LINH_GIOI to ("linhgioi" to "Linh giới"),
             Action.KET to ("tiendo" to "Tiên đồ"),
             Action.GIOI to ("thiendinh" to com.exacta.reader.data.TienLo.seat()),
@@ -814,13 +818,13 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         fun greeting(): String {
             val h = LocalTime.now().hour
             return when {
-                h in 5..8 -> "Sớm mai an lành"
-                h in 9..11 -> "Sáng an lành"
-                h in 12..13 -> "Trưa an lành"
-                h in 14..17 -> "Chiều an lành"
-                h in 18..21 -> "Tối an lành"
-                h >= 22 || h < 1 -> "Khuya rồi, đạo hữu"
-                else -> "Canh ba rồi, đạo hữu"
+                h in 5..8 -> "Giờ Mão, tử khí đông lai"
+                h in 9..11 -> "Giờ Tỵ, dương khí đang thịnh"
+                h in 12..13 -> "Giờ Ngọ, nhật chính trung thiên"
+                h in 14..17 -> "Giờ Mùi, bóng ngả về tây"
+                h in 18..21 -> "Giờ Dậu, đèn sách đã lên"
+                h >= 22 || h < 1 -> "Canh khuya, đạo hữu chưa nghỉ"
+                else -> "Canh ba, trăng lặn sao mờ"
             }
         }
 

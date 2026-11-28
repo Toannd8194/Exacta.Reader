@@ -47,7 +47,7 @@ object TongMon {
     const val R_THIEN = 2     // Thiên or song linh căn
     const val R_DI = 3        // dị linh căn of the sect's hành
     const val R_TAP = 4       // ngũ hành tạp linh căn
-    const val R_WAY = 5       // the đạo lộ of the sect's line
+    const val R_WAY = 5       // the tiên lộ of the sect's line
     const val R_CANCO = 6
     const val R_THE = 7       // thể phách tier
     const val R_THAN = 8      // thần thức trọng
@@ -145,7 +145,7 @@ object TongMon {
             R_THIEN -> "Thiên linh căn hoặc song linh căn" to (DaoPhap.roots.size in 1..2)
             R_DI -> "Dị linh căn $names" to (DaoPhap.di in s.attrs)
             R_TAP -> "Ngũ hành tạp linh căn" to (DaoPhap.roots.size >= 5)
-            R_WAY -> "Đạo lộ ${WAYS[s.family]}" to (DaoLo.way == s.family)
+            R_WAY -> "Tiên lộ ${WAYS[s.family]}" to (DaoLo.way == s.family)
             R_CANCO -> "Căn cơ ${q.n} (đang ${TuLuyen.canCo()})" to (TuLuyen.canCo() >= q.n)
             R_THE -> "Thể phách ${TuLuyen.THE_TIERS[q.n]}" to (TuLuyen.theTier() >= q.n)
             R_THAN -> "Thần thức ${TuLuyen.TRONG[q.n]}" to (TuLuyen.trong() >= q.n)

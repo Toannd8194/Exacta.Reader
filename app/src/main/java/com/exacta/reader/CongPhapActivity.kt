@@ -103,7 +103,7 @@ class CongPhapActivity : TabActivity() {
                 if (DaoPhap.roots.size == 5) "; không hệ nào bị khắc" else "")
         } else {
             val hours = Store.hourSeconds.sum() / 3600
-            headLines.add("Linh căn thức tỉnh ở Luyện Khí trung kỳ, theo khung giờ bạn hay đọc" + if (hours < 1) " (cần đọc ít nhất một giờ)." else ".")
+            headLines.add("Linh căn thức tỉnh ở Luyện Khí trung kỳ, theo canh giờ đạo hữu hay đọc" + if (hours < 1) " (cần đọc ít nhất một giờ)." else ".")
             headLines.add("Mỗi hành chiếm từ ${DaoPhap.ROOT_SHARE}% giờ đọc là một linh căn. Đọc vào giờ nào, thành người tu thế ấy.")
         }
         val tw = a.width() - 2 * pad

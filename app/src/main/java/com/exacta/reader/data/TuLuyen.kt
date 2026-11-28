@@ -179,7 +179,7 @@ object TuLuyen {
     //   A. Linh căn (ngũ hành and the dị linh căn): the strongest root 30, then 18, 12, 8, 6.
     //   B. Công pháp đang vận: its attribute 20, đại thành (tầng 9) +5.
     //   C. Tâm pháp nhập môn: 8 each (Đạo Tâm Chủng Ma 15).
-    //   D. Đạo lộ: the main way 20, the way of kiêm tu 10.
+    //   D. Tiên lộ: the main way 20, the way of kiêm tu 10.
     //   E. Đời tu: what each realm asks of the five measures and the reading, up to 25.
     //   F. Tông môn: the sect that leads to it +10.
     /** The attributes of each realm: hành of the linh căn and of the công pháp. */
@@ -193,7 +193,7 @@ object TuLuyen {
         intArrayOf(PhapMon.TP_DUONG_KHI, PhapMon.TP_KIM_CUONG), intArrayOf(PhapMon.TP_BANG_TAM, PhapMon.TP_DINH_HON, PhapMon.TP_TU_BI),
         intArrayOf(PhapMon.TP_BAT_NHA, PhapMon.TP_VAN_TAM),
     )
-    /** The đạo lộ (main 20, kiêm 10) and the sect (+10) of each realm. */
+    /** The tiên lộ (main 20, kiêm 10) and the sect (+10) of each realm. */
     val GIOI_WAY = intArrayOf(DaoLo.PHAP, DaoLo.KIEM, -1, DaoLo.THE, DaoLo.BACH, DaoLo.THAN)
     val GIOI_SECT = intArrayOf(TongMon.VAN_QUYEN, TongMon.KIEM_LU, TongMon.MINH_TAM, TongMon.THIET_COT, TongMon.BACH_THAO, -1)
     /** What the life of cultivation must show, in words (E). */
@@ -224,9 +224,9 @@ object TuLuyen {
         }
         // C. Tâm pháp.
         for (t in GIOI_TAM[i]) if (DaoPhap.tamLevel(t) >= 1) list.add("Tâm pháp ${PhapMon.TAM_PHAP[t].name}" to if (t == PhapMon.TP_CHUNG_MA) 15 else 8)
-        // D. Đạo lộ.
+        // D. Tiên lộ.
         val w = GIOI_WAY[i]
-        if (w >= 0 && DaoLo.way == w) list.add("Đạo lộ ${DaoLo.WAYS[w].name}" to 20)
+        if (w >= 0 && DaoLo.way == w) list.add("Tiên lộ ${DaoLo.WAYS[w].name}" to 20)
         if (w >= 0 && DaoLo.way2 == w) list.add("Kiêm tu ${DaoLo.WAYS[w].name}" to 10)
         // E. Đời tu.
         val life = when (i) {
@@ -421,7 +421,7 @@ object TuLuyen {
         list.add(Need("$where: ${Realm.van(minOf(t, top))}/${top / 10_000} vạn", t >= top))
         when (g) {
             1 -> list.add(Need("Căn cơ từ 30, đang ${canCo()}", canCo() >= 30))
-            2 -> list.add(Need(if (DaoLo.way >= 0) "Đạo lộ: ${DaoLo.WAYS[DaoLo.way].name}" else "Chọn đạo lộ ở màn Đạo lộ", DaoLo.way >= 0))
+            2 -> list.add(Need(if (DaoLo.way >= 0) "Tiên lộ: ${DaoLo.WAYS[DaoLo.way].name}" else "Chọn tiên lộ ở màn Tiên lộ", DaoLo.way >= 0))
             4 -> {
                 list.add(Need("Thần thức Lục trọng, đang ${TRONG[trong()]}", trong() >= 5))
                 val n = ngoDao().size
