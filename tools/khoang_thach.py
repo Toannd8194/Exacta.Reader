@@ -1,390 +1,242 @@
-"""Khoáng thạch (3.1): six ores in pixel art, on a 48 grid ×4 (192 px), grayscale on transparency,
-light from the upper left, every piece outlined in black, in the style of the linh thạch.
+"""Khoáng thạch (3.1.1): six gems in pixel art, on a 32 grid ×6 (192 px), grayscale on transparency
+for the e-ink screen. Chunky gem icons: a black outline, flat facets in four tones lit from the upper
+left, white glints on the lit facets, a sparkle or two beside the finer ones.
 
-    0 Hoàng phẩm   a raw lump of ore, veins of linh khí showing through the cracks
-    1 Huyền phẩm   a crystal breaking out of its rock
-    2 Địa phẩm     a geode split open, crystals turned inward around a bright heart
-    3 Thiên phẩm   a cut gem, crown and pavilion, glinting
-    4 Âm Dương     an orb of yin and yang, ringed
-    5 Hỗn Độn      a dark crystal of chaos in a burst of shards, motes orbiting
+    0 Hoàng phẩm   a raw nugget, broken into rough facets, flecked
+    1 Huyền phẩm   a cluster of three crystals on a bit of rock
+    2 Địa phẩm     a step-cut stone: four bevelled bands round a flat table
+    3 Thiên phẩm   a brilliant-cut gem: crown, table, pavilion, sparkling
+    4 Âm Dương     an orb split by the Thái Cực, ringed by motes
+    5 Hỗn Độn      a dark gem grown into a rock, a seam of light through it
 
-Used by tools/ve_do_hoa.py; run alone to preview: python tools/khoang_thach.py out.png
+Used by tools/ve_do_hoa.py (--khoangthach); run alone to preview: python tools/khoang_thach.py out.png
 """
 import math
 import sys
 
+import numpy as np
 from PIL import Image, ImageDraw
 
-N = 48
-RIM = 22
+N = 32
+SCALE = 6
+O = 24          # outline
+D = 70          # shade
+M = 128         # mid
+L = 182         # lit
+H = 228         # bright
+W = 255         # glint
 
 
-def layer():
-    return Image.new("L", (N, N), 0), Image.new("L", (N, N), 0)
+class Gem:
+    def __init__(self):
+        self.g = Image.new("L", (N, N), 0)
+        self.a = Image.new("L", (N, N), 0)
+        self.dg = ImageDraw.Draw(self.g)
+        self.da = ImageDraw.Draw(self.a)
 
+    def face(self, pts, v):
+        self.dg.polygon(pts, fill=v)
+        self.da.polygon(pts, fill=255)
+        return self
 
-def rim(g, a, v=RIM):
-    """Black outline on every empty pixel touching the shape (4-neighbours)."""
-    pts = []
-    for y in range(N):
-        for x in range(N):
-            if a.getpixel((x, y)) == 0 and any(0 <= x + dx < N and 0 <= y + dy < N and a.getpixel((x + dx, y + dy))
-                                               for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
-                pts.append((x, y))
-    for p in pts:
-        g.putpixel(p, v)
-        a.putpixel(p, 255)
+    def px(self, pts, v):
+        for x, y in pts:
+            if 0 <= x < N and 0 <= y < N:
+                self.g.putpixel((x, y), v)
+                self.a.putpixel((x, y), 255)
+        return self
 
+    def line(self, pts, v):
+        self.dg.line(pts, fill=v)
+        self.da.line(pts, fill=255)
+        return self
 
-def paste(cg, ca, g, a):
-    cg.paste(g, (0, 0), a)
-    ca.paste(255, (0, 0), a)
+    def outline(self):
+        a = np.array(self.a) > 0
+        ring = np.zeros_like(a)
+        ring[1:, :] |= a[:-1, :]
+        ring[:-1, :] |= a[1:, :]
+        ring[:, 1:] |= a[:, :-1]
+        ring[:, :-1] |= a[:, 1:]
+        ring &= ~a
+        g = np.array(self.g)
+        g[ring] = O
+        self.g = Image.fromarray(g)
+        self.a = Image.fromarray(((a | ring) * 255).astype(np.uint8))
+        self.dg = ImageDraw.Draw(self.g)
+        self.da = ImageDraw.Draw(self.a)
+        return self
 
+    def sparkle(self, x, y, r=2):
+        """A four-point sparkle beside the gem, dark so it shows on paper."""
+        pts = [(x, y, O)] + [(x + i, y, 120) for i in (-r, r)] + [(x, y + i, 120) for i in (-r, r)]
+        if r >= 2:
+            pts += [(x + i, y, 70) for i in (-1, 1)] + [(x, y + i, 70) for i in (-1, 1)]
+        for px, py, v in pts:
+            if 0 <= px < N and 0 <= py < N and not self.a.getpixel((px, py)):
+                self.g.putpixel((px, py), v)
+                self.a.putpixel((px, py), 255)
+        return self
 
-def poly(g, a, pts, v):
-    ImageDraw.Draw(g).polygon(pts, fill=v)
-    ImageDraw.Draw(a).polygon(pts, fill=255)
-
-
-def dot(cg, ca, x, y, v):
-    if 0 <= x < N and 0 <= y < N:
-        cg.putpixel((x, y), v)
-        ca.putpixel((x, y), 255)
-
-
-def glint(cg, ca, x, y, r=3):
-    """A four-point glint of linh khí, fading out."""
-    for i in range(-r, r + 1):
-        v = 255 if i == 0 else max(30, 110 - 30 * abs(i))
-        for px, py in ((x + i, y), (x, y + i)):
-            if not ca.getpixel((px, py)):
-                dot(cg, ca, px, py, v)
-
-
-def motes(cg, ca, pts, v=120):
-    for x, y in pts:
-        if not ca.getpixel((x, y)):
-            dot(cg, ca, x, y, v)
-
-
-def crystal(base, tip, w, shades=(232, 170, 96), tips=(250, 205, 130), streak=True):
-    """A hexagonal crystal: left face lit, front face, right face in shade; the point in three facets;
-    the faces glow toward the point."""
-    g, a = layer()
-    d = ImageDraw.Draw(g)
-    da = ImageDraw.Draw(a)
-    bx, by = base
-    tx, ty = tip
-    L = math.hypot(tx - bx, ty - by)
-    ux, uy = (tx - bx) / L, (ty - by) / L
-    px, py = -uy, ux
-    if px < 0:
-        px, py = -px, -py
-    h = 1.25 * w
-    sx, sy = tx - ux * h, ty - uy * h
-    offs = [-w, -0.38 * w, 0.38 * w, w]
-
-    def at(cx, cy, o):
-        return (cx + px * o, cy + py * o)
-
-    for i in range(3):
-        o1, o2 = offs[i], offs[i + 1]
-        body = [at(bx, by, o1), at(sx, sy, o1), at(sx, sy, o2), at(bx, by, o2)]
-        d.polygon(body, fill=shades[i]); da.polygon(body, fill=255)
-        point = [at(sx, sy, o1), (tx, ty), at(sx, sy, o2)]
-        d.polygon(point, fill=tips[i]); da.polygon(point, fill=255)
-    for o, v in ((offs[1], 252), (offs[2], 70)):
-        d.line([at(bx, by, o), at(sx, sy, o)], fill=v)
-        d.line([at(sx, sy, o), (tx, ty)], fill=v)
-    d.line([at(sx, sy, offs[0]), at(sx, sy, offs[2])], fill=245)
-    d.line([at(sx, sy, offs[2]), at(sx, sy, offs[3])], fill=60)
-    gp = g.load()
-    for y in range(N):
-        for x in range(N):
-            v = gp[x, y]
-            if a.getpixel((x, y)) and v < 250:
-                f = ((x - bx) * ux + (y - by) * uy) / L
-                gp[x, y] = max(0, min(250, v - int(34 * (1 - f)) + 8))
-    if streak:
-        o = offs[1] + 0.25 * w
-        for t in range(int(L * 0.15), int(L * 0.55)):
-            x, y = at(bx + ux * t, by + uy * t, o)
-            if a.getpixel((int(x), int(y))):
-                g.putpixel((int(x), int(y)), 255)
-    rim(g, a)
-    return g, a
-
-
-def rock(shape, base=96, lit=160, dark=66, seed=7):
-    """A lump of rock: lit along its top edge, darker below and to the right, flecked."""
-    g, a = layer()
-    poly(g, a, shape, base)
-    gp = g.load()
-    xs = [p[0] for p in shape]
-    cx = (min(xs) + max(xs)) / 2
-    bottom = max(p[1] for p in shape)
-    for y in range(N):
-        for x in range(N):
-            if not a.getpixel((x, y)):
-                continue
-            if y == 0 or not a.getpixel((x, y - 1)):
-                gp[x, y] = lit
-            elif y >= bottom - 1 or (x + 1 < N and not a.getpixel((x + 1, y)) and x > cx):
-                gp[x, y] = dark
-            elif (x * 7 + y * 5 + seed) % 13 == 0:
-                gp[x, y] = dark + 4
-            elif (x * 3 + y * 11 + seed) % 17 == 0:
-                gp[x, y] = base + 40
-    rim(g, a)
-    return g, a
-
-
-def finish(cg, ca):
-    return Image.merge("RGBA", (cg, cg, cg, ca)).resize((N * 4, N * 4), Image.NEAREST)
+    def image(self):
+        return Image.merge("RGBA", (self.g, self.g, self.g, self.a)).resize((N * SCALE, N * SCALE), Image.NEAREST)
 
 
 # --- The six ----------------------------------------------------------------------------------------
 
 def ore0():
-    """Hoàng phẩm: a raw lump of ore, facets roughly broken, veins of linh khí in the cracks."""
-    cg, ca = layer()
-    outer = [(9, 30), (13, 20), (21, 15), (31, 15), (39, 21), (42, 31), (37, 39), (24, 42), (12, 39)]
-    g, a = layer()
-    poly(g, a, outer, 120)
-    # Facets: the top plane lit, the left lit less, the right and the bottom in shade.
-    poly(g, a, [(13, 20), (21, 15), (31, 15), (34, 22), (22, 25)], 196)
-    poly(g, a, [(9, 30), (13, 20), (22, 25), (20, 34), (12, 39)], 158)
-    poly(g, a, [(34, 22), (39, 21), (42, 31), (37, 39), (30, 33)], 86)
-    poly(g, a, [(20, 34), (30, 33), (37, 39), (24, 42), (12, 39)], 104)
-    d = ImageDraw.Draw(g)
-    for p, q, v in [((22, 25), (34, 22), 225), ((22, 25), (20, 34), 70), ((20, 34), (30, 33), 70), ((30, 33), (34, 22), 60)]:
-        d.line([p, q], fill=v)
-    # Veins of linh khí: bright cracks.
-    for pts in ([(16, 24), (18, 27), (17, 30)], [(26, 18), (28, 20), (30, 19)], [(32, 28), (35, 31)], [(22, 37), (25, 38)]):
-        d.line(pts, fill=250)
-    gp = g.load()
-    for x, y in [(15, 33), (27, 29), (36, 26), (19, 21)]:
-        gp[x, y] = 240
-    rim(g, a)
-    paste(cg, ca, g, a)
-    # Rubble at its foot.
-    for shape in ([(5, 41), (8, 39), (10, 41), (8, 43)], [(40, 41), (43, 40), (44, 43), (41, 44)]):
-        paste(cg, ca, *rock(shape, 110, 150, 80))
-    glint(cg, ca, 35, 10, 3)
-    motes(cg, ca, [(28, 8), (12, 12), (43, 15)])
-    return finish(cg, ca)
+    """Hoàng phẩm: a raw nugget, broken into rough facets, flecked."""
+    g = Gem()
+    g.face([(8, 9), (15, 5), (21, 7), (17, 13), (10, 14)], H)                 # the top, in the light
+    g.face([(21, 7), (27, 11), (29, 18), (22, 16), (17, 13)], M + 16)         # upper right
+    g.face([(10, 14), (17, 13), (22, 16), (19, 22), (11, 21)], L)             # the front
+    g.face([(3, 17), (8, 9), (10, 14), (11, 21), (5, 23)], M + 4)             # left
+    g.face([(5, 23), (11, 21), (19, 22), (16, 28), (8, 27)], D)               # under
+    g.face([(22, 16), (29, 18), (26, 25), (16, 28), (19, 22)], D + 24)        # lower right
+    # Flecks of rock in the ore, and the light on the top.
+    g.px([(14, 18), (7, 18), (24, 13), (22, 22)], D - 14)
+    g.px([(11, 10), (12, 9), (13, 8), (12, 10)], W)
+    return g.outline().image()
+
+
+def _prism(g, x, top, w, bottom, tip, shades):
+    """An upright crystal: left face lit, right face in shade, a pointed tip of two facets."""
+    m = x + w // 2
+    g.face([(x, bottom), (x, top), (m, top), (m, bottom)], shades[0])
+    g.face([(m, bottom), (m, top), (x + w, top), (x + w, bottom)], shades[1])
+    g.face([(x, top), (m, tip), (m, top)], shades[2])
+    g.face([(m, top), (m, tip), (x + w, top)], shades[3])
 
 
 def ore1():
-    """Huyền phẩm: one crystal breaking out of its rock, a small one beside."""
-    cg, ca = layer()
-    paste(cg, ca, *crystal((27, 37), (31, 5), 5.6))
-    paste(cg, ca, *crystal((18, 38), (12, 24), 3.0, streak=False))
-    paste(cg, ca, *rock([(7, 40), (11, 34), (18, 33), (24, 35), (31, 32), (37, 34), (41, 39), (39, 44), (10, 44)]))
-    glint(cg, ca, 39, 7, 3)
-    motes(cg, ca, [(20, 9), (42, 20), (6, 22), (24, 14)])
-    return finish(cg, ca)
+    """Huyền phẩm: a cluster of three crystals on a bit of rock."""
+    g = Gem()
+    _prism(g, 4, 15, 7, 26, 9, (M + 10, D, H, M))
+    _prism(g, 21, 13, 7, 26, 7, (M + 10, D, H, M))
+    _prism(g, 11, 9, 10, 27, 2, (L, M, W - 10, L - 20))
+    # Light down the tall one, and on the tips.
+    g.line([(13, 11), (13, 22)], W)
+    g.px([(6, 17), (6, 18), (23, 15), (23, 16)], H)
+    g.face([(3, 26), (8, 24), (16, 25), (25, 24), (29, 27), (26, 29), (6, 29)], D - 10)   # the rock
+    g.px([(9, 26), (20, 27), (14, 28)], M - 20)
+    g.outline()
+    g.sparkle(28, 4)
+    return g.image()
 
 
 def ore2():
-    """Địa phẩm: a geode split open: a shell of dark rock, a band of agate, crystals turned inward
-    around a bright heart."""
-    cg, ca = layer()
-    cx, cy, R = 24, 25, 19
-    g, a = layer()
-    gp = g.load()
-    for y in range(N):
-        for x in range(N):
-            # A slightly squashed, lumpy round.
-            ang = math.atan2(y - cy, x - cx)
-            r = math.hypot((x - cx) * 0.95, (y - cy) * 1.08)
-            edge = R + 0.7 * math.sin(5 * ang) + 0.5 * math.cos(9 * ang)
-            if r <= edge:
-                a.putpixel((x, y), 255)
-                light = -math.cos(ang + math.pi / 4)        # lit from the upper left
-                if r > edge - 4:
-                    v = 110 + int(40 * light)                  # the shell
-                    if (x * 5 + y * 3) % 11 == 0:
-                        v -= 30
-                elif r > edge - 6:
-                    v = 205 + int(25 * light)                  # the band of agate
-                elif r > edge - 7:
-                    v = 120
-                else:
-                    v = 70                                     # the hollow
-                gp[x, y] = max(0, min(255, v))
-    # Crystals around the hollow, pointing to the heart.
-    inner = R - 8
-    for k in range(14):
-        ang = 2 * math.pi * k / 14 + 0.2
-        bx, by = cx + inner * math.cos(ang), cy + inner * math.sin(ang)
-        tx, ty = cx + (inner - 6) * math.cos(ang), cy + (inner - 6) * math.sin(ang)
-        px, py = -math.sin(ang) * 2.2, math.cos(ang) * 2.2
-        lit = math.cos(ang - 3 * math.pi / 4) > 0
-        ImageDraw.Draw(g).polygon([(bx + px, by + py), (tx, ty), (bx - px, by - py)], fill=230 if lit else 150)
-        ImageDraw.Draw(g).line([(bx, by), (tx, ty)], fill=250 if lit else 95)
-    # The heart of linh khí.
-    for y in range(N):
-        for x in range(N):
-            r = math.hypot(x - cx, y - cy)
-            if r <= 2.5:
-                gp[x, y] = 255
-            elif r <= 4 and gp[x, y] < 100:
-                gp[x, y] = 175
-    rim(g, a)
-    paste(cg, ca, g, a)
-    glint(cg, ca, 41, 6, 3)
-    motes(cg, ca, [(6, 6), (44, 30), (3, 38), (30, 2)])
-    return finish(cg, ca)
+    """Địa phẩm: a step-cut stone, four bevelled bands round a flat table."""
+    g = Gem()
+    outer = [(8, 6), (24, 6), (27, 9), (27, 23), (24, 26), (8, 26), (5, 23), (5, 9)]
+    inner = [(10, 10), (22, 10), (23, 11), (23, 21), (22, 22), (10, 22), (9, 21), (9, 11)]
+    g.face(outer, M)
+    g.face([outer[0], outer[1], inner[1], inner[0]], H)                       # top band
+    g.face([outer[7], outer[0], inner[0], inner[7]], L)
+    g.face([outer[6], outer[7], inner[7], inner[6]], L)                       # left band
+    g.face([outer[1], outer[2], inner[2], inner[1]], M + 20)
+    g.face([outer[2], outer[3], inner[3], inner[2]], D + 10)                  # right band
+    g.face([outer[3], outer[4], inner[4], inner[3]], D)
+    g.face([outer[4], outer[5], inner[5], inner[4]], D)                       # bottom band
+    g.face([outer[5], outer[6], inner[6], inner[5]], M - 20)
+    g.face(inner, M + 14)                                                     # the table
+    # A second step inside the table, and a streak of light across it.
+    g.line([(11, 12), (21, 12)], L)
+    g.line([(11, 20), (21, 20)], M - 14)
+    g.line([(12, 18), (17, 13)], W)
+    g.line([(13, 19), (18, 14)], H)
+    g.px([(9, 7), (10, 7), (6, 10)], W)
+    g.outline()
+    g.sparkle(29, 3, 1)
+    return g.image()
 
 
 def ore3():
-    """Thiên phẩm: a cut gem, crown and pavilion, facets catching the light."""
-    cg, ca = layer()
-    g, a = layer()
-    # Girdle at y 17, from x 5 to 43; the table above, the culet below.
-    tl, tr, ty = 15, 33, 8
-    gl, gr, gy = 5, 43, 18
-    cul = (24, 43)
-    crown = [(tl, ty), (tr, ty), (gr, gy), (gl, gy)]
-    poly(g, a, crown, 200)
-    # Crown facets: table bright, left lit, right shaded.
-    poly(g, a, [(tl, ty), (tr, ty), (29, gy), (19, gy)], 238)
-    poly(g, a, [(gl, gy), (tl, ty), (19, gy)], 212)
-    poly(g, a, [(tr, ty), (gr, gy), (29, gy)], 130)
-    # Pavilion facets to the culet.
-    poly(g, a, [(gl, gy), (14, gy), cul], 175)
-    poly(g, a, [(14, gy), (24, gy), cul], 215)
-    poly(g, a, [(24, gy), (34, gy), cul], 140)
-    poly(g, a, [(34, gy), (gr, gy), cul], 88)
-    d = ImageDraw.Draw(g)
-    d.line([(gl, gy), (gr, gy)], fill=250)
-    for x0, v in ((14, 245), (24, 120), (34, 70)):
-        d.line([(x0, gy), cul], fill=v)
-    d.line([(19, gy), (tl, ty)], fill=252)
-    d.line([(29, gy), (tr, ty)], fill=110)
-    # A streak across the table.
-    for i in range(5):
-        g.putpixel((19 + i, 13 - i // 2), 255)
-    rim(g, a)
-    paste(cg, ca, g, a)
-    # Rays of light around it.
-    for ang in range(0, 360, 45):
-        t = math.radians(ang)
-        for r in (22, 23):
-            x, y = int(24 + r * math.cos(t)), int(24 + r * math.sin(t))
-            motes(cg, ca, [(x, y)], 150 if r == 22 else 90)
-    glint(cg, ca, 40, 5, 3)
-    glint(cg, ca, 9, 29, 2)
-    return finish(cg, ca)
+    """Thiên phẩm: a brilliant-cut gem, crown, table and pavilion, sparkling."""
+    g = Gem()
+    tl, tr, gl, gr, pt = (9, 7), (22, 7), (3, 12), (28, 12), (15, 28)
+    a, b = (12, 7), (19, 7)                                                   # the table's top corners
+    c, d = (11, 12), (20, 12)                                                 # where the crown meets the girdle
+    g.face([tl, a, c, gl], L)
+    g.face([a, b, d, c], H)
+    g.face([b, tr, gr, d], M)
+    g.face([gl, c, (12, 16), pt], M + 12)
+    g.face([c, d, (19, 16), pt, (12, 16)], L + 10)
+    g.face([d, gr, pt, (19, 16)], D)
+    # The facet lines of the pavilion, catching light on the lit side.
+    g.line([gl, (12, 16)], H)
+    g.line([(19, 16), gr], D - 20)
+    g.line([c, (12, 16)], W - 30)
+    g.line([d, (19, 16)], M - 20)
+    g.px([(13, 8), (14, 8), (13, 9), (6, 11), (7, 10)], W)
+    g.outline()
+    g.sparkle(27, 4)
+    g.sparkle(4, 25, 1)
+    return g.image()
 
 
 def ore4():
-    """Âm Dương phẩm: an orb, yin and yang turning in it, a ring of light around."""
-    cg, ca = layer()
-    cx, cy, R = 24, 24, 15
-    g, a = layer()
-    gp = g.load()
+    """Âm Dương: an orb split by the Thái Cực, ringed by motes."""
+    g = Gem()
+    cx, cy, r = 15.5, 15.5, 11.5
     for y in range(N):
         for x in range(N):
-            dx, dy = x - cx + 0.5, y - cy + 0.5
-            r = math.hypot(dx, dy)
-            if r > R:
+            dx, dy = x + 0.5 - cx, y + 0.5 - cy
+            dist = math.hypot(dx, dy)
+            if dist > r:
                 continue
-            a.putpixel((x, y), 255)
-            # The S of yin and yang: the upper half-disc belongs to the left side's colour.
-            yang = dx < 0
-            if math.hypot(dx, dy + R / 2) < R / 2:
-                yang = True
-            if math.hypot(dx, dy - R / 2) < R / 2:
-                yang = False
-            # Sphere shading, lit from the upper left.
-            nz = math.sqrt(max(0.0, 1 - (r / R) ** 2))
-            lum = 0.55 + 0.45 * (-dx * 0.55 - dy * 0.55 + nz * 0.6) / R * R / max(R, 1)
-            base = 235 if yang else 60
-            v = int(base * (0.75 + 0.35 * lum)) if yang else int(base + 50 * max(0.0, lum - 0.4))
-            gp[x, y] = max(0, min(255, v))
-    # The eyes.
-    for ex, ey, v in ((cx, cy - R / 2, 50), (cx, cy + R / 2, 235)):
-        for y in range(N):
-            for x in range(N):
-                if math.hypot(x - ex + 0.5, y - ey + 0.5) <= 2.4:
-                    gp[x, y] = v
-    # A highlight on the glass.
-    for x, y in ((17, 15), (18, 14), (19, 14), (16, 16), (17, 16)):
-        gp[x, y] = 255
-    rim(g, a)
-    # The ring: an ellipse around the orb, behind at the top, in front at the bottom.
-    ring_g, ring_a = layer()
-    rp = ring_g.load()
-    for k in range(720):
-        t = 2 * math.pi * k / 720
-        x, y = cx + 22 * math.cos(t), cy + 6 * math.sin(t) + 0.3 * 22 * math.cos(t) * 0.3
-        xi, yi = int(round(x)), int(round(y))
-        if 0 <= xi < N and 0 <= yi < N:
-            front = math.sin(t) > 0
-            if front or not a.getpixel((xi, yi)):
-                rp[xi, yi] = 230 if math.cos(t) < 0 else 160
-                ring_a.putpixel((xi, yi), 255)
-    paste(cg, ca, g, a)
-    rim(ring_g, ring_a, 40)
-    # Draw the ring's back part under the orb, the front over it.
-    cg2, ca2 = cg.copy(), ca.copy()
-    paste(cg2, ca2, ring_g, ring_a)
-    for y in range(N):
-        for x in range(N):
-            if ring_a.getpixel((x, y)) and (y >= cy or not a.getpixel((x, y))):
-                cg.putpixel((x, y), cg2.getpixel((x, y)))
-                ca.putpixel((x, y), 255)
-    glint(cg, ca, 41, 8, 3)
-    motes(cg, ca, [(7, 8), (44, 40), (4, 36), (30, 3)])
-    return finish(cg, ca)
+            # Yin (dark) on the right, with the upper small circle; yang on the left, with the lower.
+            up = math.hypot(dx, dy + r / 2) < r / 2
+            down = math.hypot(dx, dy - r / 2) < r / 2
+            dark = (dx > 0 and not down) or up
+            if math.hypot(dx, dy + r / 2) < 1.8:
+                dark = False
+            if math.hypot(dx, dy - r / 2) < 1.8:
+                dark = True
+            # The sphere: light from the upper left, a darker rim below and to the right.
+            lit = -(dx * 0.6 + dy * 0.8) / r
+            if dark:
+                v = D - 20 if lit < -0.45 else D if lit < 0.2 else M - 30
+            else:
+                v = M + 20 if lit < -0.45 else L + 10 if lit < 0.2 else H
+            if dist > r - 1.2 and lit < 0:
+                v = max(O + 16, v - 40)
+            g.px([(x, y)], v)
+    g.px([(9, 8), (10, 7), (8, 9), (11, 7)], W)
+    g.outline()
+    for k in range(8):
+        t = 2 * math.pi * k / 8 + 0.35
+        x, y = int(round(cx - 0.5 + 15 * math.cos(t))), int(round(cy - 0.5 + 15 * math.sin(t)))
+        if 0 <= x < N and 0 <= y < N and not g.a.getpixel((x, y)):
+            g.px([(x, y)], O if k % 2 == 0 else 120)
+    return g.image()
 
 
 def ore5():
-    """Hỗn Độn phẩm: a dark crystal of chaos, a swirl in it, a burst of shards behind, motes orbiting."""
-    cg, ca = layer()
-    cx, cy = 24, 24
-    # The burst: eight shards behind.
-    for k in range(8):
-        t = math.radians(22.5 + 45 * k)
-        tip = (cx + 22 * math.cos(t), cy + 22 * math.sin(t))
-        side = 4.5
-        pts = [(cx + 9 * math.cos(t) - side * math.sin(t), cy + 9 * math.sin(t) + side * math.cos(t)), tip,
-               (cx + 9 * math.cos(t) + side * math.sin(t), cy + 9 * math.sin(t) - side * math.cos(t))]
-        g, a = layer()
-        poly(g, a, pts, 190 if math.cos(t - 3 * math.pi / 4) > 0 else 120)
-        rim(g, a)
-        paste(cg, ca, g, a)
-    # The crystal: an octahedron seen from the front, four facets.
-    g, a = layer()
-    top, bot, left, right, mid = (cx, 5), (cx, 43), (cx - 12, cy), (cx + 12, cy), (cx + 2, cy + 1)
-    poly(g, a, [top, left, mid], 92)
-    poly(g, a, [top, mid, right], 54)
-    poly(g, a, [left, bot, mid], 64)
-    poly(g, a, [mid, bot, right], 36)
-    d = ImageDraw.Draw(g)
-    d.line([top, mid], fill=150)
-    d.line([left, mid], fill=120)
-    d.line([top, left], fill=200)
-    # The swirl of chaos inside.
-    gp = g.load()
-    for k in range(260):
-        t = k / 260 * 4 * math.pi
-        r = 1 + 7.5 * k / 260
-        x, y = int(round(cx + 1 + r * math.cos(t))), int(round(cy + r * math.sin(t) * 1.4))
-        if 0 <= x < N and 0 <= y < N and a.getpixel((x, y)):
-            gp[x, y] = 235 if k > 40 else 255
-    rim(g, a)
-    paste(cg, ca, g, a)
-    # Motes orbiting.
-    for k in range(10):
-        t = 2 * math.pi * k / 10 + 0.3
-        x, y = int(cx + 21 * math.cos(t)), int(cy + 9 * math.sin(t))
-        if not ca.getpixel((x, y)):
-            dot(cg, ca, x, y, 230 if k % 3 == 0 else 140)
-    glint(cg, ca, 39, 6, 3)
-    return finish(cg, ca)
+    """Hỗn Độn: a dark gem grown into a rock, a seam of light through it."""
+    g = Gem()
+    rock = [(5, 11), (11, 4), (22, 4), (28, 11), (29, 22), (23, 29), (9, 29), (3, 22)]
+    g.face(rock, M - 6)
+    g.face([(5, 11), (11, 4), (22, 4), (16, 10)], L - 10)                     # the rock's lit top
+    g.face([(29, 22), (23, 29), (9, 29), (18, 23)], D + 10)                   # its underside
+    g.px([(7, 20), (25, 9), (26, 18), (12, 27), (20, 27), (6, 15)], D)
+    g.px([(13, 6), (8, 10), (24, 24)], H)
+    # The gem of chaos: a long rhombus, dark facets, edges catching the light.
+    top, left, bot, right = (19, 6), (9, 14), (13, 26), (24, 18)
+    mid = (16, 16)
+    g.face([top, left, mid], D + 30)
+    g.face([top, mid, right], O + 18)
+    g.face([left, bot, mid], D - 10)
+    g.face([mid, bot, right], O + 6)
+    g.line([left, top], H)
+    g.line([top, right], M)
+    g.line([(12, 21), (20, 12)], W)                                           # the seam of light
+    g.line([(13, 21), (21, 12)], L)
+    g.px([(17, 8), (16, 9)], W)
+    g.outline()
+    g.sparkle(29, 3)
+    g.sparkle(2, 4, 1)
+    g.sparkle(30, 28, 1)
+    return g.image()
 
 
 ORES = [ore0, ore1, ore2, ore3, ore4, ore5]
@@ -393,7 +245,7 @@ ORES = [ore0, ore1, ore2, ore3, ore4, ore5]
 if __name__ == "__main__":
     out = sys.argv[1]
     ims = [f() for f in ORES]
-    sheet = Image.new("RGB", (6 * 200, 290), "white")
+    sheet = Image.new("RGB", (6 * 200, 290), (238, 238, 232))
     for i, im in enumerate(ims):
         sheet.paste(im, (i * 200 + 4, 4), im)
         small = im.resize((64, 64), Image.LANCZOS)

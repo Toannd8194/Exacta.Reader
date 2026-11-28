@@ -261,7 +261,7 @@ def ore5():
 
 
 ORES_2_1 = [ore0, ore1, ore2, ore3, ore4, ore5]
-# 3.1: the ores in pixel art, in the style of the linh thạch (tools/khoang_thach.py).
+# 3.1.1: the ores as pixel gems (tools/khoang_thach.py).
 import khoang_thach  # noqa: E402
 ORES = khoang_thach.ORES
 
