@@ -50,6 +50,7 @@ class LinhGioiTest {
         DaoLo.started = true
         LinhGioi.reset()
         com.exacta.reader.data.DoKiep.reset()
+        com.exacta.reader.data.TienDinh.reset()
         LinhGioi.started = true
     }
 

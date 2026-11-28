@@ -43,6 +43,7 @@ class DaoPhapTest {
         com.exacta.reader.data.DaoLo.reset()
         com.exacta.reader.data.LinhGioi.reset()
         com.exacta.reader.data.DoKiep.reset()
+        com.exacta.reader.data.TienDinh.reset()
         TuLuyen.reset()
         TuLuyen.started = true
         TuLuyen.lastTick = today - 1

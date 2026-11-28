@@ -627,6 +627,8 @@ LAWS25 = [(m[0], m[2], m[3], *m[4:]) for m in re.findall(
     r'Law\("([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)",\s*listOf\("([^"]+)", "([^"]+)", "([^"]+)"\)\)', LINHGIOI)]
 assert len(LAWS25) == 8, len(LAWS25)
 
+TIEN_HIEU = strings(read('data', 'TienDinh.kt'), 'TIEN_HIEU')
+assert len(TIEN_HIEU) == 6
 DOKIEP = read('data', 'DoKiep.kt')
 KIEP26 = re.findall(r'Tang\("([^"]+)", (\w+), (\d+), "([^"]+)"\)', DOKIEP)
 KIEP_BY = {'LOI': 'pháp bảo, bản mệnh, nhục thân, Tử Lôi pháp tắc', 'PHAP_TAC': 'pháp tắc, đạo vực, thần thức',
@@ -676,7 +678,10 @@ def part2e():
     thans = table(['Hóa Thần', 'Từ', 'Lợi hại, Hợp Thể, Độ Kiếp'], [[f'<b>{e(t[0])}</b>', e(t[1]), e(t[2])] for t in THANS24], 'lib')
     laws = table(['Pháp tắc', 'Mở khi', 'Được', 'Ba thử thách'], [[f'<b>{e(l[0])}</b>', e(l[1]), e(l[2]), e(' → '.join(l[3:]))] for l in LAWS25], 'lib')
     kiep = table(['Tầng', 'Kiếp', 'Luật', 'Nền', 'Đỡ bằng'], [[str(i + 1), f'<b>{e(n)}</b>', e(r), f'{b}%', e(KIEP_BY[k])] for i, (n, k, b, r) in enumerate(KIEP26)], 'lib')
-    return chapter('VI', 'Đạo lộ và Lục Giới', 'Từ bản 2.4, mỗi người tu đi một trong năm con đường; bản 2.5 mở Linh giới, bản 2.6 dựng Độ Kiếp chín tầng. Con đường ấy, cùng cả đời tu, quyết định giới nào tiếp dẫn khi phi thăng.') + f'''
+    tienhieu = table(['Giới', 'Thành', 'Tiên hiệu'], [[f'<b>{e(g)}</b>', e(k), e(h)] for g, k, h in zip(
+        ['Cửu Tiêu Vân Khuyết', 'Huyết Nguyệt Trầm Uyên', 'Bát Nhã Liên Đài', 'Hồng Hoang Cổ Địa', 'Vong Xuyên Bỉ Ngạn', 'Thư Hải Vô Nhai'],
+        ['Thiên Tiên', 'Nghịch Tiên', 'Thiền Tiên', 'Chiến Tiên', 'Minh Tiên', 'Văn Tiên'], TIEN_HIEU)], 'lib')
+    return chapter('VI', 'Đạo lộ và Lục Giới', 'Từ bản 2.4, mỗi người tu đi một trong năm con đường; bản 2.5 mở Linh giới, bản 2.6 dựng Độ Kiếp chín tầng, bản 2.7 mở Lục Giới Môn và khép phần một. Con đường ấy, cùng cả đời tu, quyết định giới nào tiếp dẫn khi phi thăng.') + f'''
 {h2('Năm đạo lộ', True)}
 <p>Lên Trúc Cơ thì chọn đạo lộ, một lần cho cả đời tu, trước khi ngưng đan (cửa Kim Đan đòi điều này). Người đã qua Kim Đan từ bản cũ
 chọn được bất cứ lúc nào. Màn Đạo lộ đánh dấu đường «hợp nhất» với cách đọc của bạn.</p>
@@ -730,6 +735,16 @@ Giới Môn mới mở.</p>
 3.000, Hợp Thể 5.000, Đại Thừa 8.000, Phi Thăng 12.000; Tiên nhân vô tận. Một phần mười cuối hạn: đột phá liều mạng +10%. Diên Thọ
 Đan +50 năm. Ở <b>chế độ Chân Tu</b> (Cài đặt › Chế độ tu) cạn hạn là tọa hóa: chuyển thế, tu lại từ Luyện Khí, nhanh gấp rưỡi tới
 cảnh giới kiếp trước; pháp bảo, đạo hiệu, Niên kỷ, chữ đã đọc vẫn giữ. Mỗi lần chuyển thế cộng 10 cảm ứng Vong Xuyên Bỉ Ngạn.</p>
+
+{h2('Lục Giới Môn, màn kết, tiền đình', True)}
+<p>Từ bản 2.7. Phi Thăng đại viên mãn, qua ngũ suy, cảm ứng rõ một giới và vượt thiên kiếp cuối là <b>qua Lục Giới Môn</b>. Giới
+cảm ứng mạnh nhất tiếp dẫn; người tu thành tiên nhân của giới ấy và nhận <b>tiên hiệu</b>:</p>
+{tienhieu}
+<p>Qua cửa chỉ mang theo <b>bản mệnh pháp bảo, công pháp đang vận, linh căn và kiếp ấn</b>; phần còn lại ở lại Linh giới làm di sản
+(vẫn trong bộ sưu tập và Niên kỷ). Màn <b>Tiên đồ</b> tự mở một lần: đó là <b>màn kết phần một</b>, kể lại trọn đời tu (năm tháng,
+chữ, giờ, sách, tác giả, chuỗi, kỳ ngộ, pháp bảo, đạo hiệu, nghiệp lực), đạo đồ từng cảnh giới và hành trang. Năm giới chưa có
+phần hai: người tu đứng ở <b>tiền đình</b>, mọi chữ đọc từ ngày qua cửa được ghi lại để tính khi giới mở. Cửu Tiêu Vân Khuyết tiếp
+nối chín phẩm Thiên Tiên.</p>
 
 {h2('Lục Giới cảm ứng', True)}
 <p>Không ai chọn được giới để phi thăng. Mỗi giới chấm điểm cả đời tu; giới cao điểm nhất tiếp dẫn. Cửa Lục Giới Môn đòi cảm ứng

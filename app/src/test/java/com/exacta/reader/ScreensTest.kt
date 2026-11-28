@@ -370,6 +370,22 @@ class ScreensTest {
         l.reset(); l.started = true
     }
 
+    @Test fun ket() {
+        tabs(KetActivity::class.java, "ket_locked")
+        val cap = Store.realmCap
+        val words = Store.totalWords
+        Store.realmCap = 9
+        Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 300_000
+        com.exacta.reader.data.TuLuyen.gioi = 1
+        com.exacta.reader.data.TienDinh.onCross(seen = true)
+        com.exacta.reader.data.TienDinh.wordsAtCross = Store.totalWords - 120_000
+        tabs(KetActivity::class.java, "ket")
+        com.exacta.reader.data.TienDinh.reset(); com.exacta.reader.data.TienDinh.started = true
+        com.exacta.reader.data.TuLuyen.gioi = -1
+        Store.realmCap = cap
+        Store.totalWords = words
+    }
+
     @Test fun daoLo() {
         val d = com.exacta.reader.data.DaoLo
         d.reset(); d.started = true

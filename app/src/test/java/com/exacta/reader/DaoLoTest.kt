@@ -51,6 +51,7 @@ class DaoLoTest {
         DaoLo.reset()
         com.exacta.reader.data.LinhGioi.reset()
         com.exacta.reader.data.DoKiep.reset()
+        com.exacta.reader.data.TienDinh.reset()
         DaoLo.started = true
         DaoLo.rng = roll(99)
     }

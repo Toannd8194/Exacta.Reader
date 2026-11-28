@@ -167,7 +167,7 @@ Nguyên tắc chung cho cả sáu giới, để phần sau không lệch:
 - **Vẫn chỉ sinh ra từ việc đọc.** Mỗi giới đổi cách đọc được thưởng, không đổi nguồn.
 - **Một đời một giới.** Một đời tu chỉ vào một giới. Muốn thử giới khác thì chuyển thế (chế độ Chân Tu) hoặc mở một đời tu mới; đạo hiệu, bộ sưu tập và Niên kỷ vẫn giữ.
 - **Mang theo có hạn.** Qua cửa chỉ mang bản mệnh pháp bảo, công pháp đang vận, linh căn và kiếp ấn. Phần còn lại ở lại Linh giới làm di sản, như lúc rời Nhân giới.
-- **Màn kết của phần một.** Bước qua cửa là màn kết của Vạn Quyển Tiên Đồ phần một: Niên kỷ trọn đời tu và đạo hiệu theo giới («Tiếp Dẫn Tiên Quân», «Ma Tôn», «Bồ Tát», «Yêu Hoàng», «Minh Vương», «Thần Chủ»).
+- **Màn kết của phần một.** Bước qua cửa là màn kết của Vạn Quyển Tiên Đồ phần một: Niên kỷ trọn đời tu và tiên hiệu theo giới («Tiếp Dẫn Tiên Quân», «Huyết Nguyệt Ma Tôn», «Bát Nhã Bồ Tát», «Hồng Hoang Chiến Hoàng», «Vong Xuyên Minh Vương», «Thư Hải Văn Chủ»).
 - **Tiền đình.** Khi phần của một giới chưa ra, cửa giới đó vẫn tiếp dẫn được. Người tu đứng ở tiền đình của giới; tu vi vẫn tăng theo chữ đọc và được ghi lại, để khi phần mới ra, mọi chữ đã đọc đều được tính.
 
 ## Đạo lộ: nhiều cách để thành đạo
@@ -352,7 +352,7 @@ Mỗi bước là một bản phát hành chơi được, có test chụp màn h
 | 2.4 | Đạo lộ; các kiểu kết đan, kết anh, hóa thần; luyện thể, luyện thần; kiêm tu, Song Anh | Đạo lộ |
 | 2.5 | Phi thăng; Linh giới, pháp tắc, Hợp Thể, Đại Thừa, đạo vực; 36 tông môn (đã làm) | Linh giới |
 | 2.6 | Độ Kiếp chín tầng, Phi Thăng kỳ, thiên nhân ngũ suy; chế độ Chân Tu (đã làm) | Độ Kiếp |
-| 2.7 | Lục Giới Môn: lời gọi, chọn giới, mang theo, màn kết phần một, tiền đình | Lục Giới |
+| 2.7 | Lục Giới Môn: cảm ứng thay lời gọi, giới tiếp dẫn, mang theo, tiên hiệu, màn kết phần một, tiền đình (đã làm) | Tiên đồ |
 | 3.x | Mỗi giới một phần riêng (Tiên, Ma, Phật, Yêu, Minh, Thần), để ngỏ | theo giới |
 
 ### Nguyên tắc cân bằng

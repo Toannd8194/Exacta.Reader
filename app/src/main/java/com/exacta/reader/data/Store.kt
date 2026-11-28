@@ -247,6 +247,7 @@ object Store {
         if (!DaoLo.started) DaoLo.migrate()
         if (!LinhGioi.started) LinhGioi.migrate()
         if (!DoKiep.started) DoKiep.migrate()
+        if (!TienDinh.started) TienDinh.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -324,6 +325,7 @@ object Store {
         o.optJSONObject("daoLo")?.let { DaoLo.read(it) }
         o.optJSONObject("linhGioi")?.let { LinhGioi.read(it) }
         o.optJSONObject("doKiep")?.let { DoKiep.read(it) }
+        o.optJSONObject("tienDinh")?.let { TienDinh.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -409,6 +411,7 @@ object Store {
             put("daoLo", DaoLo.toJson())
             put("linhGioi", LinhGioi.toJson())
             put("doKiep", DoKiep.toJson())
+            put("tienDinh", TienDinh.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -465,6 +468,7 @@ object Store {
         DaoLo.reset()
         LinhGioi.reset()
         DoKiep.reset()
+        TienDinh.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -478,6 +482,7 @@ object Store {
         if (!DaoLo.started) DaoLo.migrate()
         if (!LinhGioi.started) LinhGioi.migrate()
         if (!DoKiep.started) DoKiep.migrate()
+        if (!TienDinh.started) TienDinh.migrate()
         dirty = true
         save()
         return true

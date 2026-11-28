@@ -269,7 +269,7 @@ object TuLuyen {
     /** "Luyện Khí trung kỳ", "Kim Đan hậu kỳ", "Nguyên Anh đại viên mãn", "Tiên nhân tam phẩm". */
     fun name(): String {
         val r = realm()
-        if (r >= 9) return Realm.name(Store.level()).replace("Tiên nhân", tienKind())
+        if (r >= 9) return if (TienDinh.atForecourt()) "${tienKind()} · tiền đình" else Realm.name(Store.level()).replace("Tiên nhân", tienKind())
         val s = shownSub()
         return if (r == 0) "Luyện Khí " + (if (atCeiling()) TIEU[3] else LK_KY[s / 3]) else "${shortName(r)} ${TIEU[s]}"
     }
@@ -590,6 +590,7 @@ object TuLuyen {
             Store.gainLinhThach(50L * g)
             lastResult = "Đột phá ${Realm.baseName(g)} ngày ${dayText(t)}$extra"
             Store.note("Đột phá thành công: ${Realm.baseName(g)}$extra · ${50 * g} linh thạch")
+            if (g == 9) TienDinh.onCross()
             Store.fortune(com.exacta.reader.game.KyNgo.T_BREAK, g)
             advance()
         } else {

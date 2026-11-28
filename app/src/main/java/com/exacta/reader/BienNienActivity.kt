@@ -134,6 +134,8 @@ class BienNienActivity : TabActivity() {
                 "Phi thăng Linh giới: tiết điểm, trảm trần duyên, phi thăng kiếp; bản mệnh, di bảo; tám pháp tắc, đạo vực; 36 tông môn; độ đậm theo %; cửa chưa tới thì khóa."),
             Era("2.6", "Cửu Cửu Quy Nhất",
                 "Độ Kiếp chín tầng, kiếp lực, kiếp ấn; thiên nhân ngũ suy; thọ nguyên, chế độ Chân Tu; tĩnh thất sáu đẳng; 32 đan phương; gieo hạt bằng thẻ."),
+            Era("2.7", "Tiên Môn Tiếp Dẫn",
+                "Qua Lục Giới Môn: mang theo bản mệnh, công pháp, linh căn, kiếp ấn; tiên hiệu theo giới; màn kết phần một; tiền đình ghi mọi chữ đọc chờ phần hai."),
         )
     }
 }

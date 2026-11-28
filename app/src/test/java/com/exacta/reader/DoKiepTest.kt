@@ -54,6 +54,7 @@ class DoKiepTest {
         DaoLo.reset()
         LinhGioi.reset()
         DoKiep.reset()
+        com.exacta.reader.data.TienDinh.reset()
         DoKiep.started = true
         DoKiep.lifeStart = today
         DoKiep.rng = roll(0)

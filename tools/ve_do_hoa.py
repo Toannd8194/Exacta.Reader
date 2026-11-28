@@ -621,9 +621,97 @@ def icon_linhgioi():
     return p.image(128)
 
 
+def icon_tiendo():
+    """Tiên đồ: Lục Giới Môn, a gate of two pillars under a moon, rays from the doorway."""
+    p = Pen(128)
+    p.poly([(10, 34), (64, 16), (118, 34), (112, 40), (16, 40)], BLACK)
+    for x in (30, 98):
+        p.poly([(x - 8, 40), (x + 8, 40), (x + 8, 120), (x - 8, 120)], BLACK)
+    p.poly([(44, 120), (84, 120), (84, 116), (44, 116)], BLACK)
+    for a in (-70, -45, -20, 20, 45, 70):
+        tt = math.radians(a - 90)
+        p.line([(64 + 14 * math.cos(tt), 100 + 14 * math.sin(tt)), (64 + 30 * math.cos(tt), 100 + 30 * math.sin(tt))], BLACK, 4)
+    p.circle(64, 100, 9, BLACK)
+    sparkle(p, 64, 6, 6)
+    return p.image(128)
+
+
+# --- Linh thạch (pixel art, 32 × 32 logical, ×4) -----------------------------------------------------
+
+def linhthach():
+    """Linh thạch: an emerald-cut spirit stone in pixel art, light from the upper left, a dark rim,
+    a bright table with a streak of light and a four-point glint of linh khí. Drawn on a 32 grid."""
+    n = 32
+    g = Image.new("L", (n, n), 0)
+    a = Image.new("L", (n, n), 0)
+    dg, da = ImageDraw.Draw(g), ImageDraw.Draw(a)
+    outer = [(11, 3), (20, 3), (26, 9), (26, 22), (20, 28), (11, 28), (5, 22), (5, 9)]
+    table = [(13, 9), (18, 9), (21, 12), (21, 19), (18, 22), (13, 22), (10, 19), (10, 12)]
+    facets = [  # (outer i, outer i+1, inner i+1, inner i), shade
+        (0, 230), (1, 175), (2, 120), (3, 80), (4, 100), (5, 140), (6, 190), (7, 215),
+    ]
+    for i, shade in facets:
+        pts = [outer[i], outer[(i + 1) % 8], table[(i + 1) % 8], table[i]]
+        dg.polygon(pts, fill=shade)
+        da.polygon(pts, fill=255)
+    dg.polygon(table, fill=165)
+    da.polygon(table, fill=255)
+    # The table darkens to the lower right in bands, as deep glass does.
+    px = g.load()
+    tmask = Image.new("L", (n, n), 0)
+    ImageDraw.Draw(tmask).polygon(table, fill=255)
+    for y in range(n):
+        for x in range(n):
+            if tmask.getpixel((x, y)):
+                d = (x - 10) + (y - 9)
+                px[x, y] = (205, 175, 145, 115)[min(3, d // 6)]
+    # Facet edges: light where they face the light, dark where they turn away.
+    for (x0, y0), (x1, y1) in zip(outer, table):
+        dg.line([(x0, y0), (x1, y1)], fill=70 if x0 + y0 > 33 else 240)
+    for i in range(8):
+        (x0, y0), (x1, y1) = table[i], table[(i + 1) % 8]
+        dg.line([(x0, y0), (x1, y1)], fill=245 if x0 + y0 + x1 + y1 < 64 else 75)
+    # The outer edge catches the light on the upper left.
+    for (x0, y0), (x1, y1) in [(outer[6], outer[7]), (outer[7], outer[0]), (outer[0], outer[1])]:
+        dg.line([(x0, y0), (x1, y1)], fill=250)
+    # A streak and a glint on the table.
+    for i in range(4):
+        px[12 + i, 15 - i] = 255
+        px[13 + i, 15 - i] = 230
+    px[14, 10] = 255; px[15, 10] = 255
+    # The inner shadow on the lower right, one pixel in from the rim.
+    inner = []
+    for y in range(n):
+        for x in range(n):
+            if a.getpixel((x, y)) and x + y > 30 and any(0 <= x + dx < n and 0 <= y + dy < n and not a.getpixel((x + dx, y + dy))
+                                                         for dx, dy in ((1, 0), (0, 1), (1, 1))):
+                inner.append((x, y))
+    for x, y in inner:
+        px[x, y] = 55
+    # The dark rim: every empty pixel touching the stone.
+    rim = []
+    for y in range(n):
+        for x in range(n):
+            if a.getpixel((x, y)) == 0 and any(0 <= x + dx < n and 0 <= y + dy < n and a.getpixel((x + dx, y + dy))
+                                               for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                rim.append((x, y))
+    for x, y in rim:
+        px[x, y] = 25
+        a.putpixel((x, y), 255)
+    # A four-point glint of linh khí above the right shoulder, and motes of linh khí.
+    for (x, y), v in [((28, 2), 255), ((28, 1), 60), ((28, 3), 60), ((27, 2), 60), ((29, 2), 60), ((28, 0), 30), ((28, 4), 30), ((26, 2), 30), ((30, 2), 30)]:
+        px[x, y] = v
+        a.putpixel((x, y), 255)
+    for x, y in [(3, 6), (29, 26), (2, 25), (30, 14)]:
+        px[x, y] = 120
+        a.putpixel((x, y), 255)
+    rgba = Image.merge("RGBA", (g, g, g, a))
+    return rgba.resize((128, 128), Image.NEAREST)
+
+
 ICONS = {'congphap': icon_congphap, 'dongphu': icon_dongphu, 'phapbao': icon_phapbao, 'daohieu': icon_daohieu,
          'nienky': icon_nienky, 'tongmon': icon_tongmon, 'daolo': icon_daolo, 'dao_phap': icon_dao_phap,
-         'dao_the': icon_dao_the, 'dao_than': icon_dao_than, 'dao_kiem': icon_dao_kiem, 'dao_bach': icon_dao_bach, 'linhgioi': icon_linhgioi}
+         'dao_the': icon_dao_the, 'dao_than': icon_dao_than, 'dao_kiem': icon_dao_kiem, 'dao_bach': icon_dao_bach, 'linhgioi': icon_linhgioi, 'tiendo': icon_tiendo}
 
 # --- Âm Dương phẩm frames (pixel art, 128 logical × 2) ---------------------------------------------
 
@@ -722,6 +810,17 @@ def yin_yang_frame(src):
 
 def main():
     preview = "--preview" in sys.argv
+    if "--linhthach" in sys.argv:
+        im = linhthach()
+        im.save(os.path.join(RES, "art_linhthach.png"))
+        os.makedirs(os.path.join(ROOT, "build"), exist_ok=True)
+        sheet = Image.new("RGB", (300, 150), "white")
+        sheet.paste(im, (10, 10), im)
+        small = im.resize((48, 48), Image.LANCZOS)
+        sheet.paste(small, (180, 50), small)
+        sheet.save(os.path.join(ROOT, "build", "linhthach.png"))
+        print("linhthach")
+        return
     if "--icons" in sys.argv:
         for name, f in ICONS.items():
             f().save(os.path.join(RES, f"ic_{name}.png"))

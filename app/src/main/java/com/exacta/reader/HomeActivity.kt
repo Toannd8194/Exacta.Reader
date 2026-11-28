@@ -46,6 +46,7 @@ class HomeActivity : AppCompatActivity() {
                 HomeView.Action.TONG_MON -> startActivity(Intent(this, TongMonActivity::class.java))
                 HomeView.Action.DAO_LO -> startActivity(Intent(this, DaoLoActivity::class.java))
                 HomeView.Action.LINH_GIOI -> startActivity(Intent(this, LinhGioiActivity::class.java))
+                HomeView.Action.KET -> startActivity(Intent(this, KetActivity::class.java))
                 HomeView.Action.BI_CANH -> startActivity(Intent(this, BiCanhActivity::class.java))
                 HomeView.Action.PERMISSION -> askAllFiles()
             }
@@ -61,6 +62,8 @@ class HomeActivity : AppCompatActivity() {
         Store.checkRealm()
         Store.checkTitles()
         com.exacta.reader.ui.KyNgoPopup.show(this)
+        // Lục Giới Môn just crossed: the màn kết, once.
+        if (com.exacta.reader.data.TienDinh.crossed() && !com.exacta.reader.data.TienDinh.endSeen) startActivity(Intent(this, KetActivity::class.java))
         view.shuffle()
         view.rescale()
         clock.postDelayed(minute, 60_000)

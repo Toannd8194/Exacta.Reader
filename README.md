@@ -4,9 +4,9 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.6.apk`](dist/Van-Quyen-Tien-Do-2.6.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.7.apk`](dist/Van-Quyen-Tien-Do-2.7.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
-Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.6): [`dist/Van-Quyen-Tien-Do-2.6-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.6-Cam-nang.pdf).
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.7): [`dist/Van-Quyen-Tien-Do-2.7-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.7-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
 pháp, 72 pháp bảo, 18 bộ, 18 đan dược và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
 
@@ -16,6 +16,20 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, Đ
 Bản 2.0, 2.1, 2.2 là ba bước đầu của lộ trình; các bước 2.3 – 2.7 còn đó. Từ 2.1, bản thiết kế có thêm chương Độ Kiếp
 (giai đoạn đặc biệt chín tầng kiếp) và chương Phi Thăng kỳ: cảnh giới cuối của Linh giới, nơi Lục Giới Môn mở và người
 tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả đời tu và nghiệp lực. Phần sau cửa để ngỏ cho các bản 3.x.
+
+## Bản 2.7 · Tiên Môn Tiếp Dẫn (hết phần một)
+
+- **Qua Lục Giới Môn** (đột phá vào Tiên nhân): giới cảm ứng mạnh nhất tiếp dẫn; ghi lại những gì mang qua cửa (bản mệnh
+  pháp bảo, công pháp đang vận, linh căn, kiếp ấn), phần còn lại ở lại Linh giới làm di sản.
+- **Tiên hiệu theo giới**: Tiếp Dẫn Tiên Quân, Huyết Nguyệt Ma Tôn, Bát Nhã Bồ Tát, Hồng Hoang Chiến Hoàng, Vong Xuyên Minh
+  Vương, Thư Hải Văn Chủ. Hiện trên thanh trên của Home (trừ khi đang chọn mang một đạo hiệu khác); chạm để mở Tiên đồ.
+- **Màn kết phần một** (màn Tiên đồ, tự mở một lần khi vừa qua cửa; nút Tiên đồ thay Linh giới ở Home): Qua cửa (tiên hiệu,
+  lời tiễn của giới, một đời tu bằng con số), Đạo đồ (từng cảnh giới, ngày tới, Kim Đan, Nguyên Anh, Hóa Thần, pháp tắc, đạo
+  vực, kiếp ấn), Hành trang, Tiền đình.
+- **Tiền đình**: năm giới chưa có phần hai; người tu đứng ở tiền đình, tên cảnh giới là «Nghịch Tiên · tiền đình»…, mọi chữ
+  đọc từ ngày qua cửa được ghi lại để tính khi giới mở. Cửu Tiêu Vân Khuyết tiếp nối chín phẩm Thiên Tiên.
+- Ai đã là Tiên nhân từ bản cũ: được tiếp dẫn theo cảm ứng hiện tại và xem màn kết một lần.
+- versionCode 270.
 
 ## Bản 2.6 · Cửu Cửu Quy Nhất
 
@@ -234,6 +248,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.4 | Ngũ Lộ Đồng Quy | Đạo lộ, mười hai Kim Đan, sáu Hóa Thần, Song Anh, Lục Giới cảm ứng, nghiệp lực |
   | 2.5 | Phá Toái Hư Không | Phi thăng Linh giới, pháp tắc, đạo vực, 36 tông môn, độ đậm theo % |
   | 2.6 | Cửu Cửu Quy Nhất | Độ Kiếp chín tầng, ngũ suy, thọ nguyên, Chân Tu, tĩnh thất sáu đẳng, 32 đan phương |
+  | 2.7 | Tiên Môn Tiếp Dẫn | Lục Giới Môn, tiên hiệu theo giới, màn kết phần một, tiền đình |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.
