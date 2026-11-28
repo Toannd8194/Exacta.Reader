@@ -125,7 +125,8 @@ object TuLuyen {
         return v.coerceIn(0, 100)
     }
 
-    fun tamCanhTier(v: Int = tamCanh()) = TAM_CANH_AT.indexOfLast { v >= it }
+    /** 3.2: a tâm pháp at Hóa cảnh lifts it one tier. */
+    fun tamCanhTier(v: Int = tamCanh()) = (TAM_CANH_AT.indexOfLast { v >= it } + DaoPhap.hoaCanhStep()).coerceAtMost(TAM_CANH_AT.size - 1)
 
     fun authors(): Int = Store.books.values.filter { it.finishDay >= 0 }.map { it.author.trim().lowercase() }.filter { it.isNotEmpty() }.toSet().size
 
@@ -188,8 +189,9 @@ object TuLuyen {
     )
     /** The tâm pháp that lean to each realm. */
     val GIOI_TAM = arrayOf(
-        intArrayOf(PhapMon.TP_TINH_TOA), intArrayOf(PhapMon.TP_CHUNG_MA), intArrayOf(PhapMon.TP_THANH_TAM, PhapMon.TP_VONG_NGA),
-        intArrayOf(PhapMon.TP_DUONG_KHI), intArrayOf(PhapMon.TP_BANG_TAM, PhapMon.TP_DINH_HON), intArrayOf(),
+        intArrayOf(PhapMon.TP_TINH_TOA, PhapMon.TP_THU_HUONG), intArrayOf(PhapMon.TP_CHUNG_MA), intArrayOf(PhapMon.TP_THANH_TAM, PhapMon.TP_VONG_NGA),
+        intArrayOf(PhapMon.TP_DUONG_KHI, PhapMon.TP_KIM_CUONG), intArrayOf(PhapMon.TP_BANG_TAM, PhapMon.TP_DINH_HON, PhapMon.TP_TU_BI),
+        intArrayOf(PhapMon.TP_BAT_NHA, PhapMon.TP_VAN_TAM),
     )
     /** The đạo lộ (main 20, kiêm 10) and the sect (+10) of each realm. */
     val GIOI_WAY = intArrayOf(DaoLo.PHAP, DaoLo.KIEM, -1, DaoLo.THE, DaoLo.BACH, DaoLo.THAN)
@@ -715,7 +717,7 @@ object TuLuyen {
             dayVeryLong[d] = (dayVeryLong[d] ?: 0) + 1
             DaoLo.onLongSitting()
         }
-        if (before < TAM_SITTING && session >= TAM_SITTING) DaoPhap.onSitting30()
+        DaoPhap.onTamSeconds(book, before, session)
         if (before < VONG_NGA_SITTING && session >= VONG_NGA_SITTING && DaoPhap.tamWorks(PhapMon.TP_VONG_NGA)) {
             // Vong Ngã Chân Quyết: a sitting of 90 minutes counts twice for thể phách and tâm cảnh.
             dayLong[d] = (dayLong[d] ?: 0) + 1

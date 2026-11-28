@@ -401,38 +401,118 @@ class CongPhapActivity : TabActivity() {
 
     // --- Tâm pháp ------------------------------------------------------------------------------------
 
+    private fun tamOwned() = DaoPhap.tam.keys.sortedWith(compareBy<Int>({ it !in DaoPhap.tamOn }, { PhapMon.TAM_PHAP[it].phai }, { it }))
+
+    private fun tamPer(k: Ink, a: RectF): Int {
+        val top = k.lineH(k.smallBold) + 14 * k.u
+        return ((a.height() - top) / (rowH(k) + 10 * k.u)).toInt().coerceAtLeast(1)
+    }
+
+    private fun tamNext(id: Int): String {
+        val c = DaoPhap.canh(id)
+        return if (c >= 5) "đã tới Hóa cảnh" else "${PhapMon.CANH[c + 1]} ở ${PhapMon.CANH_AT[c + 1]}"
+    }
+
     private fun tamPhap(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
+        val list = tamOwned()
+        val per = tamPer(k, a)
+        val pages = 1 + (list.size + per - 1) / per
+        if (page == 0) tamSlotsPage(c, k, a, hits) else tamList(c, k, a, list, page - 1, per, hits)
+        return pages
+    }
+
+    /** Page one: the slots, what they turn by, and what goes with what. */
+    private fun tamSlotsPage(c: Canvas, k: Ink, a: RectF, hits: Hits) {
         val u = k.u
         val small = k.small
         val sl = k.lineH(small)
         val slots = DaoPhap.tamSlots()
         var y = k.section(c, a.left, a.top, a.width(), "TÂM PHÁP · ĐANG VẬN ${DaoPhap.tamOn.size}/$slots Ô")
-        y = para(c, k, (if (slots == 0) "Ô tâm pháp mở ở Trúc Cơ (một ô), thêm ô thứ hai ở Nguyên Anh. " else if (slots == 1) "Thêm ô thứ hai ở Nguyên Anh. " else "") +
-            "Mỗi buổi đọc liền từ 30 phút là một lần vận chuyển cho mọi tâm pháp đang vận: ${PhapMon.TAM_NHAP_MON} lần là nhập môn, hiệu quả bắt đầu; ${PhapMon.TAM_DAI_THANH} lần là đại thành, tâm cảnh +5.",
+        val more = when { slots < 1 -> "Ô đầu mở ở Trúc Cơ. "; slots < 2 -> "Ô thứ hai mở ở Nguyên Anh. "; slots < 3 -> "Ô thứ ba mở ở Luyện Hư. "; else -> "" }
+        y = para(c, k, more + "Buổi đọc liền 30 phút là một lần vận chuyển, đúng lối của bộ thì tính hai. " +
+            "Cảnh: Nhập môn 5 · Tiểu thành 15 · Đại thành 30 · Viên mãn 60 · Hóa cảnh 100.",
             a.left, y, a.width(), small, 3) + 12 * u
-        val list = DaoPhap.tam.keys.sortedWith(compareBy<Int>({ it !in DaoPhap.tamOn }, { it }))
-        if (list.isEmpty()) {
-            para(c, k, "Chưa có tâm pháp. Ngọc giản tâm pháp rơi từ kỳ ngộ, bí cảnh tuần, hoặc đổi ở Tàng Kinh Các. Phá Trúc Cơ được truyền Thanh Tâm Quyết.", a.left, y, a.width(), small, 3)
-            return 1
-        }
         val h = rowH(k)
-        val per = ((a.bottom - y) / (h + 10 * u)).toInt().coerceAtLeast(1)
-        for (id in list.drop(page * per).take(per)) {
-            val t = PhapMon.TAM_PHAP[id]
-            val n = DaoPhap.tam[id] ?: 0
-            val on = id in DaoPhap.tamOn
-            val level = listOf("chưa nhập môn", "nhập môn", "đại thành")[DaoPhap.tamLevel(id)]
-            val next = when {
-                n < PhapMon.TAM_NHAP_MON -> " · nhập môn ở ${PhapMon.TAM_NHAP_MON}"
-                n < PhapMon.TAM_DAI_THANH -> " · đại thành ở ${PhapMon.TAM_DAI_THANH}"
-                else -> ""
+        if (slots == 0) {
+            y = para(c, k, "Chưa mở ô nào. Phá Trúc Cơ được sư phụ truyền Thanh Tâm Quyết.", a.left, y, a.width(), small, 2) + 12 * u
+        }
+        for (i in 0 until slots) {
+            val r = RectF(a.left, y, a.right, y + h)
+            val id = DaoPhap.tamOn.getOrNull(i)
+            if (id == null) {
+                row(c, k, r, "Ô thứ ${i + 1} còn trống", "", "Chọn một bộ ở trang sau.",
+                    if (DaoPhap.tam.isEmpty()) "Ngọc giản tâm pháp rơi từ kỳ ngộ, bí cảnh tuần, Tàng Kinh Các." else "Bấm «Xem» ở một bộ rồi «Vận».", null, false, false, hits) {}
+            } else {
+                val t = PhapMon.TAM_PHAP[id]
+                val way = DaoPhap.inTamWay(id, null)
+                row(c, k, r, t.name, PhapMon.CANH[DaoPhap.canh(id)], "${PhapMon.PHAI[t.phai]} · ${DaoPhap.turns(id)} lần vận chuyển · ${tamNext(id)}",
+                    "Lối: ${PhapMon.TAM_WAY[t.way]}" + if (way) " (đang đúng lối)" else "", "Xem", true, true, hits) { tamDialog(id) }
             }
-            val btn = if (on) "Thôi vận" else if (DaoPhap.tamOn.size < slots) "Vận" else "Hết ô"
-            row(c, k, RectF(a.left, y, a.right, y + h), t.name, if (on) "đang vận" else "", "$n lần vận chuyển · $level$next", t.text,
-                btn, on || DaoPhap.tamOn.size < slots, on, hits) { if (on) DaoPhap.stopTam(id) else DaoPhap.runTam(id) }
             y += h + 10 * u
         }
-        return (list.size + per - 1) / per
+        // What goes with what.
+        y += 6 * u
+        y = k.section(c, a.left, y, a.width(), "TƯƠNG SINH · XUNG KHẮC")
+        val notes = ArrayList<String>()
+        notes.add("Đạo gia đi cùng Phật môn: cả hai vận chuyển nhanh ${PhapMon.DAO_PHAT_PERCENT}%" + if (DaoPhap.daoPhat()) " (đang có)." else ".")
+        notes.add("Ma đạo không vận cùng Phật môn, Nho môn; mỗi bộ Ma đạo đang vận làm tâm ma tăng nhanh ${PhapMon.MA_STIR}%" +
+            if (DaoPhap.maCount() > 0) " (đang ${PhapMon.MA_STIR * DaoPhap.maCount()}%)." else ".")
+        for (n in notes) {
+            if (y + sl > a.bottom) break
+            k.diamond(c, a.left + 6 * u, y + sl * 0.5f, 4 * u)
+            y = para(c, k, n, a.left + 20 * u, y, a.width() - 20 * u, small, 2) + 6 * u
+        }
+        // What the tâm pháp give now.
+        val now = (1..PhapMon.E_BI_CANH).mapNotNull { e -> DaoPhap.tamLv(e).takeIf { it > 0 }?.let { e to it } }
+        val traits = DaoPhap.tamOn.filter { DaoPhap.canh(it) >= 1 && PhapMon.TAM_PHAP[it].trait.isNotEmpty() }
+        if ((now.isNotEmpty() || traits.isNotEmpty()) && y + 3 * sl < a.bottom) {
+            y += 10 * u
+            y = k.section(c, a.left, y, a.width(), "TÂM PHÁP ĐANG CHO")
+            val lines = traits.map { PhapMon.TAM_PHAP[it].trait } + now.map { (e, lv) -> PhapMon.effectText(e, lv) }
+            para(c, k, lines.joinToString(" · "), a.left, y, a.width(), small, ((a.bottom - y) / sl).toInt().coerceIn(1, 4))
+        }
+    }
+
+    private fun tamList(c: Canvas, k: Ink, a: RectF, list: List<Int>, page: Int, per: Int, hits: Hits) {
+        val u = k.u
+        var y = k.section(c, a.left, a.top, a.width(), "TÂM PHÁP ĐÃ CÓ · ${list.size}/${PhapMon.TAM_PHAP.size} BỘ")
+        val h = rowH(k)
+        for (id in list.drop(page * per).take(per)) {
+            val t = PhapMon.TAM_PHAP[id]
+            val on = id in DaoPhap.tamOn
+            val clash = if (on) null else DaoPhap.clashWith(id)
+            val line1 = "${PhapMon.CANH[DaoPhap.canh(id)]} · ${DaoPhap.turns(id)} lần vận chuyển" +
+                (if (on) " · đang vận" else if (clash != null) " · khắc ${PhapMon.TAM_PHAP[clash].name}" else "")
+            row(c, k, RectF(a.left, y, a.right, y + h), t.name, PhapMon.PHAI[t.phai], line1, "Lối: ${PhapMon.TAM_WAY[t.way]}",
+                "Xem", true, on, hits) { tamDialog(id) }
+            y += h + 10 * u
+        }
+    }
+
+    /** A tâm pháp in full: run it, stop it, or close. */
+    private fun tamDialog(id: Int) {
+        val t = PhapMon.TAM_PHAP[id]
+        val cc = DaoPhap.canh(id)
+        val on = id in DaoPhap.tamOn
+        val clash = if (on) null else DaoPhap.clashWith(id)
+        val way = if (t.way == PhapMon.W_FINISH) "đọc trọn một cuốn tính ${PhapMon.FINISH_TURNS} lần vận chuyển."
+            else "${PhapMon.TAM_WAY[t.way]}: buổi đó tính hai lần."
+        val msg = buildString {
+            append("${PhapMon.PHAI[t.phai]} · ${PhapMon.CANH[cc]} · ${DaoPhap.turns(id)} lần vận chuyển")
+            if (cc < 5) append(" · ${tamNext(id)}")
+            append("\n\nLối vận chuyển: $way")
+            if (t.trait.isNotEmpty()) append("\n\nĐặc chất (từ Nhập môn): ${t.trait}.")
+            append("\n\nNhập môn, Tiểu thành, Viên mãn: ${PhapMon.effectSteps(t.e1, 1, 2, 3)}.")
+            append("\nĐại thành mở, Hóa cảnh gấp đôi: ${PhapMon.effectSteps(t.e2, 1, 2)}.")
+            append("\nĐại thành: tâm cảnh +5. Hóa cảnh: tâm cảnh lên một bậc.")
+            append("\n\n${PhapMon.PHAI[t.phai]}: ${PhapMon.PHAI_TEXT[t.phai]}.")
+            if (clash != null) append("\n\nKhông vận được cùng ${PhapMon.TAM_PHAP[clash].name} đang vận.")
+            else if (!on && DaoPhap.tamOn.size >= DaoPhap.tamSlots()) append("\n\nHết ô: thôi vận một bộ trước.")
+        }
+        val b = AlertDialog.Builder(this).setTitle(t.name).setMessage(msg)
+        if (on) b.setPositiveButton("Thôi vận") { _, _ -> DaoPhap.stopTam(id); refresh() }
+        else if (clash == null && DaoPhap.tamOn.size < DaoPhap.tamSlots()) b.setPositiveButton("Vận") { _, _ -> if (DaoPhap.runTam(id)) toast("Đang vận ${t.name}"); refresh() }
+        b.setNegativeButton("Đóng", null).show()
     }
 
     // --- Thuật pháp ----------------------------------------------------------------------------------
@@ -511,9 +591,9 @@ class CongPhapActivity : TabActivity() {
                     Triple(it.name, "Công pháp ${PhapMon.PHAM[it.pham]}", "Mạch ${PhapMon.MACH[it.mach]}" +
                         (if (aff > 0) " · hợp" else if (aff < 0) " · khắc" else "") + " · ${PhapMon.effectText(it.effect)}")
                 }
-                PhapMon.TAM -> PhapMon.TAM_PHAP[id].let { Triple(it.name, "Tâm pháp", it.text) }
+                PhapMon.TAM -> PhapMon.TAM_PHAP[id].let { Triple(it.name, "Tâm pháp", "${PhapMon.PHAI[it.phai]} · ${it.text}") }
                 PhapMon.DAN -> com.exacta.reader.game.DanDao.RECIPES[id].let {
-                    Triple(it.name, "Đan phương", "${com.exacta.reader.game.DanDao.GROUPS[it.group]} · ${it.text} · cần ${com.exacta.reader.game.DanDao.CAP[it.cap - 1].lowercase()}")
+                    Triple(it.name, "Đan phương", "${it.text} · cần ${com.exacta.reader.game.DanDao.CAP[it.cap - 1].lowercase()}")
                 }
                 else -> PhapMon.THUAT_PHAP[id].let { Triple(it.name, PhapMon.KINDS[it.kind], "${PhapMon.attrName(it.attr)} · ${it.text}") }
             }

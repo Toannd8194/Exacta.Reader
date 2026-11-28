@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.1.apk`](dist/Van-Quyen-Tien-Do-3.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.2.apk`](dist/Van-Quyen-Tien-Do-3.2.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,30 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.2 · Tâm Đăng Bất Diệt
+
+- **18 tâm pháp trong bốn phái**: Đạo gia (Thanh Tâm Quyết, Tĩnh Tọa Kinh, Băng Tâm Quyết, Vong Ngã Chân Quyết, Dưỡng Khí
+  Thiên), Phật môn (Định Hồn Chân Ngôn, Vô Niệm Kinh, Kim Cương Bất Động Tâm, Từ Bi Quán, Bát Nhã Tâm Đăng), Ma đạo (Đạo Tâm
+  Chủng Ma, Huyết Tâm Quyết, Thiên Ma Giải Thể, Vạn Niệm Phệ Tâm), Nho môn (Hạo Nhiên Chính Khí, Thư Hương Dưỡng Tâm, Tam Tỉnh
+  Ngô Thân, Văn Tâm Quyết). Bảy bộ cũ giữ nguyên đặc chất và số lần vận chuyển.
+- **Năm cảnh**: Nhập môn 5, Tiểu thành 15, Đại thành 30, Viên mãn 60, Hóa cảnh 100 lần vận chuyển. Hiệu ứng thứ nhất mở ở
+  Nhập môn và mạnh lên ở Tiểu thành, Viên mãn; Đại thành mở hiệu ứng thứ hai (gấp đôi ở Hóa cảnh) và tâm cảnh +5; Hóa cảnh
+  nâng tâm cảnh một bậc. Hiệu ứng tâm pháp là các đặc hiệu của công pháp, cộng dồn với công pháp.
+- **Vận chuyển theo lối đọc**: mỗi buổi đọc liền 30 phút vẫn là một lần; đọc đúng lối của bộ thì tính hai. Lối gồm: không nhảy
+  chương trong ngày, buổi tới 45, 60, 90 phút, chuỗi từ 7 ngày, đọc sớm, đọc đêm, cả ngày một cuốn, buổi thứ ba trong ngày, tác
+  giả mới, đọc lại, đọc khi tâm ma từ 30, ngày đã nhảy chương, cuốn đã quá nửa. Hạo Nhiên Chính Khí: mỗi cuốn đọc trọn tính 5 lần.
+- **Tương sinh, xung khắc**: Ma đạo không vận cùng Phật môn hay Nho môn, và mỗi bộ Ma đạo đang vận làm tâm ma tăng nhanh 15%.
+  Đạo gia đi cùng Phật môn thì cả hai vận chuyển nhanh 20%.
+- **Ba ô tâm pháp**: một ở Trúc Cơ, hai ở Nguyên Anh, ba ở Luyện Hư.
+- Tab Tâm pháp: trang 1 là các ô đang vận, lối của từng bộ, tương sinh xung khắc và mọi thứ tâm pháp đang cho; các trang sau
+  là các bộ đã có (chạm «Xem» để vận hay thôi vận).
+- **Khoáng thạch và linh thạch vẽ lại** ở lưới 128 (gấp bốn), 16 tầng xám, mặt cắt nhận ánh sáng. Mỗi phẩm một vẻ, đẹp dần:
+  Hoàng chỉ là hòn đá có vân thạch anh; Huyền là đá bổ đôi, vân mã não quanh hốc tinh thể; Địa là cụm bảy tinh thể; Thiên là
+  thiên thạch rực lửa; Âm Dương là cả một hành tinh, ngày đêm chia theo Thái Cực, có vành đá bay quanh; Hỗn Độn là cả một vũ
+  trụ trong vỏ cầu, hư vô mà thật chất: thiên hà xoay giữa hư không, vỏ cứng sáng, một bên vỡ ra trôi đi. Linh thạch: cụm
+  khối tinh thể trong suốt trên ụ đất.
+- versionCode 320.
 
 ## Bản 3.1 · Vạn Pháp Trùng Tu
 
@@ -360,6 +384,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.0 | Cửu Tiêu Khai Thiên | Phần hai: Cửu Tiêu, chín bậc tiên vị, tiên lực, Thiên Đình |
   | 3.0.1 | Sơn Môn Định Phận | Tông môn mở theo cảnh giới, chức vụ theo thời gian, bổng ngày, phản tông |
   | 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, lối vận công, xung quan, chuyển tu, phụ tu |
+  | 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, bốn phái, năm cảnh, vận chuyển theo lối đọc, xung khắc, ba ô |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

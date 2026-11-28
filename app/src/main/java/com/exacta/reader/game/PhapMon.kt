@@ -115,6 +115,9 @@ object PhapMon {
     fun isSwitch(e: Int) = e == E_HOI_KHI || e == E_BI_CANH || e == E_NONE
     fun effectValue(e: Int, level: Int) = EFFECT_STEP[e] * level
     fun effectText(e: Int, level: Int = 1) = EFFECT_TEXT[e].replace("{}", effectValue(e, level).toString())
+    /** The text with the value at each level, as "30/60/90". */
+    fun effectSteps(e: Int, vararg levels: Int) =
+        if (isSwitch(e)) effectText(e) else EFFECT_TEXT[e].replace("{}", levels.joinToString("/") { effectValue(e, it).toString() })
     val EFFECTS get() = EFFECT_TEXT.indices.map { effectText(it) }
 
     // Khuyết điểm: from Địa phẩm, a công pháp running asks something back.
@@ -263,7 +266,7 @@ object PhapMon {
     /** Phụ tu: its words grow at this share, its first đặc hiệu counts. */
     const val PHU_PERCENT = 50
 
-    // --- Tâm pháp ----------------------------------------------------------------------------------
+    // --- Tâm pháp (3.2 Tâm Đăng Bất Diệt) ----------------------------------------------------------
 
     const val TP_THANH_TAM = 0
     const val TP_TINH_TOA = 1
@@ -272,22 +275,122 @@ object PhapMon {
     const val TP_CHUNG_MA = 4
     const val TP_DUONG_KHI = 5
     const val TP_DINH_HON = 6
+    const val TP_VO_NIEM = 7
+    const val TP_KIM_CUONG = 8
+    const val TP_TU_BI = 9
+    const val TP_BAT_NHA = 10
+    const val TP_HUYET_TAM = 11
+    const val TP_GIAI_THE = 12
+    const val TP_PHE_TAM = 13
+    const val TP_HAO_NHIEN = 14
+    const val TP_THU_HUONG = 15
+    const val TP_TAM_TINH = 16
+    const val TP_VAN_TAM = 17
 
-    class TamPhap(val name: String, val text: String)
+    /** Four schools. Ma đạo is strong and costs; it will not run beside Phật môn or Nho môn. */
+    const val PHAI_DAO = 0
+    const val PHAI_PHAT = 1
+    const val PHAI_MA = 2
+    const val PHAI_NHO = 3
+    val PHAI = arrayOf("Đạo gia", "Phật môn", "Ma đạo", "Nho môn")
+    val PHAI_TEXT = arrayOf(
+        "Lặng lòng, đọc liền, dưỡng căn cơ",
+        "Một lòng một cuốn, vững qua kiếp nạn",
+        "Mạnh và nhanh, nhưng tâm ma tăng nhanh 15% mỗi bộ đang vận",
+        "Sống bằng sách: đọc trọn, đọc lại, tự xét mình",
+    )
+    /** Ma đạo running: a rise of tâm ma comes this much stronger, each. */
+    const val MA_STIR = 15
+    /** Đạo gia beside Phật môn: both turn this much more. */
+    const val DAO_PHAT_PERCENT = 20
 
+    /** The ways a tâm pháp turns: a sitting that keeps to its way counts twice. */
+    const val W_NO_JUMP = 0
+    const val W_LONG45 = 1
+    const val W_LONG60 = 2
+    const val W_LONG90 = 3
+    const val W_STREAK = 4
+    const val W_DAWN = 5
+    const val W_NIGHT = 6
+    const val W_ONE_BOOK = 7
+    const val W_THIRD = 8
+    const val W_NEW_AUTHOR = 9
+    const val W_REREAD = 10
+    const val W_FINISH = 11
+    const val W_TAM_MA = 12
+    const val W_RESTLESS = 13
+    const val W_DEEP = 14
+    val TAM_WAY = arrayOf(
+        "buổi 30 phút mà trong ngày chưa nhảy chương",
+        "buổi đọc liền tới 45 phút",
+        "buổi đọc liền tới 60 phút",
+        "buổi đọc liền tới 90 phút",
+        "đọc khi chuỗi ngày đọc từ 7 ngày",
+        "đọc sớm, 4 – 8 giờ sáng",
+        "đọc đêm, 21 – 3 giờ",
+        "cả ngày chỉ đọc một cuốn",
+        "buổi 30 phút thứ ba trong ngày",
+        "đọc tác giả chưa đọc trọn cuốn nào",
+        "đọc lại cuốn đã đọc trọn, hay cuốn mới quay lại",
+        "đọc trọn một cuốn: tính 5 lần vận chuyển",
+        "đọc lúc tâm ma từ 30",
+        "đọc trong ngày đã nhảy chương",
+        "đọc cuốn đã quá nửa",
+    )
+    /** Ways that are judged when the sitting reaches this many minutes (the rest at 30). */
+    fun wayMinute(w: Int) = when (w) { W_LONG45 -> 45; W_LONG60 -> 60; W_LONG90 -> 90; W_FINISH -> -1; else -> 30 }
+    const val FINISH_TURNS = 5
+
+    /**
+     * A tâm pháp: its school, its way, the trait it always had (the seven of 2.1), the effect it opens
+     * at nhập môn and grows with each cảnh, and the one Đại thành opens. Effects are the đặc hiệu of
+     * công pháp and add up with them.
+     */
+    class TamPhap(val name: String, val phai: Int, val way: Int, val e1: Int, val e2: Int, val trait: String = "") {
+        /** The old line of text: the trait, or the first effect. */
+        val text get() = trait.ifEmpty { effectText(e1) }
+    }
+
+    /** Ids 0 – 6 are the tâm pháp of 2.1, kept for old saves. */
     val TAM_PHAP = listOf(
-        TamPhap("Thanh Tâm Quyết", "Tâm ma tăng chậm một nửa"),
-        TamPhap("Tĩnh Tọa Kinh", "Bế quan viên mãn được thêm 30% linh thạch"),
-        TamPhap("Băng Tâm Quyết", "Đứt chuỗi lần đầu mỗi tháng không sinh tâm ma"),
-        TamPhap("Vong Ngã Chân Quyết", "Buổi đọc từ 90 phút tính gấp đôi cho thể phách và tâm cảnh"),
-        TamPhap("Đạo Tâm Chủng Ma", "Tâm ma cao lại cộng tốc độ tu (tâm ma / 5, tối đa 20%); chỉ khi vận công pháp Kiếm"),
-        TamPhap("Dưỡng Khí Thiên", "Căn cơ +5"),
-        TamPhap("Định Hồn Chân Ngôn", "Đột phá hỏng chỉ tẩu hỏa nhập ma khi tâm ma từ 85"),
+        TamPhap("Thanh Tâm Quyết", PHAI_DAO, W_NO_JUMP, E_TAM_CANH, E_CAN_CO, "Tâm ma tăng chậm một nửa"),
+        TamPhap("Tĩnh Tọa Kinh", PHAI_DAO, W_LONG45, E_THE_PHACH, E_LINH_THACH, "Bế quan viên mãn được thêm 30% linh thạch"),
+        TamPhap("Băng Tâm Quyết", PHAI_DAO, W_STREAK, E_TINH_TAM, E_HOI_KHI, "Đứt chuỗi lần đầu mỗi tháng không sinh tâm ma"),
+        TamPhap("Vong Ngã Chân Quyết", PHAI_DAO, W_LONG90, E_TAM_CANH, E_BINH_CANH, "Buổi đọc từ 90 phút tính gấp đôi cho thể phách và tâm cảnh"),
+        TamPhap("Đạo Tâm Chủng Ma", PHAI_MA, W_TAM_MA, E_DOT_PHA, E_AP_CHE, "Tâm ma cao lại cộng linh lực (tâm ma / 5, tối đa 20%) khi vận công pháp Kiếm"),
+        TamPhap("Dưỡng Khí Thiên", PHAI_DAO, W_DAWN, E_CAN_CO, E_LINH_LUC, "Căn cơ +5"),
+        TamPhap("Định Hồn Chân Ngôn", PHAI_PHAT, W_ONE_BOOK, E_TINH_TAM, E_DO_KIEP, "Đột phá hỏng chỉ tẩu hỏa nhập ma khi tâm ma từ 85"),
+        TamPhap("Vô Niệm Kinh", PHAI_PHAT, W_LONG60, E_THAN_THUC, E_NUT_THAT),
+        TamPhap("Kim Cương Bất Động Tâm", PHAI_PHAT, W_NO_JUMP, E_DO_KIEP, E_KIEP_NGAY),
+        TamPhap("Từ Bi Quán", PHAI_PHAT, W_NEW_AUTHOR, E_CAN_CO, E_DAN),
+        TamPhap("Bát Nhã Tâm Đăng", PHAI_PHAT, W_DAWN, E_THAN_THUC, E_NGO_TINH),
+        TamPhap("Huyết Tâm Quyết", PHAI_MA, W_NIGHT, E_LINH_LUC, E_DOT_PHA),
+        TamPhap("Thiên Ma Giải Thể", PHAI_MA, W_LONG90, E_DOT_PHA, E_DO_KIEP),
+        TamPhap("Vạn Niệm Phệ Tâm", PHAI_MA, W_RESTLESS, E_KY_NGO, E_LINH_LUC),
+        TamPhap("Hạo Nhiên Chính Khí", PHAI_NHO, W_FINISH, E_TAM_CANH, E_NGO_TINH),
+        TamPhap("Thư Hương Dưỡng Tâm", PHAI_NHO, W_REREAD, E_VAN_CONG, E_KY_NGO),
+        TamPhap("Tam Tỉnh Ngô Thân", PHAI_NHO, W_THIRD, E_TINH_TAM, E_TAM_CANH),
+        TamPhap("Văn Tâm Quyết", PHAI_NHO, W_DEEP, E_VAN_CONG, E_LINH_THACH),
     )
     const val TAM_PRICE = 150L
-    /** Vận chuyển (sittings of 30 minutes) to nhập môn and đại thành. */
+
+    /** Năm cảnh, at these vận chuyển. */
+    val CANH = arrayOf("Chưa nhập môn", "Nhập môn", "Tiểu thành", "Đại thành", "Viên mãn", "Hóa cảnh")
+    val CANH_AT = intArrayOf(0, 5, 15, 30, 60, 100)
+    fun canh(turns: Int) = CANH_AT.indexOfLast { turns >= it }
+    /** The level each cảnh gives the first effect, and the second. */
+    val E1_LV = intArrayOf(0, 1, 2, 2, 3, 3)
+    val E2_LV = intArrayOf(0, 0, 0, 1, 1, 2)
     const val TAM_NHAP_MON = 5
     const val TAM_DAI_THANH = 30
+    const val TAM_HOA_CANH = 100
+
+    /** Ma đạo will not run beside Phật môn or Nho môn. */
+    fun clash(a: Int, b: Int): Boolean {
+        val pa = TAM_PHAP[a].phai
+        val pb = TAM_PHAP[b].phai
+        return (pa == PHAI_MA && (pb == PHAI_PHAT || pb == PHAI_NHO)) || (pb == PHAI_MA && (pa == PHAI_PHAT || pa == PHAI_NHO))
+    }
 
     // --- Thuật pháp --------------------------------------------------------------------------------
 

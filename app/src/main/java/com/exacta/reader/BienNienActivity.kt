@@ -148,6 +148,8 @@ class BienNienActivity : TabActivity() {
                 "36 tông môn mở cửa dần theo cảnh giới; chức vụ cần ở tông đủ lâu; bổng linh thạch mỗi ngày đọc theo chức và cống hiến; phản tông bị phạt."),
             Era("3.1", "Vạn Pháp Trùng Tu",
                 "72 công pháp trong 12 mạch; ba đặc hiệu mở ở tầng 1, 5, 9 và khuyết điểm; lối vận công theo cách đọc; xung quan; chuyển tu cùng mạch; phụ tu; khoáng thạch vẽ lại."),
+            Era("3.2", "Tâm Đăng Bất Diệt",
+                "18 tâm pháp trong bốn phái; năm cảnh từ Nhập môn tới Hóa cảnh; vận chuyển theo lối đọc riêng; Ma đạo xung khắc Phật, Nho; ba ô tâm pháp; khoáng thạch và linh thạch vẽ lại."),
         )
     }
 }

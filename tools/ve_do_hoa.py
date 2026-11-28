@@ -261,7 +261,7 @@ def ore5():
 
 
 ORES_2_1 = [ore0, ore1, ore2, ore3, ore4, ore5]
-# 3.1.1: the ores as pixel gems (tools/khoang_thach.py).
+# 3.2: the ores and the linh thạch, on a 128 grid (tools/khoang_thach.py).
 import khoang_thach  # noqa: E402
 ORES = khoang_thach.ORES
 
@@ -889,7 +889,7 @@ def yin_yang_frame(src):
 def main():
     preview = "--preview" in sys.argv
     if "--linhthach" in sys.argv:
-        im = linhthach()
+        im = khoang_thach.linhthach()          # 3.2: drawn with the ores, on the 128 grid
         im.save(os.path.join(RES, "art_linhthach.png"))
         os.makedirs(os.path.join(ROOT, "build"), exist_ok=True)
         sheet = Image.new("RGB", (300, 150), "white")

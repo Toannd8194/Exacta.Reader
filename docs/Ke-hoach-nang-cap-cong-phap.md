@@ -78,6 +78,9 @@ Bản kế hoạch, chưa có code. Mọi con số là điểm xuất phát, s�
   - Đạo gia đi với Phật môn thì cả hai vận chuyển +20%.
 - **Ô tâm pháp**: 1 ở Trúc Cơ, 2 ở Nguyên Anh, 3 ở Luyện Hư.
 
+*Bản 3.2 làm khác*: buổi 30 phút vẫn luôn là một lần vận chuyển, đúng lối thì tính hai (đọc lệch không bị phạt); hiệu ứng tâm
+pháp dùng chung loại đặc hiệu của công pháp và cộng dồn; Ma đạo trả giá bằng tâm ma tăng nhanh 15% mỗi bộ.
+
 ## C. Thuật pháp: 36 thuật, thi triển chủ động
 
 - **Sáu loại**: công kích, phòng ngự, độn thuật, khống chế, phụ trợ, thần thông.
@@ -126,7 +129,7 @@ Làm loạt này **trước** năm giới còn lại của phần hai: công ph�
 | Bản | Tên | Nội dung |
 |---|---|---|
 | 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, khuyết điểm, lối vận công, xung quan, chuyển tu, phụ tu (**đã làm**) |
-| 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, 4 trường phái, 5 cảnh, vận chuyển theo lối đọc, xung khắc, 3 ô |
+| 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, 4 trường phái, 5 cảnh, vận chuyển theo lối đọc, xung khắc, 3 ô (**đã làm**) |
 | 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, thi triển trong bí cảnh và kiếp, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông |
 | 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn theo chức, tham ngộ bằng chữ đọc, tàn quyển, đồ phổ, tự sáng công pháp |
 | 3.5 – 3.9 | | Năm giới còn lại của phần hai, như bản thiết kế phần hai |

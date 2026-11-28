@@ -20,8 +20,9 @@ import kotlin.random.Random
  *    nine tầng grow with the words read while it runs, and tầng 4, 7, 9 need ngộ tính.
  *  - Ngộ tính: what the tầng of each book were in 1.0. A book read to tầng 4 and 7 gives one each,
  *    read through one more (two for a long book).
- *  - Tâm pháp: one slot from Trúc Cơ, two from Nguyên Anh; each sitting of 30 minutes is one vận
- *    chuyển, five to nhập môn (the effect turns on), thirty to đại thành.
+ *  - Tâm pháp (3.2): one slot from Trúc Cơ, two from Nguyên Anh, three from Luyện Hư. Each sitting of
+ *    30 minutes is one vận chuyển, two if it keeps to the tâm pháp's way; five cảnh at 5, 15, 30, 60,
+ *    100. Ma đạo will not run beside Phật môn or Nho môn; Đạo gia beside Phật môn turns 20% more.
  *  - Thuật pháp: cards that act by themselves in the events of the game (bí cảnh, kiếp, đột phá
  *    hỏng, tâm ma); each use adds thuần thục.
  *  - Ngọc giản come from kỳ ngộ, the weekly bí cảnh and the Tàng Kinh Các (linh thạch).
@@ -49,6 +50,10 @@ object DaoPhap {
     val tam = LinkedHashMap<Int, Int>()  // tâm pháp -> vận chuyển
     val tamOn = ArrayList<Int>()
     var bangTamMonth = -1
+    // 3.2 Tâm Đăng Bất Diệt.
+    val tamFrac = HashMap<Int, Int>()    // tenths of a vận chuyển owed by Đạo gia beside Phật môn
+    var tamDay = -1L                     // the day of the sittings counted below
+    var tamSittings = 0                  // sittings of 30 minutes that day
     val thuat = LinkedHashMap<Int, Thuat>()
     val thuatOn = ArrayList<Int>()
     var shields = 0                      // tâm ma attacks still blocked in this kiếp
@@ -70,6 +75,7 @@ object DaoPhap {
     fun reset() {
         started = false; roots.clear(); di = -1; awakenDay = -1; hoursAt.fill(0); washed = false
         ngo = 0; ngoEarned = 0; cong.clear(); active = -1; capNoted = -1; tam.clear(); tamOn.clear(); bangTamMonth = -1
+        tamFrac.clear(); tamDay = -1; tamSittings = 0
         thuat.clear(); thuatOn.clear(); shields = 0; liemTucDay = -1; offerWeek = -1; offers.clear(); scrolls = 0; gifted = 0
         phu = -1; xung = 0; xungCost = 0; inherited.clear(); wayWords = 0; lastXung = ""
     }
@@ -211,7 +217,11 @@ object DaoPhap {
      * The level of a kind of đặc hiệu: one for each open đặc hiệu of the công pháp running, two for
      * its tuyệt học, one for the first đặc hiệu of the phụ tu.
      */
-    fun lv(e: Int): Int {
+    /** The level of an effect: the công pháp's and the tâm pháp's together. */
+    fun lv(e: Int): Int = if (PhapMon.isSwitch(e)) minOf(1, congLv(e) + tamLv(e)) else congLv(e) + tamLv(e)
+
+    /** The level the công pháp running (and the phụ tu) give an effect. */
+    fun congLv(e: Int): Int {
         if (e == PhapMon.E_NONE) return 0
         var n = 0
         activeDef()?.let { d ->
@@ -228,7 +238,7 @@ object DaoPhap {
     fun flaw(f: Int) = f != PhapMon.F_NONE && activeDef()?.flaw == f
 
     /** Everything the công pháp give now, kind by kind: (text, level). */
-    fun effectsNow(): List<Pair<Int, Int>> = (1..PhapMon.E_BI_CANH).mapNotNull { e -> lv(e).takeIf { it > 0 }?.let { e to it } }
+    fun effectsNow(): List<Pair<Int, Int>> = (1..PhapMon.E_BI_CANH).mapNotNull { e -> congLv(e).takeIf { it > 0 }?.let { e to it } }
 
     fun gainCong(id: Int): Boolean {
         if (id !in CONG_PHAP.indices || id in cong) return false
@@ -443,7 +453,7 @@ object DaoPhap {
             if (a > 0) list.add("Hợp linh căn (${PhapMon.attrName(d.attr)})" to a)
             if (a < 0) list.add("Khắc linh căn (${PhapMon.attrName(d.attr)})" to a)
         }
-        if (linhLucBonus() > 0) list.add("Đặc hiệu công pháp" to linhLucBonus())
+        if (linhLucBonus() > 0) list.add((if (tamLv(PhapMon.E_LINH_LUC) > 0) "Đặc hiệu công pháp, tâm pháp" else "Đặc hiệu công pháp") to linhLucBonus())
         if (chungMa() > 0) list.add("Đạo Tâm Chủng Ma" to chungMa())
         if (DongPhu.speedBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.speedBonus())
         list.addAll(DaoLo.speedParts())
@@ -475,30 +485,57 @@ object DaoPhap {
     fun onFinish(book: Book) {
         if (!started) return
         gainNgo(1 + (if (book.words >= TuLuyen.NGO_DAO_WORDS) 1 else 0) + lv(PhapMon.E_NGO_TINH), "Đọc trọn «${book.title}»")
+        // 3.2: the tâm pháp that turn with a book read through.
+        for (id in tamOn.toList()) if (TAM_PHAP[id].way == PhapMon.W_FINISH) turn(id, PhapMon.FINISH_TURNS)
     }
 
     // --- Tâm pháp ------------------------------------------------------------------------------------
 
+    /** Ô tâm pháp: one at Trúc Cơ, two at Nguyên Anh, three at Luyện Hư. */
     fun tamSlots() = when {
+        Store.realmCap >= 5 -> 3
         Store.realmCap >= 3 -> 2
         Store.realmCap >= 1 -> 1
         else -> 0
     }
 
-    fun tamLevel(id: Int): Int = (tam[id] ?: 0).let { if (it >= PhapMon.TAM_DAI_THANH) 2 else if (it >= PhapMon.TAM_NHAP_MON) 1 else 0 }
-    /** A tâm pháp in a slot and past nhập môn: its effect is on. */
+    fun turns(id: Int) = tam[id] ?: 0
+    /** Cảnh: 0 chưa nhập môn, 1 Nhập môn … 5 Hóa cảnh. */
+    fun canh(id: Int) = PhapMon.canh(turns(id))
+    /** The 2.1 levels: 1 from nhập môn, 2 from đại thành. */
+    fun tamLevel(id: Int): Int = canh(id).let { if (it >= 3) 2 else if (it >= 1) 1 else 0 }
+    /** A tâm pháp in a slot and past nhập môn: its trait is on. */
     fun tamWorks(id: Int) = id in tamOn && tamLevel(id) >= 1
+
+    /** The level the tâm pháp in their slots give an effect. */
+    fun tamLv(e: Int): Int {
+        if (e == PhapMon.E_NONE) return 0
+        var n = 0
+        for (id in tamOn) {
+            val t = TAM_PHAP[id]
+            val c = canh(id)
+            if (t.e1 == e) n += PhapMon.E1_LV[c]
+            if (t.e2 == e) n += PhapMon.E2_LV[c]
+        }
+        return n
+    }
+
+    /** Hóa cảnh: tâm cảnh one tier higher. */
+    fun hoaCanhStep() = if (tamOn.any { canh(it) >= 5 }) 1 else 0
+
+    /** Why `id` cannot go into a slot beside the ones running, or null. */
+    fun clashWith(id: Int): Int? = tamOn.firstOrNull { it != id && PhapMon.clash(id, it) }
 
     fun gainTam(id: Int): Boolean {
         if (id !in TAM_PHAP.indices || id in tam) return false
         tam[id] = 0
-        if (tamOn.size < tamSlots()) tamOn.add(id)
+        if (tamOn.size < tamSlots() && clashWith(id) == null) tamOn.add(id)
         Store.touch()
         return true
     }
 
     fun runTam(id: Int): Boolean {
-        if (id !in tam || id in tamOn || tamOn.size >= tamSlots()) return false
+        if (id !in tam || id in tamOn || tamOn.size >= tamSlots() || clashWith(id) != null) return false
         tamOn.add(id)
         Store.touch()
         return true
@@ -510,27 +547,91 @@ object DaoPhap {
         return ok
     }
 
-    /** A sitting reached 30 minutes: one vận chuyển of every tâm pháp in a slot. */
-    fun onSitting30() {
-        // Minh Tâm Tự: each sitting counts twice.
-        val step = if (TongMon.perk(TongMon.MINH_TAM)) 2 else 1
-        for (id in tamOn) {
-            val before = tam[id] ?: 0
-            val n = before + step
-            tam[id] = n
-            if (before < PhapMon.TAM_NHAP_MON && n >= PhapMon.TAM_NHAP_MON) Store.note("${TAM_PHAP[id].name} nhập môn: ${TAM_PHAP[id].text.replaceFirstChar { it.lowercase() }}")
-            if (before < PhapMon.TAM_DAI_THANH && n >= PhapMon.TAM_DAI_THANH) Store.note("${TAM_PHAP[id].name} đại thành: tâm cảnh +5")
+    fun maCount() = tamOn.count { TAM_PHAP[it].phai == PhapMon.PHAI_MA }
+    /** Đạo gia beside Phật môn: both turn 20% more. */
+    fun daoPhat() = tamOn.any { TAM_PHAP[it].phai == PhapMon.PHAI_DAO } && tamOn.any { TAM_PHAP[it].phai == PhapMon.PHAI_PHAT }
+
+    /** Does the reading now keep to the way of `id`? */
+    fun inTamWay(id: Int, book: Book?, hour: Int = java.time.LocalTime.now().hour): Boolean {
+        val t = today()
+        return when (TAM_PHAP[id].way) {
+            PhapMon.W_NO_JUMP -> (TuLuyen.dayJumps[t] ?: 0) == 0
+            PhapMon.W_LONG45 -> Store.sessionNow >= 45 * 60
+            PhapMon.W_LONG60 -> Store.sessionNow >= 60 * 60
+            PhapMon.W_LONG90 -> Store.sessionNow >= 90 * 60
+            PhapMon.W_STREAK -> Store.streak() >= 7
+            PhapMon.W_DAWN -> hour in 4..7
+            PhapMon.W_NIGHT -> hour >= 21 || hour <= 2
+            PhapMon.W_ONE_BOOK -> (NhatKy.days[t]?.books?.size ?: 0) <= 1
+            PhapMon.W_THIRD -> tamDay == t && tamSittings >= 3
+            PhapMon.W_NEW_AUTHOR -> inWay(PhapMon.THAN, book)
+            PhapMon.W_REREAD -> book != null && (book.finishDay >= 0 || (book.backDay >= 0 && t - book.backDay < 7))
+            PhapMon.W_TAM_MA -> TuLuyen.tamMa >= 30
+            PhapMon.W_RESTLESS -> (TuLuyen.dayJumps[t] ?: 0) > 0
+            PhapMon.W_DEEP -> book != null && book.maxProgress >= 0.5
+            else -> false
         }
-        if (tamOn.isNotEmpty()) Store.touch()
     }
 
-    fun tamCanhBonus() = 5 * tamOn.count { tamLevel(it) >= 2 } + PhapMon.effectValue(PhapMon.E_TAM_CANH, lv(PhapMon.E_TAM_CANH)) - (if (flaw(PhapMon.F_TAM_CANH)) 5 else 0)
+    /** `n` vận chuyển for `id`: Minh Tâm Tự doubles them, Đạo gia beside Phật môn adds a fifth. */
+    private fun turn(id: Int, n: Int) {
+        val t = TAM_PHAP[id]
+        var whole = n * (if (TongMon.perk(TongMon.MINH_TAM)) 2 else 1)
+        if (daoPhat() && (t.phai == PhapMon.PHAI_DAO || t.phai == PhapMon.PHAI_PHAT)) {
+            val f = (tamFrac[id] ?: 0) + whole * PhapMon.DAO_PHAT_PERCENT / 10
+            whole += f / 10
+            tamFrac[id] = f % 10
+        }
+        val before = turns(id)
+        val after = before + whole
+        tam[id] = after
+        val c0 = PhapMon.canh(before)
+        val c1 = PhapMon.canh(after)
+        if (c1 > c0) Store.note("${t.name} ${PhapMon.CANH[c1].lowercase()}: " + when (c1) {
+            1 -> t.text.replaceFirstChar { it.lowercase() }
+            3 -> "mở ${PhapMon.effectText(t.e2).replaceFirstChar { it.lowercase() }}; tâm cảnh +5"
+            5 -> "tâm cảnh lên một bậc"
+            else -> PhapMon.effectText(t.e1, PhapMon.E1_LV[c1]).replaceFirstChar { it.lowercase() }
+        })
+    }
+
+    /**
+     * The sitting has gone from `before` to `session` seconds. At 30 minutes every tâm pháp in a slot
+     * turns once, and once more if the reading keeps to its way; the ways of a long sitting are
+     * judged at 45, 60, 90 minutes.
+     */
+    fun onTamSeconds(book: Book?, before: Long, session: Long) {
+        if (tamOn.isEmpty()) return
+        val t = today()
+        var moved = false
+        if (before < 30 * 60 && session >= 30 * 60) {
+            if (tamDay != t) { tamDay = t; tamSittings = 0 }
+            tamSittings++
+            for (id in tamOn.toList()) {
+                val w = TAM_PHAP[id].way
+                turn(id, 1 + if (PhapMon.wayMinute(w) == 30 && inTamWay(id, book)) 1 else 0)
+            }
+            moved = true
+        }
+        for (m in intArrayOf(45, 60, 90)) {
+            if (before < m * 60 && session >= m * 60) {
+                for (id in tamOn.toList()) if (PhapMon.wayMinute(TAM_PHAP[id].way) == m) { turn(id, 1); moved = true }
+            }
+        }
+        if (moved) Store.touch()
+    }
+
+    /** The 2.1 name: a sitting of 30 minutes, the reading out of every way. */
+    fun onSitting30() = onTamSeconds(null, 0, 30 * 60L)
+
+    fun tamCanhBonus() = 5 * tamOn.count { canh(it) >= 3 } + PhapMon.effectValue(PhapMon.E_TAM_CANH, lv(PhapMon.E_TAM_CANH)) - (if (flaw(PhapMon.F_TAM_CANH)) 5 else 0)
     fun canCoBonus() = PhapMon.effectValue(PhapMon.E_CAN_CO, lv(PhapMon.E_CAN_CO)) + (if (tamWorks(PhapMon.TP_DUONG_KHI)) 5 else 0) - (if (flaw(PhapMon.F_CAN_CO)) 5 else 0)
 
     /** Percent of a rise of tâm ma that comes through. */
     fun stirPercent() = (if (tamWorks(PhapMon.TP_THANH_TAM)) 50 else 100) * (100 - PhapMon.effectValue(PhapMon.E_TINH_TAM, lv(PhapMon.E_TINH_TAM))).coerceAtLeast(40) / 100 *
         (if (flaw(PhapMon.F_TAM_MA)) 120 else 100) / 100 *
-        (if (TongMon.perk(TongMon.MINH_TAM)) 80 else 100) / 100
+        (if (TongMon.perk(TongMon.MINH_TAM)) 80 else 100) / 100 *
+        (100 + PhapMon.MA_STIR * maCount()) / 100
 
     /** Băng Tâm Quyết: the first broken streak of a month stirs nothing. */
     fun calmBreak(day: Long): Boolean {
@@ -827,6 +928,7 @@ object DaoPhap {
         put("cong", JSONObject().apply { cong.forEach { (id, c) -> put(id.toString(), JSONArray().put(c.words).put(c.opened)) } })
         put("tam", JSONObject().apply { tam.forEach { (id, n) -> put(id.toString(), n) } })
         put("tamOn", JSONArray().apply { tamOn.forEach { put(it) } }); put("bangTam", bangTamMonth)
+        put("tamFrac", JSONObject().apply { tamFrac.forEach { (id, n) -> put(id.toString(), n) } }); put("tamDay", tamDay); put("tamSittings", tamSittings)
         put("thuat", JSONObject().apply { thuat.forEach { (id, t) -> put(id.toString(), JSONArray().put(t.learned).put(t.uses)) } })
         put("thuatOn", JSONArray().apply { thuatOn.forEach { put(it) } }); put("shields", shields); put("liemTuc", liemTucDay)
         put("offerWeek", offerWeek)
@@ -855,6 +957,8 @@ object DaoPhap {
         o.optJSONObject("tam")?.let { m -> for (k in m.keys()) k.toInt().takeIf { it in TAM_PHAP.indices }?.let { tam[it] = m.getInt(k) } }
         o.optJSONArray("tamOn")?.let { a -> for (i in 0 until a.length()) a.getInt(i).takeIf { it in tam }?.let { tamOn.add(it) } }
         bangTamMonth = o.optInt("bangTam", -1)
+        o.optJSONObject("tamFrac")?.let { m -> for (k in m.keys()) tamFrac[k.toInt()] = m.getInt(k) }
+        tamDay = o.optLong("tamDay", -1); tamSittings = o.optInt("tamSittings")
         o.optJSONObject("thuat")?.let { m ->
             for (k in m.keys()) {
                 val id = k.toInt()

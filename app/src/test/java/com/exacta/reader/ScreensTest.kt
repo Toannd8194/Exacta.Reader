@@ -506,6 +506,21 @@ class ScreensTest {
         a.refresh()
         idle()
         shoot(root(a), "congphap_1_p2")
+        // 3.2: three slots at Luyện Hư, Đạo gia beside Phật môn, a Ma đạo bộ that will not go with them.
+        Store.realmCap = 5
+        listOf(PhapMon.TP_BAT_NHA, PhapMon.TP_HUYET_TAM, PhapMon.TP_HAO_NHIEN, PhapMon.TP_KIM_CUONG, PhapMon.TP_VAN_TAM).forEach { DaoPhap.gainTam(it) }
+        DaoPhap.tam[PhapMon.TP_THANH_TAM] = 64
+        DaoPhap.tam[PhapMon.TP_BAT_NHA] = 31
+        DaoPhap.tam[PhapMon.TP_HUYET_TAM] = 7
+        DaoPhap.runTam(PhapMon.TP_BAT_NHA)
+        a.selectTab(2)
+        idle()
+        shoot(root(a), "congphap_2_tam")
+        a.page = 1
+        a.refresh()
+        idle()
+        shoot(root(a), "congphap_2_p2")
+        Store.realmCap = 2
         // Before the awakening.
         DaoPhap.migrate()
         Store.hourSeconds.fill(0)
