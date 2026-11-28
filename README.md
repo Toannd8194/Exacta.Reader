@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.3.apk`](dist/Van-Quyen-Tien-Do-3.3.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.4.apk`](dist/Van-Quyen-Tien-Do-3.4.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,29 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.4 · Tàng Kinh Cửu Lâu
+
+- **Chín tầng lầu**: mỗi ngọc giản nằm ở một tầng (công pháp theo phẩm: Hoàng ở Nhất lâu, Huyền Nhị lâu, Địa Tam lâu, Thiên
+  Ngũ lâu, Linh Thất lâu, Tiên Cửu lâu; tâm pháp và thuật pháp mỗi bộ một tầng).
+  - Tầng 1 – 3 mở cho mọi người, mượn bằng linh thạch (40, 60, 90).
+  - Tầng 4 – 6 cần ở trong tông và cống hiến từng có 300, 800, 1.500; tầng 7 – 9 cần chức Chân truyền, Trưởng lão, Thái thượng
+    trưởng lão. Từ tầng 4 trả bằng **cống hiến**, và đó là kinh các của tông: giữ trước các mạch hợp đường tu của tông.
+  - Bộ công pháp đúng phẩm cửa kế tiếp cần luôn có: ở tầng của nó nếu đã mở, không thì ở Tam lâu, giá cao hơn. Không ai bị kẹt
+    cửa vì chưa vào tông.
+  - Mỗi thứ Hai các tầng đổi sách. Đan phương vẫn học được ngay.
+- **Án tham ngộ**: ngọc giản mượn ở Tàng Kinh hay đổi ở Bảo khố tông môn nằm trên giá; quyển đầu nằm trên án và nhận chữ đọc
+  ở bất kỳ cuốn nào, đủ chữ thì học được: Hoàng 1 vạn, Huyền 1,5 vạn, Địa 2,5 vạn … Tiên 30 vạn. Chạm quyển trên giá để đặt lên
+  án. Tông Vạn Quyển tham ngộ nhanh 25%. Ngọc giản rơi từ kỳ ngộ, bí cảnh vẫn học ngay.
+- **Tàn quyển**: công pháp Linh và Tiên phẩm rơi ở kỳ ngộ, bí cảnh thành 3 – 5 mảnh; đủ mảnh thì tự ghép, lên giá tham ngộ.
+- **Phản tông thì phế công**: bộ học từ kinh các hay Bảo khố của một tông đã phản mất đặc hiệu tầng 5 và tuyệt học, cho tới khi
+  đổi sang bộ khác cùng mạch.
+- **Đồ phổ** (tab mới): 126 công pháp, tâm pháp, thuật pháp; bộ đã thấy hiện tên, bộ chưa thấy hiện bóng mờ với mạch, phẩm và
+  tầng lầu cất nó.
+- **Tự sáng công pháp** (từ Hóa Thần): hai bộ viên mãn và 10 ngộ tính thành một bộ mang tên người tu đặt. Phẩm bằng bộ thấp hơn
+  cộng một, giữ mạch của bộ thứ nhất, lấy một đặc hiệu mỗi bên (đặc hiệu của bộ thứ nhất làm tuyệt học), không có khuyết điểm.
+  Tối đa ba bộ.
+- versionCode 340.
 
 ## Bản 3.3 · Thần Thông Quảng Đại
 
@@ -435,6 +458,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, bốn phái, năm cảnh, vận chuyển theo lối đọc, xung khắc, ba ô |
   | 3.2.1 | Bát Quái Khai Trận | Khoáng thạch pixel 32 ô có màu, tĩnh thất tới 90 phút và tiềm tu 120, 18 trận pháp |
   | 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, khống chế, thi triển, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông |
+  | 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn, án tham ngộ, tàn quyển, phế công, đồ phổ, tự sáng công pháp |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

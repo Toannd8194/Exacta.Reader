@@ -108,6 +108,9 @@ pháp dùng chung loại đặc hiệu của công pháp và cộng dồn; Ma đ
 - **Phản tông thì phế công**: bộ học từ kinh các tông mất đặc hiệu thứ hai và tuyệt học, cho tới khi đổi sang bộ khác cùng mạch.
 - **Đồ phổ**: sổ ghi mọi công pháp, tâm pháp, thuật pháp đã thấy, như sổ kỳ ngộ. Bộ chưa thấy hiện bóng mờ và nơi có thể gặp.
 
+*Bản 3.4 làm khác*: ngọc giản rơi từ kỳ ngộ và bí cảnh vẫn học ngay (chỉ đồ mượn, đồ đổi phải tham ngộ); bộ đúng phẩm cửa kế
+tiếp luôn có ở Tam lâu khi tầng của nó chưa mở, để không ai kẹt cửa; tự sáng công pháp nằm ở trang đầu Tàng Kinh.
+
 ## Màn hình
 
 Màn Công pháp có năm tab:
@@ -134,7 +137,7 @@ Làm loạt này **trước** năm giới còn lại của phần hai: công ph�
 | 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, khuyết điểm, lối vận công, xung quan, chuyển tu, phụ tu (**đã làm**) |
 | 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, 4 trường phái, 5 cảnh, vận chuyển theo lối đọc, xung khắc, 3 ô (**đã làm**) |
 | 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, thi triển trong bí cảnh và kiếp, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông (**đã làm**) |
-| 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn theo chức, tham ngộ bằng chữ đọc, tàn quyển, đồ phổ, tự sáng công pháp |
+| 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn theo chức, tham ngộ bằng chữ đọc, tàn quyển, đồ phổ, tự sáng công pháp (**đã làm**) |
 | 3.5 – 3.9 | | Năm giới còn lại của phần hai, như bản thiết kế phần hai |
 | 4.0 | | Quy Nhất |
 

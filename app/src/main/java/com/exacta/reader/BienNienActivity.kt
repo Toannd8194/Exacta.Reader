@@ -154,6 +154,8 @@ class BienNienActivity : TabActivity() {
                 "Khoáng thạch vẽ lại thành pixel 32 ô có màu: đá góc cạnh, tinh thiết bám đất, hồng ngọc ẩn trong đá, thiên thạch lửa, Âm Dương có khí tức, Hỗn Độn nửa thật nửa ảo; bế quan tới 90 phút, tiềm tu 120; 18 trận pháp."),
             Era("3.3", "Thần Thông Quảng Đại",
                 "36 thuật pháp sáu loại, thêm khống chế; thi triển trong bí cảnh, kiếp, đột phá hỏng; hồi chiêu tính bằng ngày đọc; thuần thục theo lần dùng và buổi đọc; tám hợp kích; mười hai bản mệnh thần thông."),
+            Era("3.4", "Tàng Kinh Cửu Lâu",
+                "Tàng Kinh chín tầng lầu, kinh các tông môn mở theo cống hiến và chức vụ; án tham ngộ: đọc đủ chữ mới học được ngọc giản; tàn quyển Linh, Tiên phẩm; phản tông thì phế công; đồ phổ; tự sáng công pháp."),
         )
     }
 }

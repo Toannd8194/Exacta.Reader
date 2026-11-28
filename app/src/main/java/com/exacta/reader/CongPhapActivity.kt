@@ -23,7 +23,7 @@ import java.time.LocalDate
 class CongPhapActivity : TabActivity() {
     override fun title() = "Công Pháp"
     override fun right() = "Ngộ tính ${DaoPhap.ngo}"
-    override fun tabs() = listOf("Linh căn", "Công pháp", "Tâm pháp", "Thuật pháp", "Tàng Kinh")
+    override fun tabs() = listOf("Linh căn", "Công pháp", "Tâm pháp", "Thuật pháp", "Tàng Kinh", "Đồ phổ")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Store.checkRealm()
@@ -39,7 +39,8 @@ class CongPhapActivity : TabActivity() {
         }
         2 -> tamPhap(c, k, area, page, hits)
         3 -> thuatPhap(c, k, area, page, hits)
-        else -> tangKinh(c, k, area, page, hits)
+        4 -> tangKinh(c, k, area, page, hits)
+        else -> doPho(c, k, area, page)
     }.let { if (tab == 1) maxOf(it, 2 + ownedPages(k, area)) else it }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
@@ -286,6 +287,10 @@ class CongPhapActivity : TabActivity() {
             k.pair(c, "Khuyết điểm", PhapMon.FLAWS[d.flaw], a.left + sl + 6 * u, y, a.width() - sl - 6 * u, small, sb)
             y += sl + 6 * u
         }
+        if (DaoPhap.crippled(id)) {
+            k.pair(c, "Phế công", "tông đã phản: tầng 5, tuyệt học bị phong", a.left + sl + 6 * u, y, a.width() - sl - 6 * u, small, sb)
+            y += sl + 6 * u
+        }
         y += 10 * u
 
         // The way of the line.
@@ -391,6 +396,7 @@ class CongPhapActivity : TabActivity() {
         val inherit = DaoPhap.inheritFrom(id)?.let { "\n\nChuyển tu: vận bộ này sẽ kế thừa ${Realm.van(DaoPhap.inheritWords(id))} vạn chữ từ ${PhapMon.CONG_PHAP[it].name}." } ?: ""
         val msg = "${PhapMon.PHAM[d.pham]} phẩm · mạch ${PhapMon.MACH[d.mach]} · tầng ${DaoPhap.tang(id)}\n\n" + lines.joinToString("\n") +
             (if (d.flaw != PhapMon.F_NONE) "\nKhuyết điểm: ${PhapMon.FLAWS[d.flaw]}" else "") +
+            (if (DaoPhap.crippled(id)) "\nPhế công: học từ kinh các của tông đã phản, đặc hiệu tầng 5 và tuyệt học bị phong. Đổi sang bộ khác cùng mạch thì thoát." else "") +
             "\n\nLối vận công: ${PhapMon.WAY[d.mach]}." + inherit
         val b = AlertDialog.Builder(this).setTitle(d.name).setMessage(msg)
             .setPositiveButton("Vận") { _, _ -> if (DaoPhap.run(id)) toast("Đang vận ${d.name}"); refresh() }
@@ -639,32 +645,110 @@ class CongPhapActivity : TabActivity() {
         b.setNegativeButton("Đóng", null).show()
     }
 
-    // --- Tàng Kinh Các -------------------------------------------------------------------------------
+    // --- Tàng Kinh Cửu Lâu ---------------------------------------------------------------------------
+
+    private fun openFloors() = (1..9).filter { DaoPhap.floorOpen(it) && DaoPhap.floorOffers(it).isNotEmpty() }
 
     private fun tangKinh(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
+        val floors = openFloors()
+        if (page == 0) anPage(c, k, a, hits) else floors.getOrNull(page - 1)?.let { floorPage(c, k, a, it, hits) }
+        return 1 + floors.size
+    }
+
+    /** Page one: the án and the shelf, the tàn quyển, the nine floors, the making of a công pháp. */
+    private fun anPage(c: Canvas, k: Ink, a: RectF, hits: Hits) {
         val u = k.u
         val small = k.small
-        val offers = DaoPhap.weekOffers()
-        var y = k.section(c, a.left, a.top, a.width(), "TÀNG KINH CÁC · ${Store.linhThach} LINH THẠCH")
-        y = para(c, k, "Mỗi thứ Hai kho đổi ngọc giản mới, luôn có một bộ công pháp đúng phẩm cửa kế tiếp cần. Ngọc giản còn rơi từ kỳ ngộ (tàn hồn truyền thừa) và bí cảnh tuần.",
-            a.left, y, a.width(), small, 2) + 10 * u
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        var y = k.section(c, a.left, a.top, a.width(), "ÁN THAM NGỘ · ${Store.linhThach} LINH THẠCH" + if (com.exacta.reader.data.TongMon.joined()) " · ${com.exacta.reader.data.TongMon.gongs} CỐNG HIẾN" else "")
+        val shelf = DaoPhap.shelf
+        if (shelf.isEmpty()) {
+            y = para(c, k, "Án trống. Ngọc giản mượn ở Tàng Kinh hay đổi ở tông môn phải đặt lên án, đọc đủ chữ mới học được: Hoàng phẩm 1 vạn chữ, Tiên phẩm 30 vạn. Chữ đọc ở cuốn nào cũng tính.",
+                a.left, y, a.width(), small, 3) + 12 * u
+        } else {
+            val s = shelf[0]
+            val pad = 14 * u
+            val card = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.ui10Bold) + 8 * u + 26 * u + sl)
+            k.card(c, card, selected = true)
+            val tag = "${Realm.van(s.done)}/${Realm.van(s.need)} vạn chữ"
+            k.right(c, tag, card.right - pad, card.top + pad + (k.lineH(k.ui10Bold) - k.lineH(sb)) / 2, sb)
+            k.line(c, "Trên án: ${PhapMon.scrollName(s.kind, s.id)}", card.left + pad, card.top + pad, card.width() - 3 * pad - sb.measureText(tag), k.ui10Bold)
+            val my = card.top + pad + k.lineH(k.ui10Bold) + 8 * u
+            k.meter(c, card.left + pad, my, card.width() - 2 * pad, s.done.toFloat() / s.need, 10 * u)
+            k.line(c, "${PhapMon.SCROLL_KINDS[s.kind]} · ${PhapMon.FLOOR_NAMES[PhapMon.floorOf(s.kind, s.id)]}" +
+                (if (s.sect >= 0) " · kinh các ${com.exacta.reader.data.TongMon.SECTS[s.sect].name}" else ""), card.left + pad, my + 22 * u, card.width() - 2 * pad, small)
+            y = card.bottom + 10 * u
+            // The shelf: tap to lay one on the án.
+            for ((i, w) in shelf.withIndex().drop(1).take(4)) {
+                val r = RectF(a.left, y, a.right, y + sl + 16 * u)
+                k.card(c, r)
+                val t2 = "${Realm.van(w.done)}/${Realm.van(w.need)} vạn · đặt lên án"
+                k.right(c, t2, r.right - 12 * u, r.top + 8 * u, sb)
+                k.line(c, "Trên giá: ${PhapMon.scrollName(w.kind, w.id)}", r.left + 12 * u, r.top + 8 * u, r.width() - 36 * u - sb.measureText(t2), small)
+                hits.add(r) { DaoPhap.putOnDesk(i); refresh() }
+                y = r.bottom + 6 * u
+            }
+            if (shelf.size > 5) y = para(c, k, "Và ${shelf.size - 5} ngọc giản nữa trên giá.", a.left, y, a.width(), small, 1)
+            y += 8 * u
+        }
+        if (DaoPhap.frags.isNotEmpty()) {
+            y = para(c, k, "Tàn quyển: " + DaoPhap.frags.entries.joinToString(", ") { (id, n) -> "${PhapMon.CONG_PHAP[id].name} $n/${PhapMon.fragNeed(id)}" } +
+                ". Đủ mảnh thì tự ghép, lên giá.", a.left, y, a.width(), small, 2) + 10 * u
+        }
+        // The nine floors.
+        y = k.section(c, a.left, y, a.width(), "CỬU LÂU · TRANG SAU LÀ CÁC TẦNG ĐÃ MỞ")
+        val half = (a.width() - 12 * u) / 2
+        for (f in 1..9) {
+            val col = (f - 1) % 2
+            val row = (f - 1) / 2
+            val x = a.left + col * (half + 12 * u)
+            val yy = y + row * (sl + 6 * u)
+            val open = DaoPhap.floorOpen(f)
+            val n = DaoPhap.floorOffers(f).count { !DaoPhap.had(it) }
+            k.line(c, "${PhapMon.FLOOR_NAMES[f]}: " + if (open) "$n ngọc giản" else DaoPhap.floorNeed(f), x, yy, half, if (open) small else k.paint(Ink.SMALL, color = Ink.DARK))
+        }
+        y += 5 * (sl + 6 * u) + 8 * u
+        // Tự sáng công pháp.
+        if (y + 52 * u <= a.bottom) {
+            val b = RectF(a.left, y, a.right, y + 52 * u)
+            val ok = DaoPhap.canCreate()
+            k.button(c, b, if (Store.realmCap >= 4) "Tự sáng công pháp · ${PhapMon.CREATE_NGO} ngộ tính" else "Tự sáng công pháp: từ Hóa Thần", k.smallBold, enabled = ok)
+            hits.add(b) {
+                if (ok) createDialog()
+                else toast(if (Store.realmCap < 4) "Từ Hóa Thần mới tự sáng được công pháp"
+                    else if (DaoPhap.custom.size >= PhapMon.CREATE_MAX) "Đã tự sáng đủ ${PhapMon.CREATE_MAX} bộ"
+                    else "Cần hai bộ công pháp viên mãn và ${PhapMon.CREATE_NGO} ngộ tính")
+            }
+        }
+    }
+
+    /** A floor: what it lends this week. */
+    private fun floorPage(c: Canvas, k: Ink, a: RectF, f: Int, hits: Hits) {
+        val u = k.u
+        val small = k.small
+        var y = k.section(c, a.left, a.top, a.width(), "TÀNG KINH · ${PhapMon.FLOOR_NAMES[f].uppercase()}" + if (f >= 4) " · ${com.exacta.reader.data.TongMon.gongs} CỐNG HIẾN" else " · ${Store.linhThach} LINH THẠCH")
+        y = para(c, k, (if (f >= 4) "Kinh các của ${com.exacta.reader.data.TongMon.SECTS[com.exacta.reader.data.TongMon.sect].name}: đổi bằng cống hiến, giữ trước các mạch hợp đường tu của tông. Phản tông thì công pháp học ở đây bị phế đặc hiệu thứ hai và tuyệt học. "
+            else "Mượn bằng linh thạch. ") + "Ngọc giản mượn về nằm trên giá, đọc đủ chữ mới học được; mỗi thứ Hai các tầng đổi sách.",
+            a.left, y, a.width(), small, 3) + 10 * u
         val h = 24 * u + k.lineH(k.ui10Bold) + 2 * u + k.lineH(small)
-        val per = ((a.bottom - y) / (h + 8 * u)).toInt().coerceAtLeast(1)
-        for ((kind, id) in offers.drop(page * per).take(per)) {
-            val have = DaoPhap.owns(kind, id)
-            val price = DaoPhap.price(kind, id)
-            val (title, tag, line) = when (kind) {
-                PhapMon.CONG -> PhapMon.CONG_PHAP[id].let {
+        for (o in DaoPhap.floorOffers(f)) {
+            if (y + h > a.bottom) break
+            val have = DaoPhap.had(o)
+            val price = DaoPhap.price(o)
+            val (title, tag, line) = when (o.kind) {
+                PhapMon.CONG -> PhapMon.CONG_PHAP[o.id].let {
                     val aff = DaoPhap.affinity(it.attr)
                     Triple(it.name, "Công pháp ${PhapMon.PHAM[it.pham]}", "Mạch ${PhapMon.MACH[it.mach]}" +
                         (if (aff > 0) " · hợp" else if (aff < 0) " · khắc" else "") + " · ${PhapMon.effectText(it.effect)}")
                 }
-                PhapMon.TAM -> PhapMon.TAM_PHAP[id].let { Triple(it.name, "Tâm pháp", "${PhapMon.PHAI[it.phai]} · ${it.text}") }
-                PhapMon.DAN -> com.exacta.reader.game.DanDao.RECIPES[id].let {
+                PhapMon.TAM -> PhapMon.TAM_PHAP[o.id].let { Triple(it.name, "Tâm pháp", "${PhapMon.PHAI[it.phai]} · ${it.text}") }
+                PhapMon.DAN -> com.exacta.reader.game.DanDao.RECIPES[o.id].let {
                     Triple(it.name, "Đan phương", "${it.text} · cần ${com.exacta.reader.game.DanDao.CAP[it.cap - 1].lowercase()}")
                 }
-                else -> PhapMon.THUAT_PHAP[id].let { Triple(it.name, PhapMon.KINDS[it.kind], "${PhapMon.attrName(it.attr)} · ${it.text}") }
+                else -> PhapMon.THUAT_PHAP[o.id].let { Triple(it.name, PhapMon.KINDS[it.kind], "${PhapMon.attrName(it.attr)} · ${it.text}") }
             }
+            val words = if (o.kind == PhapMon.DAN) "" else " · tham ngộ ${Realm.van(PhapMon.STUDY_WORDS[PhapMon.floorOf(o.kind, o.id)])} vạn chữ"
             val r = RectF(a.left, y, a.right, y + h)
             val pad = 12 * u
             k.card(c, r)
@@ -675,29 +759,101 @@ class CongPhapActivity : TabActivity() {
             k.right(c, tag, r.left + pad + tw, r.top + pad + (k.lineH(k.ui10Bold) - k.lineH(k.smallBold)) / 2, k.smallBold)
             k.line(c, line, r.left + pad, r.top + pad + k.lineH(k.ui10Bold) + 2 * u, tw, small)
             val b = RectF(r.right - pad - bw, r.centerY() - 22 * u, r.right - pad, r.centerY() + 22 * u)
-            val ok = !have && Store.linhThach >= price
-            k.button(c, b, if (have) "Đã có" else "Đổi · $price", k.smallBold, enabled = ok)
-            if (!have) hits.add(b) { buyDialog(kind, id, title, price, line) }
+            val unit = if (DaoPhap.paysGong(o)) "CH" else "LT"
+            val ok = !have && DaoPhap.afford(o)
+            k.button(c, b, if (have) "Đã có" else "Mượn · $price $unit", k.smallBold, enabled = ok)
+            if (!have) hits.add(b) { buyDialog(o, title, line + words) }
             y += h + 8 * u
         }
-        return (offers.size + per - 1) / per
     }
 
-    private fun buyDialog(kind: Int, id: Int, title: String, price: Long, text: String) {
-        if (Store.linhThach < price) {
-            toast("Cần $price linh thạch, mới có ${Store.linhThach}")
+    private fun buyDialog(o: DaoPhap.Offer, title: String, text: String) {
+        val price = DaoPhap.price(o)
+        val gong = DaoPhap.paysGong(o)
+        if (!DaoPhap.afford(o)) {
+            toast("Cần $price ${if (gong) "cống hiến" else "linh thạch"}")
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("Đổi $title?")
-            .setMessage("$text\n\nGiá $price linh thạch · đang có ${Store.linhThach}.")
-            .setPositiveButton("Đổi") { _, _ ->
-                if (DaoPhap.buy(kind, id)) toast("Đã nhận ngọc giản $title")
+            .setTitle("Mượn $title?")
+            .setMessage("$text.\n\nGiá $price ${if (gong) "cống hiến (đang có ${com.exacta.reader.data.TongMon.gongs})" else "linh thạch (đang có ${Store.linhThach})"}." +
+                if (o.kind != PhapMon.DAN) "\n\nNgọc giản lên giá tham ngộ; đọc đủ chữ thì học được." else "")
+            .setPositiveButton("Mượn") { _, _ ->
+                if (DaoPhap.buy(o)) toast(if (o.kind == PhapMon.DAN) "Đã học $title" else "Đã đặt $title lên giá")
                 refresh()
             }
             .setNegativeButton("Thôi", null)
             .show()
     }
+
+    /** Tự sáng công pháp: pick two công pháp viên mãn, a đặc hiệu from each, a name. */
+    private fun createDialog() {
+        val done = DaoPhap.cong.keys.filter { DaoPhap.complete(it) }
+        val names = done.map { "${PhapMon.CONG_PHAP[it].name} · ${PhapMon.PHAM[PhapMon.CONG_PHAP[it].pham]}" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Bộ thứ nhất (giữ mạch, đặc hiệu thành tuyệt học)").setItems(names) { _, i ->
+            val a = done[i]
+            val rest = done.filter { it != a }
+            AlertDialog.Builder(this).setTitle("Bộ thứ hai").setItems(rest.map { "${PhapMon.CONG_PHAP[it].name} · ${PhapMon.PHAM[PhapMon.CONG_PHAP[it].pham]}" }.toTypedArray()) { _, j ->
+                val b = rest[j]
+                val ea = PhapMon.CONG_PHAP[a].effects.map { it.first }.distinct()
+                AlertDialog.Builder(this).setTitle("Đặc hiệu lấy từ ${PhapMon.CONG_PHAP[a].name}").setItems(ea.map { PhapMon.effectText(it) }.toTypedArray()) { _, x ->
+                    val eb = PhapMon.CONG_PHAP[b].effects.map { it.first }.distinct()
+                    AlertDialog.Builder(this).setTitle("Đặc hiệu lấy từ ${PhapMon.CONG_PHAP[b].name}").setItems(eb.map { PhapMon.effectText(it) }.toTypedArray()) { _, z ->
+                        val input = android.widget.EditText(this).apply { hint = "Tên công pháp"; setSingleLine() }
+                        val pham = PhapMon.PHAM[(minOf(PhapMon.CONG_PHAP[a].pham, PhapMon.CONG_PHAP[b].pham) + 1).coerceAtMost(5)]
+                        AlertDialog.Builder(this).setTitle("Đặt tên cho bộ $pham phẩm").setView(input)
+                            .setPositiveButton("Sáng tạo") { _, _ ->
+                                val id = DaoPhap.create(a, b, ea[x], eb[z], input.text.toString())
+                                toast(if (id != null) "Đã sáng tạo ${PhapMon.CONG_PHAP[id].name}" else "Tên không hợp lệ (1 – 28 chữ)")
+                                refresh()
+                            }.setNegativeButton("Thôi", null).show()
+                    }.show()
+                }.show()
+            }.show()
+        }.show()
+    }
+
+    // --- Đồ phổ ---------------------------------------------------------------------------------------
+
+    /** Every công pháp, tâm pháp, thuật pháp: those seen by name, the rest as shadows with where they are kept. */
+    private fun doPhoEntries(): List<Pair<Int, Int>> =
+        (0 until PhapMon.BASE_CONG).map { PhapMon.CONG to it } + PhapMon.TAM_PHAP.indices.map { PhapMon.TAM to it } +
+            PhapMon.THUAT_PHAP.indices.map { PhapMon.THUAT to it } + DaoPhap.custom.indices.map { PhapMon.CONG to PhapMon.BASE_CONG + it }
+
+    private fun doPho(c: Canvas, k: Ink, a: RectF, page: Int): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val all = doPhoEntries()
+        val seen = all.count { DaoPhap.seen(it.first, it.second) }
+        var y = k.section(c, a.left, a.top, a.width(), "ĐỒ PHỔ · ĐÃ THẤY $seen/${all.size}")
+        val rh = sl + 10 * u
+        val per = ((a.bottom - y) / rh).toInt().coerceAtLeast(1)
+        for ((kind, id) in all.drop(page * per).take(per)) {
+            val has = DaoPhap.owns(kind, id)
+            val known = DaoPhap.seen(kind, id)
+            val name = if (known) PhapMon.scrollName(kind, id) else "· · ·"
+            val what = when (kind) {
+                PhapMon.CONG -> PhapMon.CONG_PHAP[id].let { "${PhapMon.MACH[it.mach]} · ${PhapMon.PHAM[it.pham]}" }
+                PhapMon.TAM -> PhapMon.PHAI[PhapMon.TAM_PHAP[id].phai]
+                else -> PhapMon.KINDS[PhapMon.THUAT_PHAP[id].kind]
+            }
+            val where = when {
+                id >= PhapMon.BASE_CONG && kind == PhapMon.CONG -> "tự sáng"
+                has -> "đã có"
+                DaoPhap.onShelf(kind, id) -> "trên giá"
+                kind == PhapMon.CONG && PhapMon.CONG_PHAP[id].pham >= 4 -> "${PhapMon.FLOOR_NAMES[PhapMon.floorOf(kind, id)]}, tàn quyển"
+                else -> PhapMon.FLOOR_NAMES[PhapMon.floorOf(kind, id)]
+            }
+            val tag = "$what · $where"
+            k.right(c, tag, a.right, y, sb)
+            k.line(c, (if (has) "◆ " else "◇ ") + name, a.left, y, a.width() - sb.measureText(tag) - 16 * u, if (known) small else k.paint(Ink.SMALL, color = Ink.DARK))
+            y += rh
+        }
+        return (all.size + per - 1) / per
+    }
+
 }
 
 /** Hours read, short. */

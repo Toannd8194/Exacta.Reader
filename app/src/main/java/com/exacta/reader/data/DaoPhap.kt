@@ -33,7 +33,7 @@ object DaoPhap {
     const val AWAKEN_SECONDS = 3600L
     const val ROOT_SHARE = 15
 
-    class Cong(var words: Long = 0, var opened: Int = 3)
+    class Cong(var words: Long = 0, var opened: Int = 3, var sect: Int = -1)
     class Thuat(var learned: Boolean = false, var uses: Int = 0, var sits: Int = 0, var cool: Int = 0)
 
     var started = false
@@ -59,7 +59,14 @@ object DaoPhap {
     var shields = 0                      // tâm ma attacks still blocked in this kiếp
     var liemTucDay = -1L
     var offerWeek = -1L
-    val offers = ArrayList<Pair<Int, Int>>()
+    val offers = ArrayList<Offer>()
+    // 3.4 Tàng Kinh Cửu Lâu.
+    val shelf = ArrayList<Scroll>()          // ngọc giản waiting to be read through; the first lies on the án
+    val frags = HashMap<Int, Int>()          // tàn quyển of Linh and Tiên công pháp
+    val seenCong = HashSet<Int>()
+    val seenTam = HashSet<Int>()
+    val seenThuat = HashSet<Int>()
+    val custom = ArrayList<PhapMon.CongPhap>()   // công pháp of the cultivator's own making
     var scrolls = 0
     var gifted = 0
     // 3.1 Vạn Pháp Trùng Tu.
@@ -79,6 +86,8 @@ object DaoPhap {
         tamFrac.clear(); tamDay = -1; tamSittings = 0
         thuat.clear(); thuatOn.clear(); shields = 0; liemTucDay = -1; offerWeek = -1; offers.clear(); scrolls = 0; gifted = 0
         phu = -1; xung = 0; xungCost = 0; inherited.clear(); wayWords = 0; lastXung = ""; thuatDay = -1
+        shelf.clear(); frags.clear(); seenCong.clear(); seenTam.clear(); seenThuat.clear(); custom.clear()
+        while (CONG_PHAP.size > PhapMon.BASE_CONG) CONG_PHAP.removeAt(CONG_PHAP.size - 1)
     }
 
     // --- Linh căn ------------------------------------------------------------------------------------
@@ -212,7 +221,7 @@ object DaoPhap {
     fun phuDef(): PhapMon.CongPhap? = if (phu in cong && phu != active && phuOpen()) CONG_PHAP.getOrNull(phu) else null
 
     /** Is đặc hiệu `slot` (0, 1, 2) of công pháp `id` open: tầng 1, 5, 9. */
-    fun slotOpen(id: Int, slot: Int) = id in cong && tang(id) >= intArrayOf(1, 5, 9)[slot]
+    fun slotOpen(id: Int, slot: Int) = id in cong && tang(id) >= intArrayOf(1, 5, 9)[slot] && !(slot >= 1 && crippled(id))
 
     /**
      * The level of a kind of đặc hiệu: one for each open đặc hiệu of the công pháp running, two for
@@ -411,6 +420,7 @@ object DaoPhap {
 
     /** Words read: into the tầng of the công pháp running (more in its way), half into the phụ tu. */
     fun onWords(words: Long, book: Book? = null) {
+        study(words)
         phuDef()?.let { _ ->
             cong[phu]?.let { p -> p.words = minOf(p.words + words * PhapMon.PHU_PERCENT / 100, p.opened * need(phu)) }
         }
@@ -912,22 +922,93 @@ object DaoPhap {
         else -> id in thuat
     }
 
-    fun gain(kind: Int, id: Int): Boolean = when (kind) {
-        PhapMon.CONG -> gainCong(id)
-        PhapMon.TAM -> gainTam(id)
-        PhapMon.DAN -> DongPhu.learn(id)
-        else -> gainThuat(id)
+    fun gain(kind: Int, id: Int): Boolean {
+        see(kind, id)
+        return when (kind) {
+            PhapMon.CONG -> gainCong(id)
+            PhapMon.TAM -> gainTam(id)
+            PhapMon.DAN -> DongPhu.learn(id)
+            else -> gainThuat(id)
+        }
     }
-
-    fun price(kind: Int, id: Int) = when (kind) {
-        PhapMon.CONG -> PhapMon.PRICE[CONG_PHAP[id].pham]
-        PhapMon.TAM -> PhapMon.TAM_PRICE
-        PhapMon.DAN -> com.exacta.reader.game.DanDao.recipePrice(id)
-        else -> PhapMon.thuatPrice(id)
-    }.let { if (TongMon.perk(TongMon.VAN_QUYEN)) it * 85 / 100 else it }
 
     /** The phẩm of công pháp the reader looks for now: what the next gate asks, or the one running. */
     fun targetPham() = maxOf(PhapMon.phamFor(TuLuyen.gate()), activeDef()?.pham ?: 0).coerceIn(0, 5)
+
+    // Đồ phổ: everything ever seen.
+
+    fun see(kind: Int, id: Int) {
+        val set = when (kind) { PhapMon.CONG -> seenCong; PhapMon.TAM -> seenTam; PhapMon.THUAT -> seenThuat; else -> return }
+        if (set.add(id)) Store.touch()
+    }
+
+    fun seen(kind: Int, id: Int) = owns(kind, id) || onShelf(kind, id) || when (kind) {
+        PhapMon.CONG -> id in seenCong || id in frags
+        PhapMon.TAM -> id in seenTam
+        else -> id in seenThuat
+    }
+
+    // Án tham ngộ: a ngọc giản is learned by reading.
+
+    class Scroll(val kind: Int, val id: Int, val need: Long, var done: Long = 0, val sect: Int = -1)
+
+    fun onShelf(kind: Int, id: Int) = shelf.any { it.kind == kind && it.id == id }
+
+    /** A ngọc giản onto the shelf; the first on the shelf lies on the án and takes the words read. */
+    fun toShelf(kind: Int, id: Int, sect: Int = -1): Boolean {
+        if (kind == PhapMon.DAN) return DongPhu.learn(id)
+        if (owns(kind, id) || onShelf(kind, id)) return false
+        see(kind, id)
+        shelf.add(Scroll(kind, id, PhapMon.STUDY_WORDS[PhapMon.floorOf(kind, id)], 0, sect))
+        Store.touch()
+        return true
+    }
+
+    fun putOnDesk(i: Int) {
+        if (i <= 0 || i >= shelf.size) return
+        shelf.add(0, shelf.removeAt(i))
+        Store.touch()
+    }
+
+    /** Words read go into the ngọc giản on the án; what is left over flows on to the next. */
+    fun study(words: Long) {
+        var left = words * (if (TongMon.perk(TongMon.VAN_QUYEN)) 125 else 100) / 100
+        while (left > 0 && shelf.isNotEmpty()) {
+            val s = shelf[0]
+            val take = minOf(left, s.need - s.done)
+            s.done += take
+            left -= take
+            if (s.done < s.need) break
+            shelf.removeAt(0)
+            gain(s.kind, s.id)
+            if (s.kind == PhapMon.CONG && s.sect >= 0) cong[s.id]?.sect = s.sect
+            Store.note("Tham ngộ xong ngọc giản ${PhapMon.scrollName(s.kind, s.id)}")
+        }
+        if (words > 0 && shelf.isNotEmpty()) Store.touch()
+    }
+
+    // Phản tông thì phế công.
+
+    /** A công pháp from the kinh các of a sect betrayed: its second đặc hiệu and tuyệt học are sealed. */
+    fun crippled(id: Int) = cong[id]?.sect?.let { it >= 0 && it in TongMon.betrayed } == true
+
+    // Tàn quyển.
+
+    /** A piece of a Linh or Tiên công pháp: the line of what came of it. */
+    private fun fragment(id: Int): String {
+        val n = (frags[id] ?: 0) + 1
+        val need = PhapMon.fragNeed(id)
+        see(PhapMon.CONG, id)
+        return if (n >= need) {
+            frags.remove(id)
+            toShelf(PhapMon.CONG, id)
+            "đủ $need tàn quyển ${CONG_PHAP[id].name}, ghép thành ngọc giản, đặt lên giá tham ngộ"
+        } else {
+            frags[id] = n
+            Store.touch()
+            "tàn quyển ${CONG_PHAP[id].name} ($n/$need)"
+        }
+    }
 
     /** A ngọc giản found (kỳ ngộ, bí cảnh): its line; one already owned turns into ngộ tính. */
     fun dropScroll(rng: Random = Random.Default): String {
@@ -940,8 +1021,8 @@ object DaoPhap {
                     in 5..7 -> target - 1
                     else -> target + 1
                 }.coerceIn(0, 5)
-                val list = CONG_PHAP.indices.filter { CONG_PHAP[it].pham == p && it !in cong }
-                    .ifEmpty { CONG_PHAP.indices.filter { CONG_PHAP[it].pham <= target && it !in cong } }
+                val base = (0 until PhapMon.BASE_CONG).filter { it !in cong && !onShelf(PhapMon.CONG, it) }
+                val list = base.filter { CONG_PHAP[it].pham == p }.ifEmpty { base.filter { CONG_PHAP[it].pham <= target } }
                 list.randomOrNull(rng)?.let { PhapMon.CONG to it }
             }
             r < 85 -> THUAT_PHAP.indices.filter { it !in thuat && canLearnRealm(it) }.randomOrNull(rng)?.let { PhapMon.THUAT to it }
@@ -954,42 +1035,116 @@ object DaoPhap {
             Store.touch()
             return "ngọc giản đã thuộc, tham ngộ thêm: ngộ tính +1"
         }
+        // 3.4: the công pháp of Linh and Tiên phẩm are found in pieces.
+        if (pick.first == PhapMon.CONG && CONG_PHAP[pick.second].pham >= 4) return fragment(pick.second)
         gain(pick.first, pick.second)
         val extra = if (pick.first == PhapMon.CONG) " (${PhapMon.PHAM[CONG_PHAP[pick.second].pham]} phẩm)" else ""
         return "ngọc giản ${PhapMon.SCROLL_KINDS[pick.first].lowercase()} ${PhapMon.scrollName(pick.first, pick.second)}$extra"
     }
 
-    /** Tàng Kinh Các: what it lends this week (three công pháp, two tâm pháp, three thuật pháp). */
-    fun weekOffers(): List<Pair<Int, Int>> {
+    // Tàng Kinh Cửu Lâu.
+
+    data class Offer(val floor: Int, val kind: Int, val id: Int)
+
+    /** Floors 1 – 3 are open to all; 4 – 6 ask a sect and cống hiến; 7 – 9 a rank. */
+    fun floorOpen(f: Int) = when {
+        f <= 3 -> true
+        !TongMon.joined() -> false
+        f <= 6 -> TongMon.gongsTotal >= PhapMon.FLOOR_GONG_TOTAL[f]
+        else -> TongMon.rank() >= f - 5
+    }
+
+    fun floorNeed(f: Int) = when {
+        f <= 3 -> "mở cho mọi người"
+        f <= 6 -> "vào tông, cống hiến từng có ${PhapMon.FLOOR_GONG_TOTAL[f]}"
+        else -> "chức ${TongMon.RANKS[f - 5]}"
+    }
+
+    /** The price of an offer: linh thạch below, cống hiến above; a ngọc giản kept higher up costs more down here. */
+    fun price(o: Offer): Long = when {
+        o.kind == PhapMon.DAN -> com.exacta.reader.game.DanDao.recipePrice(o.id)
+        o.floor >= 4 -> PhapMon.FLOOR_GONG[o.floor].toLong()
+        else -> PhapMon.floorOf(o.kind, o.id).let { f -> if (f <= 3) PhapMon.FLOOR_LT[f] else 60L * f }
+    }.let { if (TongMon.perk(TongMon.VAN_QUYEN)) it * 85 / 100 else it }
+
+    fun paysGong(o: Offer) = o.floor >= 4 && o.kind != PhapMon.DAN
+    fun afford(o: Offer) = if (paysGong(o)) TongMon.gongs >= price(o) else Store.linhThach >= price(o)
+    fun had(o: Offer) = owns(o.kind, o.id) || onShelf(o.kind, o.id)
+
+    /**
+     * What the nine floors lend this week. The first offer is always a công pháp of the phẩm the next
+     * gate asks: on its own floor when that is open, else on Tam lâu, dearer.
+     */
+    fun weekOffers(): List<Offer> {
         val w = Store.weekStart(today())
-        if (w != offerWeek) {
-            offerWeek = w
+        val key = w * 100 + TongMon.sect + 1
+        if (key != offerWeek) {
+            offerWeek = key
             offers.clear()
-            val r = Random(w * 7919 + 17)
+            val r = Random(w * 7919 + 17 + TongMon.sect)
             val target = targetPham()
-            val free = CONG_PHAP.indices.filter { it !in cong }
+            val free = (0 until PhapMon.BASE_CONG).filter { it !in cong && !onShelf(PhapMon.CONG, it) }
             val atTarget = free.filter { CONG_PHAP[it].pham == target }
             val first = atTarget.filter { affinity(CONG_PHAP[it].attr) > 0 }.randomOrNull(r) ?: atTarget.randomOrNull(r)
-            val picks = listOfNotNull(first) + (free.filter { it != first && CONG_PHAP[it].pham in (target - 1)..target }.shuffled(r) +
-                free.filter { it != first && CONG_PHAP[it].pham < target - 1 }.shuffled(r)).take(3 - (if (first != null) 1 else 0))
-            picks.forEach { offers.add(PhapMon.CONG to it) }
-            TAM_PHAP.indices.filter { it !in tam }.shuffled(r).take(2).forEach { offers.add(PhapMon.TAM to it) }
-            THUAT_PHAP.indices.filter { it !in thuat && canLearnRealm(it) }.shuffled(r).take(3).forEach { offers.add(PhapMon.THUAT to it) }
-            if (DongPhu.started) com.exacta.reader.game.DanDao.RECIPES.indices.filter { it !in DongPhu.known }.shuffled(r).take(2).forEach { offers.add(PhapMon.DAN to it) }
+            if (first != null) {
+                val f = PhapMon.FLOOR_OF_PHAM[target]
+                offers.add(Offer(if (floorOpen(f)) f else minOf(f, 3), PhapMon.CONG, first))
+            }
+            val lines = if (TongMon.joined()) PhapMon.FAMILY_MACH[TongMon.family()].toSet() else emptySet()
+            for (f in 1..9) {
+                // A sect's kinh các keeps its own lines first.
+                val cong = free.filter { it != first && PhapMon.FLOOR_OF_PHAM[CONG_PHAP[it].pham] == f }.shuffled(r)
+                    .sortedBy { if (f >= 4 && CONG_PHAP[it].mach in lines) 0 else 1 }.take(2)
+                cong.forEach { offers.add(Offer(f, PhapMon.CONG, it)) }
+                TAM_PHAP.indices.filter { it !in tam && PhapMon.TAM_FLOOR[it] == f }.shuffled(r).take(1).forEach { offers.add(Offer(f, PhapMon.TAM, it)) }
+                THUAT_PHAP.indices.filter { it !in thuat && PhapMon.THUAT_FLOOR[it] == f }.shuffled(r).take(if (cong.isEmpty()) 2 else 1)
+                    .forEach { offers.add(Offer(f, PhapMon.THUAT, it)) }
+            }
+            if (DongPhu.started) com.exacta.reader.game.DanDao.RECIPES.indices.filter { it !in DongPhu.known }.shuffled(r).take(2)
+                .forEachIndexed { i, id -> offers.add(Offer(1 + i, PhapMon.DAN, id)) }
             Store.touch()
         }
+        for (o in offers) if (floorOpen(o.floor)) see(o.kind, o.id)
         return offers
     }
 
-    fun buy(kind: Int, id: Int): Boolean {
-        if (owns(kind, id)) return false
-        val p = price(kind, id)
-        if (Store.linhThach < p) return false
-        Store.linhThach -= p
-        gain(kind, id)
-        Store.note("Tàng Kinh Các: đổi ${PhapMon.scrollName(kind, id)} · $p linh thạch")
+    fun floorOffers(f: Int) = weekOffers().filter { it.floor == f }
+
+    /** Borrows an offer: paid, then onto the shelf (a đan phương is learned at once). */
+    fun buy(o: Offer): Boolean {
+        if (had(o) || !floorOpen(o.floor) || !afford(o)) return false
+        val p = price(o)
+        if (paysGong(o)) TongMon.gongs -= p.toInt() else Store.linhThach -= p
+        toShelf(o.kind, o.id, if (o.floor >= 4) TongMon.sect else -1)
+        Store.note("Tàng Kinh ${PhapMon.FLOOR_NAMES[o.floor]}: ${PhapMon.scrollName(o.kind, o.id)} · $p ${if (paysGong(o)) "cống hiến" else "linh thạch"}")
         Store.touch()
         return true
+    }
+
+    // Tự sáng công pháp.
+
+    fun canCreate() = Store.realmCap >= 4 && ngo >= PhapMon.CREATE_NGO && custom.size < PhapMon.CREATE_MAX && cong.keys.count { complete(it) } >= 2
+
+    /**
+     * From Hóa Thần: two công pháp viên mãn and ngộ tính become one of the cultivator's own. Its phẩm
+     * is the lower one's plus one; its line is the first's; it takes a đặc hiệu from each (the first's
+     * again as tuyệt học), and has no khuyết điểm.
+     */
+    fun create(a: Int, b: Int, ea: Int, eb: Int, name: String): Int? {
+        val n = name.trim()
+        if (!canCreate() || a == b || !complete(a) || !complete(b) || n.isEmpty() || n.length > 28) return null
+        val da = CONG_PHAP[a]
+        val db = CONG_PHAP[b]
+        if (da.effects.none { it.first == ea } || db.effects.none { it.first == eb }) return null
+        val d = PhapMon.CongPhap(n, (minOf(da.pham, db.pham) + 1).coerceAtMost(5), da.attr, ea, eb, ea)
+        CONG_PHAP.add(d)
+        custom.add(d)
+        ngo -= PhapMon.CREATE_NGO
+        val id = CONG_PHAP.size - 1
+        gainCong(id)
+        Store.note("Tự sáng công pháp ${d.name}, ${PhapMon.PHAM[d.pham]} phẩm, từ ${da.name} và ${db.name}")
+        Store.touch()
+        return id
     }
 
     // --- Each day, and the move from 2.0 -------------------------------------------------------------
@@ -1037,14 +1192,18 @@ object DaoPhap {
         put("roots", JSONArray().apply { roots.forEach { put(it) } }); put("di", di); put("awaken", awakenDay)
         put("hoursAt", JSONArray().apply { hoursAt.forEach { put(it) } }); put("washed", washed)
         put("ngo", ngo); put("ngoEarned", ngoEarned); put("active", active); put("capNoted", capNoted)
-        put("cong", JSONObject().apply { cong.forEach { (id, c) -> put(id.toString(), JSONArray().put(c.words).put(c.opened)) } })
+        put("cong", JSONObject().apply { cong.forEach { (id, c) -> put(id.toString(), JSONArray().put(c.words).put(c.opened).put(c.sect)) } })
         put("tam", JSONObject().apply { tam.forEach { (id, n) -> put(id.toString(), n) } })
         put("tamOn", JSONArray().apply { tamOn.forEach { put(it) } }); put("bangTam", bangTamMonth)
         put("tamFrac", JSONObject().apply { tamFrac.forEach { (id, n) -> put(id.toString(), n) } }); put("tamDay", tamDay); put("tamSittings", tamSittings)
         put("thuat", JSONObject().apply { thuat.forEach { (id, t) -> put(id.toString(), JSONArray().put(t.learned).put(t.uses).put(t.sits).put(t.cool)) } })
         put("thuatOn", JSONArray().apply { thuatOn.forEach { put(it) } }); put("shields", shields); put("liemTuc", liemTucDay)
         put("offerWeek", offerWeek)
-        put("offers", JSONArray().apply { offers.forEach { put(JSONArray().put(it.first).put(it.second)) } })
+        put("offers", JSONArray().apply { offers.forEach { put(JSONArray().put(it.floor).put(it.kind).put(it.id)) } })
+        put("shelf", JSONArray().apply { shelf.forEach { put(JSONArray().put(it.kind).put(it.id).put(it.need).put(it.done).put(it.sect)) } })
+        put("frags", JSONObject().apply { frags.forEach { (id, n) -> put(id.toString(), n) } })
+        put("seen", JSONArray().put(JSONArray(seenCong.toList())).put(JSONArray(seenTam.toList())).put(JSONArray(seenThuat.toList())))
+        put("custom", JSONArray().apply { custom.forEach { put(JSONArray().put(it.name).put(it.pham).put(it.attr).put(it.effect).put(it.e2).put(it.e3)) } })
         put("scrolls", scrolls); put("gifted", gifted)
         put("phu", phu); put("xung", xung); put("xungCost", xungCost); put("wayWords", wayWords); put("lastXung", lastXung); put("thuatDay", thuatDay)
         put("inherited", JSONArray().apply { inherited.forEach { put(it) } })
@@ -1058,12 +1217,20 @@ object DaoPhap {
         o.optJSONArray("hoursAt")?.let { a -> for (i in 0 until minOf(a.length(), 24)) hoursAt[i] = a.getLong(i) }
         washed = o.optBoolean("washed"); ngo = o.optInt("ngo"); ngoEarned = o.optInt("ngoEarned")
         active = o.optInt("active", -1); capNoted = o.optInt("capNoted", -1)
+        // 3.4: the công pháp of the cultivator's own making, before the ones owned point at them.
+        o.optJSONArray("custom")?.let { a ->
+            for (i in 0 until a.length()) a.getJSONArray(i).let {
+                val d = PhapMon.CongPhap(it.getString(0), it.getInt(1), it.getInt(2), it.getInt(3), it.getInt(4), it.getInt(5))
+                custom.add(d)
+                CONG_PHAP.add(d)
+            }
+        }
         o.optJSONObject("cong")?.let { m ->
             for (k in m.keys()) {
                 val id = k.toInt()
                 if (id !in CONG_PHAP.indices) continue
                 val a = m.getJSONArray(k)
-                cong[id] = Cong(a.optLong(0), a.optInt(1, 3))
+                cong[id] = Cong(a.optLong(0), a.optInt(1, 3), a.optInt(2, -1))
             }
         }
         o.optJSONObject("tam")?.let { m -> for (k in m.keys()) k.toInt().takeIf { it in TAM_PHAP.indices }?.let { tam[it] = m.getInt(k) } }
@@ -1081,7 +1248,18 @@ object DaoPhap {
         }
         o.optJSONArray("thuatOn")?.let { a -> for (i in 0 until a.length()) a.getInt(i).takeIf { it in thuat && it !in thuatOn }?.let { thuatOn.add(it) } }
         shields = o.optInt("shields"); liemTucDay = o.optLong("liemTuc", -1); offerWeek = o.optLong("offerWeek", -1)
-        o.optJSONArray("offers")?.let { a -> for (i in 0 until a.length()) a.getJSONArray(i).let { offers.add(it.getInt(0) to it.getInt(1)) } }
+        // Offers of 3.3 and before had no floor: the week is drawn again.
+        o.optJSONArray("offers")?.let { a ->
+            for (i in 0 until a.length()) a.getJSONArray(i).let { if (it.length() >= 3) offers.add(Offer(it.getInt(0), it.getInt(1), it.getInt(2))) }
+            if (offers.size < a.length()) { offers.clear(); offerWeek = -1 }
+        }
+        o.optJSONArray("shelf")?.let { a ->
+            for (i in 0 until a.length()) a.getJSONArray(i).let { shelf.add(Scroll(it.getInt(0), it.getInt(1), it.getLong(2), it.optLong(3), it.optInt(4, -1))) }
+        }
+        o.optJSONObject("frags")?.let { m -> for (k in m.keys()) frags[k.toInt()] = m.getInt(k) }
+        o.optJSONArray("seen")?.let { a ->
+            listOf(seenCong, seenTam, seenThuat).forEachIndexed { i, set -> a.optJSONArray(i)?.let { b -> for (j in 0 until b.length()) set.add(b.getInt(j)) } }
+        }
         scrolls = o.optInt("scrolls"); gifted = o.optInt("gifted")
         phu = o.optInt("phu", -1).takeIf { it in cong } ?: -1
         xung = o.optInt("xung"); xungCost = o.optInt("xungCost"); wayWords = o.optLong("wayWords"); lastXung = o.optString("lastXung"); thuatDay = o.optLong("thuatDay", -1)

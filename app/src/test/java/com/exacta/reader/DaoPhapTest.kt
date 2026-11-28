@@ -213,15 +213,19 @@ class DaoPhapTest {
     fun tàngKinhCácOffersWhatTheGateAsks() {
         Store.realmCap = 1
         val offers = DaoPhap.weekOffers()
-        assertEquals(PhapMon.CONG, offers[0].first)
-        assertEquals(1, PhapMon.CONG_PHAP[offers[0].second].pham)   // Huyền for Kim Đan
-        assertEquals(8, offers.size)
-        val (kind, id) = offers[0]
-        assertFalse(DaoPhap.buy(kind, id))
+        assertEquals(PhapMon.CONG, offers[0].kind)
+        assertEquals(1, PhapMon.CONG_PHAP[offers[0].id].pham)       // Huyền for Kim Đan, on Nhị lâu
+        assertEquals(2, offers[0].floor)
+        val o = offers[0]
+        assertFalse(DaoPhap.buy(o))
         Store.linhThach = 500
-        assertTrue(DaoPhap.buy(kind, id))
-        assertEquals(380, Store.linhThach)
-        assertTrue(DaoPhap.owns(kind, id))
+        assertTrue(DaoPhap.buy(o))
+        assertEquals(440, Store.linhThach)
+        // 3.4: on the shelf first; read through, then owned.
+        assertFalse(DaoPhap.owns(o.kind, o.id))
+        assertTrue(DaoPhap.onShelf(o.kind, o.id))
+        DaoPhap.study(PhapMon.STUDY_WORDS[2])
+        assertTrue(DaoPhap.owns(o.kind, o.id))
         // The week's list stays as it was.
         assertEquals(offers[0], DaoPhap.weekOffers()[0])
     }

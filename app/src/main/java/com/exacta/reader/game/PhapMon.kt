@@ -171,7 +171,9 @@ object PhapMon {
 
     const val DAN_KHI = 0
     /** Ids 0 – 35 are the công pháp of 2.1, kept for old saves; 36 – 71 complete the twelve lines (3.1). */
-    val CONG_PHAP = listOf(
+    /** The seventy-two of the catalog; công pháp made by the cultivator (3.4) are added after them. */
+    const val BASE_CONG = 72
+    val CONG_PHAP: MutableList<CongPhap> = mutableListOf(
         CongPhap("Dẫn Khí Quyết", 0, NONE, E_VAN_CONG, E_LINH_LUC, E_VAN_CONG),
         CongPhap("Canh Kim Quyết", 0, KIM, E_AP_CHE, E_LINH_THACH, E_DOT_PHA),
         CongPhap("Thanh Mộc Công", 0, MOC, E_CAN_CO, E_HOI_KHI, E_CAN_CO),
@@ -538,6 +540,34 @@ object PhapMon {
         BanMenh("Khô Mộc Phùng Xuân", E_HOI_KHI, 1),
         BanMenh("Tịch Diệt Chỉ", E_NUT_THAT, 2),
     )
+
+    // --- Tàng Kinh Cửu Lâu (3.4) ---------------------------------------------------------------------
+
+    /** The floor each ngọc giản is kept on: công pháp by phẩm, tâm pháp and thuật pháp each its own. */
+    val FLOOR_OF_PHAM = intArrayOf(1, 2, 3, 5, 7, 9)
+    val TAM_FLOOR = intArrayOf(1, 1, 2, 3, 6, 2, 3, 4, 5, 4, 8, 6, 8, 6, 7, 2, 3, 4)
+    val THUAT_FLOOR = intArrayOf(1, 1, 2, 2, 1, 1, 1, 1, 2, 3, 3, 2, 6, 6, 7, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 6, 2, 2, 3, 3, 3, 3, 4, 4, 8, 9)
+    fun floorOf(kind: Int, id: Int) = when (kind) {
+        CONG -> FLOOR_OF_PHAM[CONG_PHAP[id].pham]
+        TAM -> TAM_FLOOR[id]
+        THUAT -> THUAT_FLOOR[id]
+        else -> 1
+    }
+    /** Words read to tham ngộ a ngọc giản of each floor: Hoàng 1 vạn … Tiên 30 vạn. */
+    val STUDY_WORDS = longArrayOf(0, 10_000, 15_000, 25_000, 40_000, 60_000, 90_000, 140_000, 200_000, 300_000)
+    /** Floors 1 – 3 lend for linh thạch, floors 4 – 9 for cống hiến. */
+    val FLOOR_LT = longArrayOf(0, 40, 60, 90)
+    val FLOOR_GONG = intArrayOf(0, 0, 0, 0, 60, 90, 130, 180, 250, 350)
+    /** Floors 4 – 6 ask cống hiến ever earned; 7 – 9 a rank (Chân truyền, Trưởng lão, Thái thượng). */
+    val FLOOR_GONG_TOTAL = intArrayOf(0, 0, 0, 0, 300, 800, 1_500)
+    val FLOOR_NAMES = arrayOf("", "Nhất lâu", "Nhị lâu", "Tam lâu", "Tứ lâu", "Ngũ lâu", "Lục lâu", "Thất lâu", "Bát lâu", "Cửu lâu")
+    /** Tàn quyển: a công pháp of Linh or Tiên phẩm found in pieces, three to five. */
+    fun fragNeed(id: Int) = 3 + id % 3
+    /** The lines each founding family keeps in its kinh các: Vạn Quyển, Thiết Cốt, Minh Tâm, Kiếm Lư, Bách Thảo. */
+    val FAMILY_MACH = arrayOf(intArrayOf(10, 11, 2, 0), intArrayOf(9, 4, 3), intArrayOf(6, 2, 11, 1), intArrayOf(8, 0, 5, 7), intArrayOf(1, 3, 7))
+    /** Tự sáng công pháp: from Hóa Thần, two công pháp viên mãn and this much ngộ tính; three at most. */
+    const val CREATE_NGO = 10
+    const val CREATE_MAX = 3
 
     // --- Ngọc giản -------------------------------------------------------------------------------
 

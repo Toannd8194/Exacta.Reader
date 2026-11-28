@@ -468,16 +468,16 @@ object TongMon {
         val text = when (i) {
             0 -> {
                 val p = DaoPhap.targetPham()
-                val free = PhapMon.CONG_PHAP.indices.filter { PhapMon.CONG_PHAP[it].pham == p && it !in DaoPhap.cong }
+                val free = (0 until PhapMon.BASE_CONG).filter { PhapMon.CONG_PHAP[it].pham == p && it !in DaoPhap.cong && !DaoPhap.onShelf(PhapMon.CONG, it) }
                 val id = free.firstOrNull { DaoPhap.affinity(PhapMon.CONG_PHAP[it].attr) > 0 } ?: free.randomOrNull(rng) ?: return null
-                DaoPhap.gainCong(id)
-                "ngọc giản ${PhapMon.CONG_PHAP[id].name}"
+                DaoPhap.toShelf(PhapMon.CONG, id, sect)
+                "ngọc giản ${PhapMon.CONG_PHAP[id].name}, đặt lên giá tham ngộ"
             }
-            1 -> PhapMon.THUAT_PHAP.indices.filter { it !in DaoPhap.thuat && DaoPhap.canLearnRealm(it) }.randomOrNull(rng)?.let {
-                DaoPhap.gainThuat(it); "ngọc giản ${PhapMon.THUAT_PHAP[it].name}"
+            1 -> PhapMon.THUAT_PHAP.indices.filter { it !in DaoPhap.thuat && !DaoPhap.onShelf(PhapMon.THUAT, it) && DaoPhap.canLearnRealm(it) }.randomOrNull(rng)?.let {
+                DaoPhap.toShelf(PhapMon.THUAT, it, sect); "ngọc giản ${PhapMon.THUAT_PHAP[it].name}, đặt lên giá tham ngộ"
             } ?: return null
-            2 -> PhapMon.TAM_PHAP.indices.filter { it !in DaoPhap.tam }.randomOrNull(rng)?.let {
-                DaoPhap.gainTam(it); "ngọc giản ${PhapMon.TAM_PHAP[it].name}"
+            2 -> PhapMon.TAM_PHAP.indices.filter { it !in DaoPhap.tam && !DaoPhap.onShelf(PhapMon.TAM, it) }.randomOrNull(rng)?.let {
+                DaoPhap.toShelf(PhapMon.TAM, it, sect); "ngọc giản ${PhapMon.TAM_PHAP[it].name}, đặt lên giá tham ngộ"
             } ?: return null
             3 -> DanDao.RECIPES.indices.filter { it !in DongPhu.known }.randomOrNull(rng)?.let {
                 DongPhu.learn(it); "đan phương ${DanDao.RECIPES[it].name}"

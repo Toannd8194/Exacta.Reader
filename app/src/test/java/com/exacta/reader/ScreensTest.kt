@@ -546,6 +546,17 @@ class ScreensTest {
         idle()
         shoot(root(a), "congphap_3_thuat_p2")
         com.exacta.reader.data.DaoLo.dan = danBefore
+        // 3.4: the án with a ngọc giản half read, three on the shelf, a tàn quyển.
+        DaoPhap.toShelf(PhapMon.CONG, 22); DaoPhap.shelf[0].done = 14_000
+        DaoPhap.toShelf(PhapMon.TAM, PhapMon.TP_VO_NIEM)
+        DaoPhap.toShelf(PhapMon.THUAT, PhapMon.T_DANG_LA)
+        DaoPhap.toShelf(PhapMon.THUAT, PhapMon.T_HOI_XUAN)
+        DaoPhap.frags[PhapMon.ofLine(0, 4)!!] = 2
+        a.selectTab(4)
+        a.page = 0
+        a.refresh()
+        idle()
+        shoot(root(a), "congphap_4_an")
         Store.realmCap = 2
         // Before the awakening.
         DaoPhap.migrate()
