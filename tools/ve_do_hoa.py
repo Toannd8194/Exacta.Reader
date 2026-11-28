@@ -607,9 +607,23 @@ def icon_dao_bach():
     return p.image(128)
 
 
+def icon_linhgioi():
+    """Linh giới: an island of mountains floating over a sea of clouds, a gate of light on top."""
+    p = Pen(128)
+    p.poly([(14, 70), (40, 34), (52, 48), (70, 18), (98, 52), (114, 70)], BLACK)
+    p.poly([(14, 70), (114, 70), (92, 92), (64, 104), (36, 92)], BLACK)
+    p.cut(pts=[(66, 30), (70, 24), (76, 34)])
+    p.ring(70, 10, 6, 3, BLACK)
+    for x, y, r in ((22, 108, 10), (38, 104, 13), (56, 112, 10), (88, 110, 12), (106, 106, 10)):
+        p.circle(x, y, r, BLACK)
+    p.poly([(12, 112), (118, 112), (118, 122), (12, 122)], BLACK)
+    p.cut(pts=[(20, 114), (110, 114), (110, 117), (20, 117)])
+    return p.image(128)
+
+
 ICONS = {'congphap': icon_congphap, 'dongphu': icon_dongphu, 'phapbao': icon_phapbao, 'daohieu': icon_daohieu,
          'nienky': icon_nienky, 'tongmon': icon_tongmon, 'daolo': icon_daolo, 'dao_phap': icon_dao_phap,
-         'dao_the': icon_dao_the, 'dao_than': icon_dao_than, 'dao_kiem': icon_dao_kiem, 'dao_bach': icon_dao_bach}
+         'dao_the': icon_dao_the, 'dao_than': icon_dao_than, 'dao_kiem': icon_dao_kiem, 'dao_bach': icon_dao_bach, 'linhgioi': icon_linhgioi}
 
 # --- Âm Dương phẩm frames (pixel art, 128 logical × 2) ---------------------------------------------
 

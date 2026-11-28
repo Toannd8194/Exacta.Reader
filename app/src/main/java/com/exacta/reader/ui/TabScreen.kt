@@ -42,6 +42,13 @@ abstract class TabActivity : AppCompatActivity() {
 
     open fun onTab(tab: Int) {}
 
+    /**
+     * The realm a tab opens at (Realm index: 1 Trúc Cơ … 9 Tiên nhân), or -1 when always open. A tab
+     * not yet reached is drawn pale under a framed word that the road is still far.
+     */
+    open fun opensAt(tab: Int): Int = -1
+    fun locked(tab: Int) = opensAt(tab) > Store.realmCap.coerceAtLeast(0)
+
     fun selectTab(t: Int) {
         tab = t.coerceIn(0, tabs().size - 1)
         page = 0
@@ -137,12 +144,21 @@ class TabView(context: Context, private val host: TabActivity) : View(context) {
         // Content and the page row.
         val pagerH = 52 * u
         val area = RectF(m, top, w - m, h - 10 * u - pagerH - 8 * u)
+        val locked = host.locked(host.tab)
+        if (locked) host.page = 0
+        val before = hits.list.size
         pages = try {
             host.content(c, k, area, host.tab, host.page, hits).coerceAtLeast(1)
         } catch (e: Exception) {
             com.exacta.reader.ExactaApp.log("screen ${host.title()}: ${e.stackTraceToString()}")
             k.text(c, "Lỗi vẽ màn hình: ${e.javaClass.simpleName}", area.left, area.top, k.small)
             1
+        }
+        if (locked) {
+            // Nothing under the veil can be touched; one page only.
+            while (hits.list.size > before) hits.list.removeAt(hits.list.size - 1)
+            pages = 1
+            veil(c, k, area, host.opensAt(host.tab))
         }
         if (host.page >= pages) {
             host.page = pages - 1
@@ -162,12 +178,48 @@ class TabView(context: Context, private val host: TabActivity) : View(context) {
         }
     }
 
+    /** The pale veil over a tab not yet open, and the framed word in the middle. */
+    private fun veil(c: Canvas, k: Ink, a: RectF, realm: Int) {
+        val u = k.u
+        c.drawRect(a.left - 4 * u, a.top - 4 * u, a.right + 4 * u, a.bottom + 4 * u,
+            android.graphics.Paint().apply { color = Color.argb(205, 236, 236, 236) })
+        val pad = 30 * u
+        val w = a.width() * 0.86f
+        val line = LOCK_LINES[((host.title().hashCode() and 0xffff) + host.tab) % LOCK_LINES.size]
+        val body = k.wrap(line, w - 2 * pad, k.small, 4)
+        val need = "Mở khi tới ${com.exacta.reader.game.Realm.baseName(realm)}"
+        val h = 2 * pad + k.lineH(k.ui12Bold) + 12 * u + body.size * k.lineH(k.small) + 14 * u + k.lineH(k.smallBold)
+        val r = RectF(a.centerX() - w / 2, a.centerY() - h / 2, a.centerX() + w / 2, a.centerY() + h / 2)
+        c.drawRoundRect(r, 14 * u, 14 * u, k.white)
+        k.card(c, r, selected = false)
+        c.drawRoundRect(k.inset(r, 7 * u), 10 * u, 10 * u, k.stroke(1.2f))
+        var y = r.top + pad
+        k.centered(c, "Tiên lộ còn xa", r.left, r.width(), y, k.ui12Bold)
+        y += k.lineH(k.ui12Bold) + 12 * u
+        for (l in body) {
+            k.centered(c, l, r.left + pad, r.width() - 2 * pad, y, k.small)
+            y += k.lineH(k.small)
+        }
+        y += 14 * u
+        k.centered(c, need, r.left, r.width(), y, k.smallBold)
+    }
+
     private fun turn(delta: Int) {
         val p = (host.page + delta).coerceIn(0, pages - 1)
         if (p != host.page) {
             host.page = p
             invalidate()
         }
+    }
+
+    companion object {
+        val LOCK_LINES = listOf(
+            "Con đường phía trước còn mờ mịt trong mây. Đạo hữu hãy tĩnh tâm đọc tiếp, tới lúc tự khắc thấy cửa.",
+            "Thiên cơ chưa tới, cưỡng cầu chỉ sinh tâm ma. Cứ từng trang mà đi, cảnh này sẽ tự hiện.",
+            "Núi còn cao, chân mới tới lưng chừng. Chăm đọc thêm ít lâu, đỉnh sẽ gần.",
+            "Mây mù che lối, đạo tâm chưa đủ để nhìn thấu. Tu thêm một đoạn, màn sương sẽ tan.",
+            "Cửa này chưa mở cho người chưa tới. Đọc tiếp đi, ngày gõ cửa không xa.",
+        )
     }
 
     @SuppressLint("ClickableViewAccessibility")

@@ -30,7 +30,7 @@ import kotlin.random.Random
  */
 @SuppressLint("ViewConstructor")
 class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU, TONG_MON, BI_CANH, DAO_LO }
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU, TONG_MON, BI_CANH, DAO_LO, LINH_GIOI }
 
     var book: Book? = null
     var needsPermission = false
@@ -85,7 +85,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val lunar = Lunar.fromSolar(today.dayOfMonth, today.monthValue, today.year)
         val t = Store.shownTitle()
         k.status(c, w, if (t >= 0) "« ${DaoHieu.NAMES[t]} »" else Lunar.plainDate(today.dayOfMonth, today.monthValue, lunar))
-        if (t >= 0) on(RectF(w / 2 - 200 * u, 0f, w / 2 + 200 * u, Ink.STATUS_H * u), Action.DAO_HIEU)
+        on(RectF(w / 2 - 200 * u, 0f, w / 2 + 200 * u, Ink.STATUS_H * u), Action.DAO_HIEU)
         val m = Ink.MARGIN * u
         val area = RectF(m, (Ink.STATUS_H + 12) * u, w - m, h - 10 * u)
         when (Store.homeStyle) {
@@ -717,8 +717,10 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
 
     // --- The dock ---------------------------------------------------------------------------
 
-    private fun drawDock(c: Canvas, k: Ink, r: RectF, actions: List<Action>) {
+    private fun drawDock(c: Canvas, k: Ink, r: RectF, given: List<Action>) {
         val u = k.u
+        // From Hóa Thần the way to Linh giới takes the place of Đạo hiệu (the top bar still opens it).
+        val actions = if (Store.realmCap >= 4) given.map { if (it == Action.DAO_HIEU) Action.LINH_GIOI else it } else given
         val due = NienKy.due()
         val all = mapOf(
             Action.PHAP_BAO to ("phapbao" to "Pháp bảo"),
@@ -731,6 +733,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             Action.DONG_PHU to ("dongphu" to "Động phủ"),
             Action.TONG_MON to ("tongmon" to "Tông môn"),
             Action.DAO_LO to ("daolo" to "Đạo lộ"),
+            Action.LINH_GIOI to ("linhgioi" to "Linh giới"),
             Action.BI_CANH to ("bicanh" to "Bí cảnh"),
         )
         val g = Ink.GAP * u

@@ -50,6 +50,7 @@ class TongMonTest {
         TongMon.started = true
         BiCanh.reset()
         com.exacta.reader.data.DaoLo.reset()
+        com.exacta.reader.data.LinhGioi.reset()
         BiCanh.started = true
         BiCanh.rng = roll(0)
     }
@@ -64,7 +65,9 @@ class TongMonTest {
         assertFalse(TongMon.canJoin())
         assertFalse(TongMon.join(TongMon.KIEM_LU))
         awaken()
-        assertEquals(TongMon.KIEM_LU, TongMon.suggested())   // Kim
+        assertTrue(TongMon.KIEM_LU in TongMon.choices())       // Kim
+        assertEquals(TongMon.choices().first(), TongMon.suggested())
+        assertEquals(8, TongMon.choiceCount())                 // Thiên linh căn
         assertTrue(TongMon.join(TongMon.KIEM_LU))
         assertEquals(3, TongMon.tasks.size)
         assertTrue(TongMon.rivalName.startsWith("Sư"))
@@ -76,7 +79,7 @@ class TongMonTest {
     @Test
     fun tasksPayCốngHiến() {
         awaken()
-        TongMon.join(TongMon.MINH_TAM)
+        TongMon.join(TongMon.MINH_TAM, check = false)
         TongMon.tasks.clear(); TongMon.tasks.addAll(listOf(0, 6, 4))
         val w = TongMon.week
         for (d in w..today) Store.daySeconds[d] = 1900
@@ -92,7 +95,7 @@ class TongMonTest {
     @Test
     fun rankAsksTheRealmToo() {
         awaken()
-        TongMon.join(TongMon.VAN_QUYEN)
+        TongMon.join(TongMon.VAN_QUYEN, check = false)
         TongMon.gain(1_200, "thử")
         assertEquals(1, TongMon.rank())            // Chân truyền asks Kim Đan
         Store.realmCap = 2
@@ -107,7 +110,7 @@ class TongMonTest {
     @Test
     fun theRivalKeepsYourPace() {
         awaken()
-        TongMon.join(TongMon.THIET_COT)
+        TongMon.join(TongMon.THIET_COT, check = false)
         TongMon.rivalWords = 10_000.0
         TongMon.rivalDay = today - 3
         for (d in 0..40) Store.dayWords[today - d] = 6_000
@@ -122,7 +125,7 @@ class TongMonTest {
     @Test
     fun theContestOfTheQuarter() {
         awaken()
-        TongMon.join(TongMon.BACH_THAO)
+        TongMon.join(TongMon.BACH_THAO, check = false)
         TongMon.joinDay = today - 200
         TongMon.quarter = TongMon.quarterOf(today) - 1
         TongMon.check()
@@ -236,6 +239,24 @@ class TongMonTest {
         val order = KyNgo.ORDER.map { KyNgo.EVENTS[it].rarity }
         assertEquals(order.sorted(), order)
         assertTrue(KyNgo.OLD_NAMES.all { KyNgo.index(it) >= 0 })
+    }
+
+    @Test
+    fun thirtySixSectsSixToEightOpen() {
+        assertEquals(36, TongMon.SECTS.size)
+        for (f in 0..4) assertEquals(f, TongMon.SECTS[f].family)
+        DaoPhap.started = true
+        DaoPhap.roots.addAll(listOf(com.exacta.reader.game.PhapMon.HOA, com.exacta.reader.game.PhapMon.THUY, com.exacta.reader.game.PhapMon.THO))
+        assertEquals(6, TongMon.choiceCount())
+        val list = TongMon.choices()
+        assertTrue(list.size <= 6 && list.isNotEmpty())
+        assertTrue(list.all { TongMon.admits(it) })
+        assertTrue(TongMon.SECTS.indices.first { TongMon.SECTS[it].name == "Xích Viêm Cốc" } in list)
+        assertFalse(TongMon.join(TongMon.SECTS.indices.first { TongMon.SECTS[it].name == "Long Tượng Môn" }))
+        // The perks follow the line.
+        assertTrue(TongMon.join(TongMon.SECTS.indices.first { TongMon.SECTS[it].name == "Xích Viêm Cốc" }))
+        assertTrue(TongMon.perk(TongMon.VAN_QUYEN))
+        assertEquals(0, TongMon.family())
     }
 
     @Test

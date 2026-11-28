@@ -4,9 +4,9 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.4.apk`](dist/Van-Quyen-Tien-Do-2.4.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.5.apk`](dist/Van-Quyen-Tien-Do-2.5.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
-Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.4): [`dist/Van-Quyen-Tien-Do-2.4-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.4-Cam-nang.pdf).
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.5): [`dist/Van-Quyen-Tien-Do-2.5-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.5-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
 pháp, 72 pháp bảo, 18 bộ, 18 đan dược và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
 
@@ -16,6 +16,24 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, Đ
 Bản 2.0, 2.1, 2.2 là ba bước đầu của lộ trình; các bước 2.3 – 2.7 còn đó. Từ 2.1, bản thiết kế có thêm chương Độ Kiếp
 (giai đoạn đặc biệt chín tầng kiếp) và chương Phi Thăng kỳ: cảnh giới cuối của Linh giới, nơi Lục Giới Môn mở và người
 tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả đời tu và nghiệp lực. Phần sau cửa để ngỏ cho các bản 3.x.
+
+## Bản 2.5 · Phá Toái Hư Không
+
+- **Linh giới** (màn mới; từ Hóa Thần, nút Linh giới thay chỗ Đạo hiệu ở Home, Đạo hiệu vẫn mở từ thanh trên):
+  - **Phi thăng** ba bước: không gian tiết điểm (bí cảnh 4 tuần liền), trảm trần duyên (một bản mệnh pháp bảo, hai nếu Song
+    Anh, và ba món mang theo), phi thăng kiếp 7 ngày × 55 phút.
+  - Ở Linh giới, bộ pháp bảo nào không có món nào được mang lên thì bị linh khí áp chế, mất hiệu quả; mỗi 30 ngày tế luyện
+    thêm được một món. Bản mệnh ôn dưỡng, lớn một tầng mỗi 20 giờ đọc (linh lực +1% mỗi tầng).
+  - **Tám pháp tắc** (Kim, Mộc, Thủy, Hỏa, Thổ, Lôi, Không gian, Thời gian), mở theo linh căn, công pháp, đạo lộ; mỗi lúc
+    tham ngộ một, qua ba thử thách đọc. Hợp Thể cần một pháp tắc và **thân thần hợp nhất** (thể phách 300, thần thức 24;
+    tạp linh căn được nửa). Đại Thừa cần ba pháp tắc và một **đạo vực** tự đặt tên: ba pháp tắc trong vực tính gấp đôi.
+- **36 tông môn** theo năm dòng; mỗi tông đòi điều riêng (linh căn, dị linh căn, công pháp, đạo lộ, căn cơ, thể phách,
+  thần thức, chuỗi ngày, sách đọc trọn, lò đan, pháp bảo, cảnh giới). Mỗi lúc chỉ 6 – 8 tông hợp nhất chịu nhận (8 với
+  Thiên linh căn). Thẻ tông hai dòng.
+- **Cửa chưa tới thì khóa**: tab nào chưa tới gần (Kim Đan mở ở Trúc Cơ, Hóa Thần ở Nguyên Anh, pháp tắc ở Luyện Hư…) phủ
+  xám nhạt, giữa trang hiện khung «Tiên lộ còn xa». Chạm loại Kim Đan để xem điều kiện kết đan và mình đang ở đâu.
+- **Độ đậm** khi đọc theo %, bước 5% như cỡ chữ; mức đậm đang dùng thành 100%.
+- versionCode 250.
 
 ## Bản 2.4 · Ngũ Lộ Đồng Quy
 
@@ -198,6 +216,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.3 | Bái Nhập Sơn Môn | tông môn, bí cảnh bản đồ, 72 kỳ ngộ, tiểu đột phá, cảnh giới theo kỳ |
   | 2.3.1 | Lục Giới Phân Đồ | Phi Thăng, Lục Giới Môn, sáu loại tiên nhân, Home gọn lại |
   | 2.4 | Ngũ Lộ Đồng Quy | Đạo lộ, mười hai Kim Đan, sáu Hóa Thần, Song Anh, Lục Giới cảm ứng, nghiệp lực |
+  | 2.5 | Phá Toái Hư Không | Phi thăng Linh giới, pháp tắc, đạo vực, 36 tông môn, độ đậm theo % |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

@@ -70,21 +70,34 @@ class TongMonActivity : TabActivity() {
         }
     }
 
-    // --- Not in a sect yet: the five ---------------------------------------------------------------------
+    // --- Not in a sect yet: the sects that would take the cultivator ---------------------------------------
+
+    /** A sect in two lines: the name and its line, then what it asks (or its text). */
+    private fun sectCard(c: Canvas, k: Ink, r: RectF, i: Int, best: Boolean, hits: Hits) {
+        val u = k.u
+        val s = TongMon.SECTS[i]
+        val pad = 14 * u
+        k.card(c, r, selected = best)
+        val tag = s.way + if (best) " · hợp nhất" else ""
+        k.right(c, tag, r.right - pad, r.top + pad + (k.lineH(k.ui10Bold) - k.lineH(k.smallBold)) / 2, k.smallBold)
+        k.line(c, s.name, r.left + pad, r.top + pad, r.width() - 2 * pad - k.smallBold.measureText(tag) - 10 * u, k.ui10Bold)
+        val asks = s.reqs.joinToString(" · ") { TongMon.reqText(s, it).first }.ifEmpty { "Cửa mở cho mọi tán tu" }
+        k.line(c, asks, r.left + pad, r.top + pad + k.lineH(k.ui10Bold) + 4 * u, r.width() - 2 * pad, k.small)
+        hits.add(r) { joinDialog(i) }
+    }
 
     private fun choose(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
         val u = k.u
         val small = k.small
-        var y = k.section(c, a.left, a.top, a.width(), "NĂM TÔNG MÔN · BÁI NHẬP MỘT TÔNG")
-        y = para(c, k, if (DaoPhap.awakened()) "Linh căn đã thức tỉnh: chọn một tông để bái nhập. Tông hợp chủ hành của linh căn được đánh dấu. Về sau được chuyển tông một lần, nhưng cống hiến ở lại tông cũ."
-            else "Linh căn thức tỉnh (Luyện Khí trung kỳ) thì các tông mới nhận đệ tử. Trước đó, đạo hữu là tán tu.", a.left, y, a.width(), small, 3) + 10 * u
+        val list = if (DaoPhap.awakened()) TongMon.choices() else emptyList()
+        var y = k.section(c, a.left, a.top, a.width(), "BA MƯƠI SÁU TÔNG · ${list.size} TÔNG CHỊU NHẬN")
+        y = para(c, k, if (DaoPhap.awakened()) "Không phải tông nào cũng nhận. Tùy tư chất, linh căn, công pháp, đạo lộ, mỗi lúc chỉ ${TongMon.choiceCount()} tông hợp nhất mở cửa cho bạn; tu thêm thì tông khác sẽ để mắt. Chạm một tông để xem."
+            else "Linh căn thức tỉnh (Luyện Khí trung kỳ) thì các tông mới nhận đệ tử. Trước đó, đạo hữu là tán tu.", a.left, y, a.width(), small, 4) + 10 * u
         val gap = 8 * u
-        val h = ((a.bottom - y - 4 * gap) / 5).coerceAtMost(150 * u)
-        val hint = TongMon.suggested()
-        for ((i, s) in TongMon.SECTS.withIndex()) {
-            val r = RectF(a.left, y, a.right, y + h)
-            row(c, k, r, s.name, s.way + if (DaoPhap.awakened() && i == hint) " · hợp linh căn" else "", listOf(s.perk, s.text),
-                if (TongMon.canJoin()) "Bái nhập" else "Chưa nhận", TongMon.canJoin(), hits) { joinDialog(i) }
+        val h = minOf(2 * 14 * u + k.lineH(k.ui10Bold) + 4 * u + k.lineH(small), (a.bottom - y - (list.size - 1) * gap) / list.size.coerceAtLeast(1))
+        for ((n, i) in list.withIndex()) {
+            if (y + h > a.bottom + u) break
+            sectCard(c, k, RectF(a.left, y, a.right, y + h), i, n == 0, hits)
             y += h + gap
         }
         return 1
@@ -92,15 +105,17 @@ class TongMonActivity : TabActivity() {
 
     private fun joinDialog(i: Int) {
         val s = TongMon.SECTS[i]
-        AlertDialog.Builder(this)
-            .setTitle("Bái nhập ${s.name}?")
-            .setMessage("${s.text}\n\nĐường tu: ${s.way}. Ưu đãi: ${s.perk}.\n\nVề sau chỉ được chuyển tông một lần, và cống hiến không mang theo.")
-            .setPositiveButton("Bái nhập") { _, _ ->
-                if (TongMon.join(i)) toast("Đã bái nhập ${s.name}")
-                refresh()
-            }
-            .setNegativeButton("Suy nghĩ thêm", null)
-            .show()
+        val asks = s.reqs.joinToString("\n") { TongMon.reqText(s, it).let { (t, ok) -> (if (ok) "✓ " else "✗ ") + t } }.ifEmpty { "Không đòi gì." }
+        val can = if (TongMon.joined()) !TongMon.changed else TongMon.canJoin()
+        val d = AlertDialog.Builder(this)
+            .setTitle((if (TongMon.joined()) "Chuyển sang " else "Bái nhập ") + "${s.name}?")
+            .setMessage("${s.text}\n\nĐường tu: ${s.way}. Ưu đãi: ${s.perk}.\n\nTông đòi:\n$asks\n\n" +
+                if (TongMon.joined()) "Chỉ được chuyển tông một lần, cống hiến ở lại tông cũ." else "Về sau chỉ được chuyển tông một lần, và cống hiến không mang theo.")
+        if (can) d.setPositiveButton(if (TongMon.joined()) "Chuyển tông" else "Bái nhập") { _, _ ->
+            if (TongMon.join(i)) toast((if (TongMon.joined()) "Đã vào " else "Đã bái nhập ") + s.name)
+            refresh()
+        }
+        d.setNegativeButton("Suy nghĩ thêm", null).show()
     }
 
     // --- The sect ---------------------------------------------------------------------------------------
@@ -157,13 +172,10 @@ class TongMonActivity : TabActivity() {
     }
 
     private fun changeDialog() {
-        val names = TongMon.SECTS.indices.filter { it != TongMon.sect }
+        val names = TongMon.choices()
         AlertDialog.Builder(this)
-            .setTitle("Chuyển sang tông nào?")
-            .setItems(names.map { "${TongMon.SECTS[it].name} · ${TongMon.SECTS[it].way}" }.toTypedArray()) { _, i ->
-                if (TongMon.join(names[i])) toast("Đã chuyển sang ${TongMon.SECTS[names[i]].name}")
-                refresh()
-            }
+            .setTitle("Tông nào chịu nhận?")
+            .setItems(names.map { "${TongMon.SECTS[it].name} · ${TongMon.SECTS[it].way}" }.toTypedArray()) { _, i -> joinDialog(names[i]) }
             .setNegativeButton("Ở lại", null)
             .show()
     }

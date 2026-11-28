@@ -560,25 +560,30 @@ Giải Độc Đan; còn lại tìm ở kỳ ngộ, bí cảnh tuần, Tàng Kin
 
 
 TONGMON = read('data', 'TongMon.kt')
-SECTS = re.findall(r'Sect\("([^"]+)", "([^"]+)", "([^"]+)",', TONGMON)
+SECT_ROWS = re.findall(r'Sect\("([^"]+)", (\d)', TONGMON)
+WAYS5 = ['Pháp tu', 'Thể tu', 'Thần tu', 'Kiếm tu', 'Bách nghệ']
+PERKS5 = re.findall(r'^        "([^"]+)",$', TONGMON[TONGMON.index('val PERKS'):TONGMON.index('private fun r(')], re.M)
+SECTS = [(WAYS5[f], [n for n, ff in SECT_ROWS if int(ff) == f], PERKS5[f]) for f in range(5)]
 TASKS = re.findall(r'Task\("([^"]+)", [\d_]+, (\d+)\)', TONGMON)
 RANKS = strings(TONGMON, 'RANKS')
 RANK_AT = numbers(TONGMON, 'RANK_AT')
 SALARY = numbers(TONGMON, 'SALARY')
 BICANH = read('data', 'BiCanh.kt')
 BC_TYPES = strings(BICANH, 'TYPES')
-assert len(SECTS) == 5 and len(TASKS) == 12 and len(BC_TYPES) == 7
+assert len(SECT_ROWS) == 36 and len(PERKS5) == 5 and len(TASKS) == 12 and len(BC_TYPES) == 7
 
 
 def part2d():
-    sects = table(['Tông', 'Đường', 'Ưu đãi'], [[f'<b>{e(n)}</b>', e(w), e(pk)] for n, w, pk in SECTS], 'lib')
+    sects = table(['Dòng', 'Tông', 'Ưu đãi'], [[f'<b>{e(w)}</b>', e(', '.join(ns)), e(pk)] for w, ns, pk in SECTS], 'lib')
     tasks = '<p class="small">Mười hai việc có thể được giao: ' + '; '.join(f'{e(t[0].lower() + t[1:])} ({r})' for t, r in TASKS) + '.</p>'
     ranks = ' · '.join(f'{e(RANKS[i])} {num(RANK_AT[i])}' for i in range(5))
     salary = ' / '.join(str(x) for x in SALARY)
     return chapter('V', 'Tông môn và bí cảnh', 'Từ bản 2.3, người tu có sơn môn để bái, đồng môn để đua, và bí cảnh thành một bản đồ đầy biến cố.') + f'''
-{h2('Năm tông môn', True)}
-<p>Linh căn thức tỉnh (Luyện Khí trung kỳ) thì bái nhập được một tông. Tông hợp chủ hành của linh căn được đánh dấu. Chuyển tông
-được một lần, cống hiến ở lại tông cũ.</p>
+{h2('Ba mươi sáu tông môn', True)}
+<p>Linh căn thức tỉnh (Luyện Khí trung kỳ) thì các tông mới nhận đệ tử. Ba mươi sáu tông chia năm dòng, mỗi dòng một ưu đãi chung;
+mỗi tông đòi điều riêng (linh căn, dị linh căn, công pháp, đạo lộ, căn cơ, thể phách, thần thức, chuỗi ngày, sách đọc trọn, lò
+đan, pháp bảo, cảnh giới). Mỗi lúc chỉ 6 tông hợp nhất chịu nhận: 7 với song linh căn hoặc dị linh căn, 8 với Thiên linh căn.
+Chuyển tông được một lần, cống hiến ở lại tông cũ.</p>
 {sects}
 <p>Thân phận theo tổng cống hiến đã nhận (Chân truyền cần Kim Đan, Trưởng lão cần Nguyên Anh, Thái thượng cần Hóa Thần): {ranks}.</p>
 
@@ -615,6 +620,11 @@ WAYS24 = [
     ('Kiếm tu', 'cuốn xong trong 14 ngày +4.000; chuỗi từ 7 ngày +10%', 'Kiếm Anh · Kiếm Ý Thông Thiên', '1/4 lần đột phá thành vào thẳng trung kỳ', 'tâm ma ×1,5', '2 ngày × 50′'),
     ('Bách nghệ', 'mỗi lò đan, mỗi pháp bảo +1.500', 'Hỏa Anh · Thiên Hỏa Hóa Thân', 'luyện đan +15%, đan độc −25%', 'linh lực −15%', '3 ngày × 45′'),
 ]
+
+LINHGIOI = read('data', 'LinhGioi.kt')
+LAWS25 = [(m[0], m[2], m[3], *m[4:]) for m in re.findall(
+    r'Law\("([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)",\s*listOf\("([^"]+)", "([^"]+)", "([^"]+)"\)\)', LINHGIOI)]
+assert len(LAWS25) == 8, len(LAWS25)
 
 DANS24 = [
     ('Canh Kim Đan', 'Ngũ hành', 'linh căn Kim, công pháp Kim', 'linh lực +5%, kết anh +6%'),
@@ -657,7 +667,8 @@ def part2e():
                  [[f'<b>{e(g[0])}</b>'] + [e(x) for x in g[1:]] for g in GIOI24], 'lib')
     dans = table(['Kim Đan', 'Nhóm', 'Kết khi', 'Được'], [[f'<b>{e(d[0])}</b>', e(d[1]), e(d[2]), e(d[3])] for d in DANS24], 'lib')
     thans = table(['Hóa Thần', 'Từ', 'Lợi hại, Hợp Thể, Độ Kiếp'], [[f'<b>{e(t[0])}</b>', e(t[1]), e(t[2])] for t in THANS24], 'lib')
-    return chapter('VI', 'Đạo lộ và Lục Giới', 'Từ bản 2.4, mỗi người tu đi một trong năm con đường, và chính con đường ấy, cùng cả đời tu, quyết định giới nào tiếp dẫn khi phi thăng.') + f'''
+    laws = table(['Pháp tắc', 'Mở khi', 'Được', 'Ba thử thách'], [[f'<b>{e(l[0])}</b>', e(l[1]), e(l[2]), e(' → '.join(l[3:]))] for l in LAWS25], 'lib')
+    return chapter('VI', 'Đạo lộ và Lục Giới', 'Từ bản 2.4, mỗi người tu đi một trong năm con đường; bản 2.5 mở Linh giới. Con đường ấy, cùng cả đời tu, quyết định giới nào tiếp dẫn khi phi thăng.') + f'''
 {h2('Năm đạo lộ', True)}
 <p>Lên Trúc Cơ thì chọn đạo lộ, một lần cho cả đời tu, trước khi ngưng đan (cửa Kim Đan đòi điều này). Người đã qua Kim Đan từ bản cũ
 chọn được bất cứ lúc nào. Màn Đạo lộ đánh dấu đường «hợp nhất» với cách đọc của bạn.</p>
@@ -683,6 +694,17 @@ cuối cùng <b>ngũ hành</b> theo linh căn và công pháp (Canh Kim, Ất M�
 tên «Tử Lôi Kiếm Anh», tỉ lệ kết anh của đan, tốc độ của đan tăng thêm một nửa.</p>
 {dans}
 {thans}
+
+{h2('Linh giới: phi thăng, pháp tắc, đạo vực', True)}
+<p>Từ bản 2.5. <b>Phi thăng</b> (cửa vào Luyện Hư) có ba bước: <b>không gian tiết điểm</b> là qua bí cảnh bốn tuần liền; <b>trảm trần
+duyên</b> là chọn một bản mệnh pháp bảo (hai nếu Song Anh) và ba món mang theo; rồi <b>phi thăng kiếp</b> 7 ngày × 55 phút. Ở Linh
+giới, bộ nào không có món nào được mang lên thì bị áp chế, mất hiệu quả (tu vi không bị ảnh hưởng); mỗi 30 ngày tế luyện thêm một
+món. Bản mệnh lớn một tầng mỗi 20 giờ đọc, tới tầng 9, mỗi tầng linh lực +1%.</p>
+{laws}
+<p>Mỗi lúc tham ngộ một pháp tắc; thử thách tính từ ngày bắt đầu, đổi sang pháp tắc khác thì mất tiến độ. Lĩnh ngộ được 300 LT.
+<b>Hợp Thể</b> cần một pháp tắc và thân thần hợp nhất: thể phách 300, thần thức 24 (ngũ hành tạp linh căn 150 và 12). <b>Đại Thừa</b>
+cần ba pháp tắc và một <b>đạo vực</b> tự đặt tên: ba pháp tắc trong vực tính gấp đôi, linh lực thêm 10%. Lôi pháp tắc bớt một ngày
+mọi thiên kiếp từ Hợp Thể; Thời gian bớt một ngày hồi khí.</p>
 
 {h2('Lục Giới cảm ứng', True)}
 <p>Không ai chọn được giới để phi thăng. Mỗi giới chấm điểm cả đời tu; giới cao điểm nhất tiếp dẫn. Cửa Lục Giới Môn đòi cảm ứng

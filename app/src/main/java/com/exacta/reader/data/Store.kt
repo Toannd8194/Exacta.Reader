@@ -202,7 +202,9 @@ object Store {
     var uiScale = 1.0
     var birthDay = 0
     var birthMonth = 0
-    var textWeight = 3          // 0 Mảnh … 5 Rất đậm; 3 Đậm vừa by default
+    var textWeight = 3          // 2.4 and before: 0 Mảnh … 5 Rất đậm (read once into weightRef)
+    var weightRef = 600         // CSS weight of 100%: the step the reader had in 2.4
+    var weightPct = 100         // độ đậm, 5% a step
     var footerMode = 0          // 0 chương · %, 1 chỉ %, 2 ẩn
     var homeStyle = 0           // see HomeView.STYLES
     var showHeader = true       // the book's title above the page
@@ -242,6 +244,7 @@ object Store {
         if (!TongMon.started) TongMon.migrate()
         if (!BiCanh.started) BiCanh.migrate()
         if (!DaoLo.started) DaoLo.migrate()
+        if (!LinhGioi.started) LinhGioi.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -315,6 +318,7 @@ object Store {
         o.optJSONObject("tongMon")?.let { TongMon.read(it) }
         o.optJSONObject("biCanh2")?.let { BiCanh.read(it) }
         o.optJSONObject("daoLo")?.let { DaoLo.read(it) }
+        o.optJSONObject("linhGioi")?.let { LinhGioi.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -327,6 +331,12 @@ object Store {
             justify = it.optBoolean("justify", justify); swapTaps = it.optBoolean("swapTaps", swapTaps)
             uiScale = it.optDouble("uiScale", uiScale); birthDay = it.optInt("birthDay"); birthMonth = it.optInt("birthMonth")
             textWeight = it.optInt("textWeight", textWeight); footerMode = it.optInt("footerMode", footerMode)
+            if (it.has("weightPct")) {
+                weightRef = it.optInt("weightRef", weightRef); weightPct = it.optInt("weightPct", weightPct)
+            } else {
+                // From 2.4: the weight the reader had is the new 100%.
+                weightRef = BookCss.OLD_STEP_WEIGHT[textWeight.coerceIn(0, 5)]; weightPct = 100
+            }
             homeStyle = it.optInt("homeStyle", homeStyle); showHeader = it.optBoolean("showHeader", showHeader)
             if (!it.optBoolean("homeStyles4")) homeStyle = intArrayOf(0, 0, 1, 2, 1, 3).getOrElse(homeStyle) { 0 }
             homeStyle = homeStyle.coerceIn(0, 3)
@@ -391,12 +401,13 @@ object Store {
             put("tongMon", TongMon.toJson())
             put("biCanh2", BiCanh.toJson())
             put("daoLo", DaoLo.toJson())
+            put("linhGioi", LinhGioi.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
                 .put("fontFamily", fontFamily).put("justify", justify).put("swapTaps", swapTaps)
                 .put("uiScale", uiScale).put("birthDay", birthDay).put("birthMonth", birthMonth)
-                .put("textWeight", textWeight).put("footerMode", footerMode)
+                .put("textWeight", textWeight).put("footerMode", footerMode).put("weightRef", weightRef).put("weightPct", weightPct)
                 .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
                 .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
                 .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes)
@@ -445,6 +456,7 @@ object Store {
         TongMon.reset()
         BiCanh.reset()
         DaoLo.reset()
+        LinhGioi.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -456,6 +468,7 @@ object Store {
         if (!TongMon.started) TongMon.migrate()
         if (!BiCanh.started) BiCanh.migrate()
         if (!DaoLo.started) DaoLo.migrate()
+        if (!LinhGioi.started) LinhGioi.migrate()
         dirty = true
         save()
         return true
@@ -1252,7 +1265,9 @@ object Store {
 
     // --- Bộ pháp bảo ------------------------------------------------------------------------------
 
-    fun setActive(set: Int) = set in 0 until Treasure.SETS && (setsDone shr set) and 1 == 1
+    fun setOwned(set: Int) = set in 0 until Treasure.SETS && (setsDone shr set) and 1 == 1
+    /** A set gathered works, unless in Linh giới none of its kinds was carried up (2.5). */
+    fun setActive(set: Int) = setOwned(set) && !LinhGioi.setHeld(set)
     fun setsCount() = Integer.bitCount(setsDone)
     fun kinds(): Set<Int> = beasts.map { it.species }.toSet()
 
@@ -1260,7 +1275,7 @@ object Store {
     fun checkSets() {
         val have = kinds()
         for (set in 0 until Treasure.SETS) {
-            if (setActive(set) || !Treasure.SET_MEMBERS[set].all { it in have }) continue
+            if (setOwned(set) || !Treasure.SET_MEMBERS[set].all { it in have }) continue
             setsDone = setsDone or (1 shl set)
             note("Gom đủ bộ ${Treasure.SET_NAMES[set]}: ${Treasure.SET_EFFECTS[set]}")
             giveOre(2, "Thưởng bộ pháp bảo")
@@ -1323,9 +1338,12 @@ object Store {
 
     private val TRIAL_MINUTES = intArrayOf(30, 30, 35, 40, 45, 45, 50, 55, 60)
     private val TRIAL_DAYS = intArrayOf(3, 3, 4, 4, 5, 5, 6, 6, 7)
+    /** 2.5: the phi thăng kiếp, into Linh giới. */
+    const val PHI_THANG_DAYS = 7
+    const val PHI_THANG_MINUTES = 55
 
     /** Words of tu vi: words read (+5% with Thượng Cổ Thần Khí), less what failed trials cost. */
-    fun tuViRaw() = totalWords + bonusTuVi + (if (setActive(8)) totalWords / 20 else 0) + (if (setActive(17)) totalWords / 20 else 0)
+    fun tuViRaw() = totalWords + bonusTuVi + (if (setOwned(8)) totalWords / 20 else 0) + (if (setOwned(17)) totalWords / 20 else 0)
     fun tuVi() = (tuViRaw() - tuViLoss + TuLuyen.adj).coerceAtLeast(0)
 
     private fun rawLevel() = Realm.level(tuVi())
@@ -1343,10 +1361,11 @@ object Store {
         !TuLuyen.hasTrial(g) -> 0
         g == 2 -> DaoLo.danDays()
         g == 3 -> (TRIAL_DAYS[2] - DaoLo.loiDays()).coerceAtLeast(2)
-        g == 6 -> (TRIAL_DAYS[5] + DaoLo.hopDays()).coerceAtLeast(2)
-        else -> TRIAL_DAYS[(g - 1).coerceIn(0, 8)]
+        g == 5 -> PHI_THANG_DAYS
+        g == 6 -> (TRIAL_DAYS[5] + DaoLo.hopDays() - LinhGioi.kiepLess()).coerceAtLeast(2)
+        else -> (TRIAL_DAYS[(g - 1).coerceIn(0, 8)] - LinhGioi.kiepLess()).coerceAtLeast(2)
     }
-    fun trialMinutes(g: Int = nextGate()) = if (g == 2) DaoLo.danMinutes() else TRIAL_MINUTES[(g - 1).coerceIn(0, 8)] - if (setActive(13)) 5 else 0
+    fun trialMinutes(g: Int = nextGate()) = if (g == 2) DaoLo.danMinutes() else if (g == 5) PHI_THANG_MINUTES - (if (setActive(13)) 5 else 0) else TRIAL_MINUTES[(g - 1).coerceIn(0, 8)] - if (setActive(13)) 5 else 0
     /** A day of the trial is met: ngưng đan by one sitting, the others by the day's minutes. */
     fun trialMet(day: Long) = if (nextGate() == 2) TuLuyen.bestMinutes(day) >= trialMinutes() else minutes(day) >= trialMinutes()
     fun minutes(day: Long) = (daySeconds[day] ?: 0) / 60 + (bonusMinutes[day] ?: 0)
@@ -1391,6 +1410,7 @@ object Store {
         TongMon.check()
         BiCanh.check()
         DaoLo.settle()
+        LinhGioi.check()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level
@@ -1430,6 +1450,7 @@ object Store {
         if (biCanhWeek == week) return
         biCanhWeek = week
         biCanhCount++
+        LinhGioi.onBiCanh(week)
         val lift = if (setActive(14)) 1 else 0
         giveOre((maxOf(Treasure.rollTier(), 1) + lift).coerceAtMost(Treasure.TIERS - 1), "Qua bí cảnh tuần")  // never below Huyền
         if (setActive(5)) giveOre(maxOf(Treasure.rollTier(), 1), "Phong Thần Bảo Lục")

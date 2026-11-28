@@ -262,7 +262,7 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     private fun buildNavigator(pub: Publication, initial: Locator?) {
         val config = EpubNavigatorFragment.Configuration().apply {
             servedAssets = listOf("fonts/.*")
-            // Bitter once per weight step: the family switches live when the weight changes.
+            // Bitter once per static face: the family switches live when the weight changes.
             for ((family, regular, bold) in BookCss.bitterFaces()) {
                 addFontFamilyDeclaration(FontFamily(family)) {
                     for ((face, weight) in listOf(regular to FontWeight.NORMAL, bold to FontWeight.BOLD)) {
@@ -579,14 +579,14 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
         pageMargins = Store.margins,
         fontFamily = when (Store.fontFamily) {
             "Original" -> null
-            "Bitter" -> FontFamily(BookCss.bitterFamily(Store.textWeight))
+            "Bitter" -> FontFamily(BookCss.bitterFamily())
             else -> FontFamily(Store.fontFamily)
         },
         textAlign = if (Store.justify) TextAlign.JUSTIFY else TextAlign.START,
         hyphens = Store.hyphens,
         paragraphIndent = if (Store.indent) 1.0 else null,
         paragraphSpacing = Store.paraSpacing,
-        wordSpacing = BookCss.strokeCarrier(Store.textWeight),
+        wordSpacing = BookCss.strokeCarrier(),
         publisherStyles = false,
         scroll = false,
     )

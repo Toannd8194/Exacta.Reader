@@ -163,7 +163,7 @@ class ScreensTest {
         DongPhu.lastResult = "Thành đan: 2 viên Tụ Khí Đan thượng phẩm"
         // 2.3: in Kiếm Lư, a contest held; a map with one node walked and one waiting.
         com.exacta.reader.data.TongMon.migrate()
-        com.exacta.reader.data.TongMon.join(com.exacta.reader.data.TongMon.KIEM_LU)
+        com.exacta.reader.data.TongMon.join(com.exacta.reader.data.TongMon.KIEM_LU, check = false)
         com.exacta.reader.data.TongMon.gain(1_300, "thử")
         com.exacta.reader.data.TongMon.joinDay = today - 120
         com.exacta.reader.data.TongMon.quarter = com.exacta.reader.data.TongMon.quarterOf(today) - 1
@@ -354,6 +354,21 @@ class ScreensTest {
     }
 
     @Test fun tongMon() = tabs(TongMonActivity::class.java, "tongmon")
+
+    @Test fun linhGioi() {
+        tabs(LinhGioiActivity::class.java, "linhgioi")
+        val l = com.exacta.reader.data.LinhGioi
+        val cap = Store.realmCap
+        Store.realmCap = 6
+        l.reset(); l.started = true
+        l.stage[l.HOA] = 3; l.stage[l.KIM] = 3; l.active = l.THUY; l.activeDay = Store.today() - 10; l.stage[l.THUY] = 1
+        Store.beasts.take(2).forEach { l.carried.add(it.seed) }
+        Store.beasts.lastOrNull()?.let { l.banMenh.add(it.seed) }
+        l.banMenhDay = Store.today() - 60
+        tabs(LinhGioiActivity::class.java, "linhgioi_open")
+        Store.realmCap = cap
+        l.reset(); l.started = true
+    }
 
     @Test fun daoLo() {
         val d = com.exacta.reader.data.DaoLo

@@ -249,11 +249,11 @@ class ReaderSheet(context: Context, private val host: Host) : View(context) {
             Store.fontSize = 1.0
             host.applyPrefs(false)
         }
-        stepper(c, k, r[2], "Độ đậm", BookCss.WEIGHT_NAMES[Store.textWeight.coerceIn(0, 5)], { d ->
-            Store.textWeight = (Store.textWeight + d).coerceIn(0, 5)
+        stepper(c, k, r[2], "Độ đậm", "${Store.weightPct}%", { d ->
+            Store.weightPct = (Store.weightPct + 5 * d).coerceIn(BookCss.pctMin(), BookCss.pctMax())
             host.applyPrefs(false)
         }) {
-            Store.textWeight = 3
+            Store.weightPct = 100
             host.applyPrefs(false)
         }
     }

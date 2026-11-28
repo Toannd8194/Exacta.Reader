@@ -39,6 +39,7 @@
         <activity android:name=".DongPhuActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".TongMonActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".DaoLoActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".LinhGioiActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".BiCanhActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".PhapBaoActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:exported="false" android:screenOrientation="portrait" />

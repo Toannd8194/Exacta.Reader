@@ -273,7 +273,7 @@ Thuật pháp có **độ thuần thục** tăng theo số lần dùng: Sơ Họ
 
 ### Tông môn
 
-Gia nhập ở Luyện Khí tầng 3, sau khi linh căn thức tỉnh. Năm tông, mỗi tông nghiêng về một đường:
+Gia nhập sau khi linh căn thức tỉnh. Từ bản 2.5 có **ba mươi sáu tông** chia năm dòng, năm tông dưới đây đứng đầu mỗi dòng. Không phải tông nào cũng nhận: mỗi tông đòi điều riêng (linh căn, dị linh căn, công pháp, đạo lộ, căn cơ, thể phách, thần thức, chuỗi ngày, sách đọc trọn, lò đan, pháp bảo, cảnh giới), và mỗi lúc chỉ 6 – 8 tông hợp nhất chịu nhận, tùy tư chất (8 với Thiên linh căn). Năm dòng:
 
 | Tông | Đường | Ưu đãi |
 |---|---|---|
@@ -350,7 +350,7 @@ Mỗi bước là một bản phát hành chơi được, có test chụp màn h
 | 2.2 | Động phủ, dược viên, đan phòng, đan độc, đan đạo cấp | Động phủ (5 tab) |
 | 2.3 | Tông môn, nhiệm vụ tuần, đối thủ; bí cảnh bản đồ, biến cố, trọng thương | Tông môn, Bí cảnh |
 | 2.4 | Đạo lộ; các kiểu kết đan, kết anh, hóa thần; luyện thể, luyện thần; kiêm tu, Song Anh | Đạo lộ |
-| 2.5 | Phi thăng; Linh giới, pháp tắc, Hợp Thể, Đại Thừa, đạo vực | Linh giới |
+| 2.5 | Phi thăng; Linh giới, pháp tắc, Hợp Thể, Đại Thừa, đạo vực; 36 tông môn (đã làm) | Linh giới |
 | 2.6 | Độ Kiếp chín tầng, Phi Thăng kỳ, thiên nhân ngũ suy; chế độ Chân Tu | Độ Kiếp |
 | 2.7 | Lục Giới Môn: lời gọi, chọn giới, mang theo, màn kết phần một, tiền đình | Lục Giới |
 | 3.x | Mỗi giới một phần riêng (Tiên, Ma, Phật, Yêu, Minh, Thần), để ngỏ | theo giới |

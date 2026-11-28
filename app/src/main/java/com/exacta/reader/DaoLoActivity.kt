@@ -28,6 +28,15 @@ class DaoLoActivity : TabActivity() {
         super.onCreate(savedInstanceState)
     }
 
+    /** Đạo lộ and Kim Đan open at Trúc Cơ, Hóa Thần and kiêm tu at Nguyên Anh, Lục Giới in Linh giới. */
+    override fun opensAt(tab: Int) = when (tab) {
+        0 -> if (DaoLo.way >= 0) -1 else 1
+        1 -> 1
+        2, 4 -> 3
+        5 -> 5
+        else -> -1
+    }
+
     override fun onTab(tab: Int) {
         armed = false
         result = null
@@ -54,7 +63,8 @@ class DaoLoActivity : TabActivity() {
         val items = DaoLo.DANS.mapIndexed { i, d ->
             Item("", d.name, if (i == mine) (if (formed) "đan của bạn" else "sẽ kết") else d.group, listOf("Khi: ${d.how}", d.good.replaceFirstChar { it.uppercase() }), i == mine) {
                 AlertDialog.Builder(this).setTitle(d.name).setMessage("${d.group}.\n\nKết khi: ${d.how}.\n\nĐược: ${d.good}.\n\nNguyên Anh thành ${d.prefix} " +
-                    (if (DaoLo.way >= 0) DaoLo.WAYS[DaoLo.way].forms[1] else "Nguyên Anh") + ".").setPositiveButton("Đóng", null).show()
+                    (if (DaoLo.way >= 0) DaoLo.WAYS[DaoLo.way].forms[1] else "Nguyên Anh") + ".\n\nBạn đang:\n" + DaoLo.danStatus(i).joinToString("\n") { (t, ok) -> (if (ok) "✓ " else "✗ ") + t } +
+                    "\n\nĐan xét theo thứ tự: Sinh Tử, Âm Dương, biến dị, ngũ hành; đủ điều kiện nhóm trước thì kết đan nhóm trước.").setPositiveButton("Đóng", null).show()
             }
         }
         return cards(c, k, a, y, page, items, hits)

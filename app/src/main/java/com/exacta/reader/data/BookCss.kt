@@ -25,20 +25,43 @@ import java.io.File
  * inside the open book under exacta-fonts/, with @font-face rules in the same CSS.
  */
 object BookCss {
-    /** Weight steps: names, and the Bitter face used for each. */
-    val WEIGHT_NAMES = listOf("Mảnh", "Thường", "Hơi đậm", "Đậm vừa", "Đậm", "Rất đậm")
-    private val BITTER_FACES = listOf("Light", "Regular", "Medium", "SemiBold", "Bold", "ExtraBold")
-    private val BITTER_BOLD = listOf("SemiBold", "Bold", "ExtraBold", "Black", "Black", "Black")
-    private const val STROKE_REM = 0.011  // per weight step above Thường, for fonts other than Bitter
+    /** The weight steps of 2.4 and before (kept to read old settings): the CSS weight of each. */
+    val OLD_STEP_WEIGHT = intArrayOf(300, 400, 500, 600, 700, 800)
 
-    /** The Readium font family for Bitter at a weight step. */
-    fun bitterFamily(step: Int) = if (step.coerceIn(0, 5) == 1) "Bitter" else "Bitter " + BITTER_FACES[step.coerceIn(0, 5)]
+    /**
+     * 2.5: the weight is a percent of the reader's reference weight (the step they had, 100%), like
+     * the font size. Bitter takes the heaviest static face not above the weight asked and a text
+     * stroke for the rest; other fonts take a stroke over their own regular face (400).
+     */
+    private val BITTER_FACES = listOf("Light", "Regular", "Medium", "SemiBold", "Bold", "ExtraBold", "Black")
+    private val BITTER_WEIGHT = intArrayOf(300, 400, 500, 600, 700, 800, 900)
+    private val BITTER_BOLD = listOf("SemiBold", "Bold", "ExtraBold", "Black", "Black", "Black", "Black")
+    private const val STROKE_REM = 0.011  // of text stroke for 100 of CSS weight
+    const val WEIGHT_MIN = 300
+    const val WEIGHT_MAX = 1300
+
+    /** The CSS weight asked for now. */
+    fun weight() = (Store.weightRef * Store.weightPct / 100).coerceIn(WEIGHT_MIN, WEIGHT_MAX)
+
+    /** Percents allowed with the reference weight: 5 apart, the weight from 300 to 1300. */
+    fun pctMin() = ((WEIGHT_MIN * 100 + Store.weightRef - 1) / Store.weightRef + 4) / 5 * 5
+    fun pctMax() = (WEIGHT_MAX * 100 / Store.weightRef) / 5 * 5
+
+    private fun face(w: Int) = BITTER_WEIGHT.indexOfLast { it <= w }.coerceAtLeast(0)
+
+    /** The Readium font family of a Bitter face. */
+    private fun bitterName(i: Int) = if (i == 1) "Bitter" else "Bitter " + BITTER_FACES[i]
+    fun bitterFamily() = bitterName(face(weight()))
 
     /** All Bitter families: name, regular face file, bold face file (italics alongside). */
-    fun bitterFaces() = (0..5).map { Triple(bitterFamily(it), BITTER_FACES[it], BITTER_BOLD[it]) }
+    fun bitterFaces() = BITTER_FACES.indices.map { Triple(bitterName(it), BITTER_FACES[it], BITTER_BOLD[it]) }
 
-    /** The word-spacing value that carries the stroke for a font that is not Bitter. */
-    fun strokeCarrier(step: Int): Double? = if (Store.fontFamily == "Bitter" || step <= 1) null else (step - 1) * STROKE_REM
+    /** The word-spacing value that carries the text stroke: the weight above the face drawn. */
+    fun strokeCarrier(): Double? {
+        val w = weight()
+        val base = if (Store.fontFamily == "Bitter") BITTER_WEIGHT[face(w)] else 400
+        return if (w <= base) null else (w - base) * STROKE_REM / 100
+    }
 
     // --- Fonts the reader adds ------------------------------------------------------------------
 

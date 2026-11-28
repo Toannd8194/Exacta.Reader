@@ -271,7 +271,7 @@ object DaoPhap {
     fun chungMa(): Int = if (tamWorks(PhapMon.TP_CHUNG_MA) && activeDef()?.attr == PhapMon.KIEM) minOf(20, TuLuyen.tamMa / 5) else 0
 
     /** Percent of linh lực the cultivator draws from a word (before bình cảnh and wounds). */
-    fun speed(): Int = (100 + rootBonus() + congBonus() + affinityBonus() + chungMa() + DongPhu.speedBonus() + DaoLo.speedBonus()).coerceIn(50, 200)
+    fun speed(): Int = (100 + rootBonus() + congBonus() + affinityBonus() + chungMa() + DongPhu.speedBonus() + DaoLo.speedBonus() + LinhGioi.speedBonus()).coerceIn(50, 250)
 
     fun speedParts(): List<Pair<String, Int>> {
         val list = ArrayList<Pair<String, Int>>()
@@ -285,6 +285,7 @@ object DaoPhap {
         if (chungMa() > 0) list.add("Đạo Tâm Chủng Ma" to chungMa())
         if (DongPhu.speedBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.speedBonus())
         list.addAll(DaoLo.speedParts())
+        list.addAll(LinhGioi.speedParts())
         return list
     }
 

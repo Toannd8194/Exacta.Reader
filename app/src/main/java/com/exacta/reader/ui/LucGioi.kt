@@ -49,7 +49,7 @@ object LucGioi {
         val attrs = TuLuyen.GIOI_ATTR[i].joinToString(", ") { PhapMon.attrName(it) }
         val tam = TuLuyen.GIOI_TAM[i].joinToString(", ") { PhapMon.TAM_PHAP[it].name }
         val way = TuLuyen.GIOI_WAY[i].takeIf { it >= 0 }?.let { DaoLo.WAYS[it].name }
-        val sect = TuLuyen.GIOI_SECT[i].takeIf { it >= 0 }?.let { TongMon.SECTS[it].name }
+        val sect = TuLuyen.GIOI_SECT[i].takeIf { it >= 0 }?.let { "theo ${TongMon.WAYS[it]} (như ${TongMon.SECTS[it].name})" }
         val now = TuLuyen.gioiParts(i)
         return buildString {
             append(TuLuyen.GIOI_TEXT[i])

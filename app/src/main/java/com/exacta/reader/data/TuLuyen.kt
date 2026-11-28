@@ -106,7 +106,7 @@ object TuLuyen {
     /** Căn cơ: 2 a day read 30 minutes (30 days), 10 a book read through (90 days, 4 at most), the Trúc Cơ's root. */
     fun canCo(): Int {
         val t = today()
-        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() + DaoLo.canCoBonus() - DongPhu.canCoPenalty() -
+        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() + DaoLo.canCoBonus() + LinhGioi.canCoBonus() - DongPhu.canCoPenalty() -
             (if (recent(tauHoaDay)) 10 else 0) - (jumps30() - 5).coerceIn(0, 20)
         return v.coerceIn(0, 100)
     }
@@ -130,11 +130,11 @@ object TuLuyen {
     fun authors(): Int = Store.books.values.filter { it.finishDay >= 0 }.map { it.author.trim().lowercase() }.filter { it.isNotEmpty() }.toSet().size
 
     /** Thần thức: 5 an author read through, 1 a book. */
-    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + (if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0)) * DaoLo.thanPercent() / 100
+    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + (if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0)) * DaoLo.thanPercent() / 100 * LinhGioi.thanPercent() / 100
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
-    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }.let { it * DaoLo.thePercent() / 100 }
+    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { if (DaoPhap.effect(PhapMon.E_THE_PHACH)) it * 6 / 5 else it }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }.let { it * DaoLo.thePercent() / 100 * LinhGioi.thePercent() / 100 }
     fun theTier(v: Int = thePhach()) = THE_AT.indexOfLast { v >= it }
 
     // --- Realms and tiểu cảnh ----------------------------------------------------------------------
@@ -242,7 +242,7 @@ object TuLuyen {
         // H. Nghiệp lực, from Phi Thăng.
         DaoLo.karmaPart(i).takeIf { it != 0 }?.let { list.add("Nghiệp lực ${DaoLo.karma()}" to it) }
         // F. Tông môn.
-        if (GIOI_SECT[i] >= 0 && TongMon.sect == GIOI_SECT[i]) list.add(TongMon.SECTS[GIOI_SECT[i]].name to 10)
+        if (GIOI_SECT[i] >= 0 && TongMon.family() == GIOI_SECT[i]) list.add(TongMon.SECTS[TongMon.sect].name to 10)
         return list
     }
 
@@ -360,7 +360,7 @@ object TuLuyen {
 
     /** Tâm ma rises by `n`, less with Thanh Tâm Quyết and a công pháp that calms. */
     fun stir(n: Int) {
-        tamMa = (tamMa + (n * DaoPhap.stirPercent() * DaoLo.stirPercent() / 100 + 50) / 100).coerceAtMost(100)
+        tamMa = (tamMa + (n * DaoPhap.stirPercent() * DaoLo.stirPercent() / 100 * LinhGioi.stirPercent() / 100 + 50) / 100).coerceAtMost(100)
     }
 
     /** Áp chế: 5% a tenth of the realm, 20% at most. */
@@ -413,6 +413,7 @@ object TuLuyen {
                 list.add(Need("Ngộ đạo ${minOf(n, 3)}/3: cuốn từ 20 vạn chữ đọc trọn trong 30 ngày", n >= 3))
             }
         }
+        list.addAll(LinhGioi.needs(g))
         if (Store.realmCap >= 1) list.add(Need("Đã vào đại viên mãn (căn cơ từ 60 khi tới)", subCap >= 3))
         if (g == 9) list.add(Need("Lục Giới cảm ứng rõ: ${GIOI[destined()]} hơn giới kế tiếp từ $GIOI_LEAD điểm (đang ${gioiLead()})", gioiClear()))
         if (g >= 2) {
@@ -459,6 +460,7 @@ object TuLuyen {
         if (DongPhu.breakBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.breakBonus())
         if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
         list.addAll(DaoLo.breakParts(g))
+        list.addAll(LinhGioi.breakParts(g))
         if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])
         if (DongPhu.danDoc >= 4) list.add("Đan độc ${DongPhu.danDoc}, chia bốn" to -(DongPhu.danDoc / 4))
         if (g == 9) list.add("Cảm ứng ${GIOI[destined()]}, chia mười" to minOf(10, gioiScore(destined()) / 10))
@@ -551,6 +553,10 @@ object TuLuyen {
                 extra = " · ${DaoLo.THANS[DaoLo.than].name}"
             }
             if (g == 3) extra = " · ${DaoLo.anhName()}"
+            if (g == 5) {
+                LinhGioi.keepChoice()
+                extra = " · phi thăng Linh giới, bản mệnh ${LinhGioi.banMenh.mapNotNull { LinhGioi.beast(it)?.name }.joinToString(", ").ifEmpty { "không có" }}"
+            }
             if (g == 9) {
                 gioi = destined()
                 extra = " · phi thăng ${GIOI[gioi]}, thành ${TIEN_KIND[gioi]}"
@@ -590,7 +596,7 @@ object TuLuyen {
             failDays.add(t)
             while (failDays.size > 20) failDays.removeAt(0)
             stir(f.tamMa)
-            restUntil = t + f.restDays
+            restUntil = t + (f.restDays - LinhGioi.restLess()).coerceAtLeast(1)
             val what = when (f.kind) {
                 HUT_KHI -> {
                     Store.tuViLoss += Store.tuVi() / f.lossDiv

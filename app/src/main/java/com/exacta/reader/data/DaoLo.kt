@@ -226,6 +226,28 @@ object DaoLo {
         }
     }
 
+    /** Where the reader stands on each condition of Kim Đan i: (text, met). */
+    fun danStatus(i: Int): List<Pair<String, Boolean>> {
+        val tier = TuLuyen.tamCanhTier()
+        val calm = "Tâm cảnh ${TuLuyen.TAM_CANH_TIERS[tier]} (cần Thanh Minh)" to (tier >= 2)
+        val roots = DaoPhap.roots.joinToString(", ") { PhapMon.attrName(it) }.ifEmpty { "chưa thức tỉnh" }
+        val cong = DaoPhap.activeDef()?.let { "${it.name} (${PhapMon.attrName(it.attr)})" } ?: "chưa vận"
+        return when (i) {
+            in 0..4 -> listOf("Linh căn: $roots" to (i in DaoPhap.roots), "Công pháp đang vận: $cong" to (DaoPhap.activeDef()?.attr == i))
+            5, 6, 7 -> {
+                val want = listOf(PhapMon.LOI, PhapMon.BANG, PhapMon.PHONG)[i - 5]
+                listOf("Dị linh căn: ${if (DaoPhap.di >= 0) PhapMon.attrName(DaoPhap.di) else "không có"}" to (DaoPhap.di == want))
+            }
+            8 -> listOf(calm, "Giờ đọc từ 6 tới 18 giờ: ${dayShare()}% (cần 75%)" to (dayShare() >= 75))
+            9 -> listOf(calm, "Giờ đọc từ 22 tới 5 giờ: ${nightShare()}% (cần 50%)" to (nightShare() >= 50))
+            10 -> listOf("Căn cơ ${TuLuyen.canCo()} (cần 80)" to (TuLuyen.canCo() >= 80),
+                "Đột phá hỏng ${TuLuyen.breakFails} lần (cần 0)" to (TuLuyen.breakFails == 0),
+                "Chuỗi dài nhất ${Store.bestStreak()} ngày (cần 60)" to (Store.bestStreak() >= 60))
+            else -> listOf("Đột phá hỏng ${TuLuyen.breakFails} lần (cần 3)" to (TuLuyen.breakFails >= 3),
+                "Từng tẩu hỏa nhập ma" to (TuLuyen.tauHoaDay >= 0))
+        }
+    }
+
     /** The Hóa Thần of the way walked; Song Anh above all. */
     fun thanFor(): Int = if (songAnh) 5 else if (way >= 0) way else 0
 
@@ -349,7 +371,7 @@ object DaoLo {
             list.add("Thể phách ${TuLuyen.THE_TIERS[tier]}" + (if (per > 1) ", thân đỡ kiếp" else "") to per * tier)
         }
         if (kiep(g) && main(PHAP)) list.add("Pháp tu, nhục thân yếu" to -5)
-        if (way >= 0 && TongMon.sect == way) list.add("Đạo lộ hợp tông môn" to 2)
+        if (way >= 0 && TongMon.family() == way) list.add("Đạo lộ hợp tông môn" to 2)
         if (songAnh) list.add("Song Anh" to 5)
         danOn()?.let { if (g == 3 && it.anh != 0) list.add("${it.name} phá đan thành anh" to it.anh) }
         thanOn()?.let {

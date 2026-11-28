@@ -29,20 +29,141 @@ object TongMon {
     const val KIEM_LU = 3
     const val BACH_THAO = 4
 
-    class Sect(val name: String, val way: String, val perk: String, val text: String)
+    /**
+     * 2.5: thirty-six sects in five lines (the five founding sects lead them: Pháp, Thể, Thần, Kiếm,
+     * Bách nghệ). A sect gives the perks of its line, leans to some hành, and takes a disciple only
+     * when what it asks is met; at a time 6 to 8 sects will take one in, by the aptitude.
+     */
+    class Sect(val name: String, val family: Int, val attrs: IntArray, val reqs: List<Req>, val text: String) {
+        val way get() = WAYS[family]
+        val perk get() = PERKS[family]
+    }
+
+    /** What a sect asks: a kind and a number. */
+    class Req(val kind: Int, val n: Int = 0)
+
+    const val R_ATTR = 0      // linh căn or công pháp of the sect's hành
+    const val R_ROOT = 1      // linh căn of the sect's hành
+    const val R_THIEN = 2     // Thiên or song linh căn
+    const val R_DI = 3        // dị linh căn of the sect's hành
+    const val R_TAP = 4       // ngũ hành tạp linh căn
+    const val R_WAY = 5       // the đạo lộ of the sect's line
+    const val R_CANCO = 6
+    const val R_THE = 7       // thể phách tier
+    const val R_THAN = 8      // thần thức trọng
+    const val R_STREAK = 9    // longest streak
+    const val R_BOOKS = 10    // books read through
+    const val R_REALM = 11
+    const val R_TAM = 12      // tâm cảnh tier
+    const val R_PILLS = 13    // lò đan made
+    const val R_BEASTS = 14   // pháp bảo owned
+
+    val WAYS = arrayOf("Pháp tu", "Thể tu", "Thần tu", "Kiếm tu", "Bách nghệ")
+    val PERKS = arrayOf(
+        "Tàng Kinh Các rẻ hơn 15%; nhiệm vụ đọc nhiều chữ, đọc trọn sách",
+        "Thể phách +15%; đan luyện thể ra thêm một viên; nhiệm vụ buổi đọc dài",
+        "Tâm pháp vận chuyển gấp đôi; tâm ma tăng chậm 20%; nhiệm vụ đọc đều ngày",
+        "Công pháp Kiếm luôn hợp (+20%); đột phá +3%; nhiệm vụ đọc trọn nhanh",
+        "Dược linh +5 năm mỗi ngày; luyện đan +10%; nhiệm vụ luyện đan, bế quan",
+    )
+
+    private fun r(kind: Int, n: Int = 0) = Req(kind, n)
+    private fun a(vararg x: Int) = x
 
     val SECTS = listOf(
-        Sect("Vạn Quyển Tông", "Pháp tu", "Tàng Kinh Các rẻ hơn 15%; nhiệm vụ đọc nhiều chữ, đọc trọn sách",
-            "Tông môn của người đọc rộng: kinh các chất cao như núi, đệ tử lấy chữ làm linh khí."),
-        Sect("Thiết Cốt Môn", "Thể tu", "Thể phách +15%; đan luyện thể ra thêm một viên; nhiệm vụ buổi đọc dài",
-            "Luyện thân như luyện sắt: buổi đọc càng dài, xương cốt càng cứng."),
-        Sect("Minh Tâm Tự", "Thần tu", "Tâm pháp vận chuyển gấp đôi; tâm ma tăng chậm 20%; nhiệm vụ đọc đều ngày",
-            "Chùa trên núi tuyết, tu tâm trước tu thân: ngày nào cũng đọc, không vội, không bỏ."),
-        Sect("Kiếm Lư", "Kiếm tu", "Công pháp Kiếm luôn hợp (+20%); đột phá +3%; nhiệm vụ đọc trọn nhanh",
-            "Một túp lều, một thanh kiếm, một cuốn sách đọc tới cuối: kiếm ý ở sự dứt khoát."),
-        Sect("Bách Thảo Cốc", "Bách nghệ", "Dược linh +5 năm mỗi ngày; luyện đan +10%; nhiệm vụ luyện đan, bế quan",
-            "Thung lũng trăm loài thảo dược: đệ tử giỏi trồng, giỏi luyện, giỏi chờ."),
+        // The five founding sects, the heads of the five lines.
+        Sect("Vạn Quyển Tông", 0, a(PhapMon.HOA), listOf(r(R_BOOKS, 3)), "Tông môn của người đọc rộng: kinh các chất cao như núi, đệ tử lấy chữ làm linh khí."),
+        Sect("Thiết Cốt Môn", 1, a(PhapMon.THO), listOf(r(R_THE, 1)), "Luyện thân như luyện sắt: buổi đọc càng dài, xương cốt càng cứng."),
+        Sect("Minh Tâm Tự", 2, a(PhapMon.THUY), listOf(r(R_STREAK, 7)), "Chùa trên núi tuyết, tu tâm trước tu thân: ngày nào cũng đọc, không vội, không bỏ."),
+        Sect("Kiếm Lư", 3, a(PhapMon.KIM, PhapMon.KIEM), listOf(r(R_ATTR)), "Một túp lều, một thanh kiếm, một cuốn sách đọc tới cuối: kiếm ý ở sự dứt khoát."),
+        Sect("Bách Thảo Cốc", 4, a(PhapMon.MOC), listOf(r(R_ATTR)), "Thung lũng trăm loài thảo dược: đệ tử giỏi trồng, giỏi luyện, giỏi chờ."),
+        // Pháp tu.
+        Sect("Thái Hư Đạo Tông", 0, a(PhapMon.KIM, PhapMon.LOI), listOf(r(R_THIEN), r(R_REALM, 1)), "Đạo tông đứng đầu chính đạo, chỉ nhận kẻ tư chất hơn người."),
+        Sect("Lôi Âm Tông", 0, a(PhapMon.LOI), listOf(r(R_ATTR)), "Sấm rền trên đỉnh, đệ tử luyện thuật pháp trong mưa giông."),
+        Sect("Xích Viêm Cốc", 0, a(PhapMon.HOA), listOf(r(R_ROOT)), "Hỏa mạch dưới đáy cốc chưa từng tắt, chỉ nhận người mang hỏa căn."),
+        Sect("Huyền Thủy Các", 0, a(PhapMon.THUY), listOf(r(R_ROOT)), "Lầu các dựng giữa hồ, thuật pháp mềm như nước mà bền."),
+        Sect("Thanh Vân Môn", 0, a(PhapMon.KIM), emptyList(), "Tông nhỏ dưới chân núi, cửa mở cho mọi tán tu biết chữ."),
+        Sect("Thiên Diễn Tông", 0, a(PhapMon.THO), listOf(r(R_REALM, 2), r(R_CANCO, 60)), "Suy diễn thiên cơ bằng muôn quyển sách; chỉ nhận người đã kết đan, nền vững."),
+        // Thể tu.
+        Sect("Bá Thể Tông", 1, a(PhapMon.THO), listOf(r(R_THE, 3)), "Đệ tử gánh núi mà đọc, nhục thân Ngọc Tủy mới qua được sơn môn."),
+        Sect("Man Hoang Bộ", 1, a(PhapMon.MOC, PhapMon.THO), listOf(r(R_ROOT)), "Bộ lạc giữa rừng già, sống bằng sức vóc và cây cỏ."),
+        Sect("Kim Cương Tự", 1, a(PhapMon.KIM), listOf(r(R_ROOT), r(R_THE, 2)), "Võ tăng thân như kim cương, tụng kinh trong tư thế trung bình tấn."),
+        Sect("Huyết Sát Đường", 1, a(PhapMon.HOA), listOf(r(R_WAY)), "Luyện thể bằng máu và lửa; chỉ người đã bước vào Thể tu mới được dạy."),
+        Sect("Hắc Thạch Bảo", 1, a(PhapMon.THO), emptyList(), "Pháo đài đá đen nơi biên ải, nhận bất cứ ai chịu được khổ."),
+        Sect("Long Tượng Môn", 1, a(PhapMon.THO, PhapMon.KIM), listOf(r(R_REALM, 2), r(R_THE, 4)), "Sức của rồng và voi: chỉ nhận Kim Đan có thân Kim Thân."),
+        // Thần tu.
+        Sect("Tinh Thần Các", 2, a(PhapMon.THUY), listOf(r(R_THAN, 3)), "Đài ngắm sao, đệ tử đọc thiên văn mà mở thức hải."),
+        Sect("Huyễn Mộng Tông", 2, a(PhapMon.THUY, PhapMon.BANG), listOf(r(R_ATTR)), "Tu trong mộng, mỗi cuốn sách là một giấc mơ dài."),
+        Sect("Thái Thượng Thư Viện", 2, a(10), listOf(r(R_BOOKS, 10)), "Thư viện cổ nhất thiên hạ: đọc trọn mười cuốn mới được ghi danh."),
+        Sect("Băng Tâm Am", 2, a(PhapMon.BANG), listOf(r(R_DI)), "Am tu giữa băng nguyên, chỉ nhận người mang băng linh căn."),
+        Sect("Vô Niệm Thiền Viện", 2, a(PhapMon.THO), listOf(r(R_TAM, 2)), "Ngồi tĩnh mà đọc, lòng như mặt nước; tâm cảnh Thanh Minh mới vào được."),
+        Sect("Bách Gia Học Cung", 2, IntArray(0), emptyList(), "Học cung trăm nhà, ai ham đọc đều được ngồi nghe giảng."),
+        // Kiếm tu.
+        Sect("Thục Sơn Kiếm Phái", 3, a(PhapMon.KIM, PhapMon.KIEM), listOf(r(R_THIEN), r(R_ATTR)), "Kiếm phái trên mây, chỉ chọn kiếm tài có linh căn thuần."),
+        Sect("Phong Lôi Kiếm Các", 3, a(PhapMon.PHONG, PhapMon.LOI), listOf(r(R_DI)), "Kiếm nhanh như gió, nặng như sấm; nhận người mang dị linh căn Phong, Lôi."),
+        Sect("Thiên Kiếm Tông", 3, a(PhapMon.KIEM), listOf(r(R_REALM, 2), r(R_WAY)), "Tông của kiếm tu đã kết đan, kiếm ý thông thiên."),
+        Sect("Tuyệt Tình Cốc", 3, a(PhapMon.BANG), listOf(r(R_STREAK, 14)), "Đoạn tình mà luyện kiếm: chuỗi ngày đọc không đứt mới thấy lối vào cốc."),
+        Sect("Lạc Hà Kiếm Trang", 3, a(PhapMon.KIM), emptyList(), "Kiếm trang bên bờ sông, dạy kiếm cho kẻ áo vải."),
+        Sect("Liệt Hỏa Kiếm Tông", 3, a(PhapMon.HOA), listOf(r(R_ROOT)), "Kiếm nung trong hỏa mạch, chỉ hỏa căn cầm nổi."),
+        // Bách nghệ.
+        Sect("Đan Đỉnh Tông", 4, a(PhapMon.HOA, PhapMon.MOC), listOf(r(R_PILLS, 5)), "Ba nghìn lò đan cháy ngày đêm; đã thành năm lò mới được nhận."),
+        Sect("Thiên Công Các", 4, a(PhapMon.KIM), listOf(r(R_BEASTS, 5)), "Các của thợ luyện khí; có năm pháp bảo mới được bước vào."),
+        Sect("Phù Lục Sơn", 4, a(PhapMon.PHONG), emptyList(), "Núi của thợ vẽ bùa, giấy vàng bay như lá."),
+        Sect("Dược Vương Cốc", 4, a(PhapMon.MOC, PhapMon.THUY), listOf(r(R_ROOT)), "Cốc của dược vương, cỏ cây nghe tiếng người đọc mà lớn."),
+        Sect("Trận Đạo Môn", 4, a(PhapMon.THO), listOf(r(R_THAN, 2)), "Bày trận bằng thần thức; thức hải Tam trọng mới hiểu nổi trận đồ."),
+        Sect("Linh Thú Sơn", 4, a(PhapMon.MOC), listOf(r(R_BEASTS, 3)), "Núi nuôi linh thú, pháp bảo cũng thành bạn đồng hành."),
+        Sect("Tạp Học Đường", 4, IntArray(0), listOf(r(R_TAP)), "Nơi ngũ hành tạp linh căn được trọng: biết ít mỗi thứ, thành nhiều mỗi đường."),
     )
+
+    // --- Admission -----------------------------------------------------------------------------------
+
+    private fun attrOk(s: Sect) = s.attrs.any { it in DaoPhap.roots || it == DaoPhap.di || it == DaoPhap.activeDef()?.attr }
+
+    /** Whether one thing a sect asks is met, and how it reads. */
+    fun reqText(s: Sect, q: Req): Pair<String, Boolean> {
+        val names = s.attrs.joinToString(", ") { PhapMon.attrName(it) }
+        return when (q.kind) {
+            R_ATTR -> "Linh căn hoặc công pháp $names" to attrOk(s)
+            R_ROOT -> "Linh căn $names" to s.attrs.any { it in DaoPhap.roots }
+            R_THIEN -> "Thiên linh căn hoặc song linh căn" to (DaoPhap.roots.size in 1..2)
+            R_DI -> "Dị linh căn $names" to (DaoPhap.di in s.attrs)
+            R_TAP -> "Ngũ hành tạp linh căn" to (DaoPhap.roots.size >= 5)
+            R_WAY -> "Đạo lộ ${WAYS[s.family]}" to (DaoLo.way == s.family)
+            R_CANCO -> "Căn cơ ${q.n} (đang ${TuLuyen.canCo()})" to (TuLuyen.canCo() >= q.n)
+            R_THE -> "Thể phách ${TuLuyen.THE_TIERS[q.n]}" to (TuLuyen.theTier() >= q.n)
+            R_THAN -> "Thần thức ${TuLuyen.TRONG[q.n]}" to (TuLuyen.trong() >= q.n)
+            R_STREAK -> "Chuỗi ngày đọc ${q.n} (dài nhất ${Store.bestStreak()})" to (Store.bestStreak() >= q.n)
+            R_BOOKS -> "Đọc trọn ${q.n} cuốn" to (Store.books.values.count { it.finishDay >= 0 } >= q.n)
+            R_REALM -> "Cảnh giới ${Realm.baseName(q.n)}" to (Store.realmCap >= q.n)
+            R_TAM -> "Tâm cảnh ${TuLuyen.TAM_CANH_TIERS[q.n]}" to (TuLuyen.tamCanhTier() >= q.n)
+            R_PILLS -> "Luyện thành ${q.n} lò đan" to (DongPhu.made >= q.n)
+            else -> "Có ${q.n} pháp bảo" to (Store.beasts.size >= q.n)
+        }
+    }
+
+    fun admits(i: Int) = SECTS[i].reqs.all { reqText(SECTS[i], it).second }
+
+    /** How well a sect fits: its hành in the linh căn and the công pháp, the way, how much it asks. */
+    fun fit(i: Int): Int {
+        val s = SECTS[i]
+        var v = 0
+        DaoPhap.roots.forEachIndexed { n, root -> if (root in s.attrs) v += 30 - 6 * n }
+        if (DaoPhap.di in s.attrs) v += 30
+        if (DaoPhap.activeDef()?.attr?.let { it in s.attrs } == true) v += 15
+        if (DaoLo.way == s.family) v += 25
+        v += 6 * s.reqs.size
+        if (s.reqs.isEmpty()) v -= 15
+        return v
+    }
+
+    /** How many sects will look at this cultivator: 6, 7 with song linh căn or a dị linh căn, 8 with Thiên linh căn. */
+    fun choiceCount() = (6 + (if (DaoPhap.roots.size in 1..2) 1 else 0) + (if (DaoPhap.roots.size == 1) 1 else 0) + (if (DaoPhap.di >= 0) 1 else 0)).coerceAtMost(8)
+
+    /** The sects that would take this cultivator now, the best fitting first. */
+    fun choices(): List<Int> = SECTS.indices.filter { it != sect && admits(it) }.sortedByDescending { fit(it) * 100 - it }.take(choiceCount())
+
+    /** The line of the sect joined, or -1. */
+    fun family() = if (joined()) SECTS[sect].family else -1
 
     val RANKS = arrayOf("Ngoại môn", "Nội môn", "Chân truyền", "Trưởng lão", "Thái thượng trưởng lão")
     val RANK_AT = intArrayOf(0, 300, 1_000, 2_500, 5_000)
@@ -105,7 +226,8 @@ object TongMon {
 
     fun joined() = sect >= 0
     fun canJoin() = !joined() && DaoPhap.awakened()
-    fun perk(s: Int) = sect == s
+    /** The perks of a line: the founding sect's index is the line's. */
+    fun perk(line: Int) = joined() && SECTS[sect].family == line
 
     fun rank(): Int {
         var r = 0
@@ -125,18 +247,12 @@ object TongMon {
         Store.touch()
     }
 
-    /** The sect the linh căn leans to: Kim to Kiếm Lư, Mộc to Bách Thảo Cốc, Thủy to Minh Tâm Tự, Hỏa to Vạn Quyển Tông, Thổ to Thiết Cốt Môn. */
-    fun suggested(): Int = when (DaoPhap.roots.firstOrNull()) {
-        PhapMon.KIM -> KIEM_LU
-        PhapMon.MOC -> BACH_THAO
-        PhapMon.THUY -> MINH_TAM
-        PhapMon.HOA -> VAN_QUYEN
-        PhapMon.THO -> THIET_COT
-        else -> VAN_QUYEN
-    }
+    /** The sect that fits best of those that would take the cultivator. */
+    fun suggested(): Int = choices().firstOrNull() ?: VAN_QUYEN
 
-    fun join(s: Int): Boolean {
-        if (s !in SECTS.indices || s == sect) return false
+    /** Joins sect s if it would take the cultivator (`check` off: for the tests and old saves). */
+    fun join(s: Int, check: Boolean = true): Boolean {
+        if (s !in SECTS.indices || s == sect || (check && s !in choices())) return false
         if (joined()) {
             // Leaving one sect for another, once: the cống hiến stays behind.
             if (changed) return false
@@ -169,7 +285,7 @@ object TongMon {
         // A week ends: what was done and not claimed is lost, as in the sect's register.
         week = w
         val r = Random(w * 131 + sect * 7 + 3)
-        val fav = FAVOURED.getOrElse(sect) { FAVOURED[0] }
+        val fav = FAVOURED[SECTS[sect].family]
         val first = fav.random(r)
         val rest = TASKS.indices.filter { it != first }.shuffled(r).take(2)
         tasks.clear()

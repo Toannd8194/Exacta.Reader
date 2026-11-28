@@ -49,6 +49,7 @@ class DaoLoTest {
         TongMon.reset()
         BiCanh.reset()
         DaoLo.reset()
+        com.exacta.reader.data.LinhGioi.reset()
         DaoLo.started = true
         DaoLo.rng = roll(99)
     }
@@ -199,6 +200,7 @@ class DaoLoTest {
         DaoLo.earned = 4_500
         val o = JSONObject(DaoLo.toJson().toString())
         DaoLo.reset()
+        com.exacta.reader.data.LinhGioi.reset()
         DaoLo.read(o)
         assertEquals(DaoLo.BACH, DaoLo.way)
         assertEquals(DaoLo.KIEM, DaoLo.way2)

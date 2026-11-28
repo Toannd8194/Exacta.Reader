@@ -130,6 +130,8 @@ class BienNienActivity : TabActivity() {
                 "Phi Thăng thành cảnh giới, Độ Kiếp là chặng đặc biệt; sáu giới, sáu loại tiên nhân; Home gọn lại, đạo hiệu lên thanh trên, tiết khí kèm lời bình."),
             Era("2.4", "Ngũ Lộ Đồng Quy",
                 "Năm đạo lộ; mười hai Kim Đan, Nguyên Anh kế thừa đan; sáu Hóa Thần đè lên Hợp Thể, Độ Kiếp; luyện thể, luyện thần, kiêm tu, Song Anh; Lục Giới do đời tu và nghiệp lực quyết định."),
+            Era("2.5", "Phá Toái Hư Không",
+                "Phi thăng Linh giới: tiết điểm, trảm trần duyên, phi thăng kiếp; bản mệnh, di bảo; tám pháp tắc, đạo vực; 36 tông môn; độ đậm theo %; cửa chưa tới thì khóa."),
         )
     }
 }
