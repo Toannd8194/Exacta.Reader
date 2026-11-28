@@ -636,77 +636,132 @@ def icon_tiendo():
     return p.image(128)
 
 
-# --- Linh thạch (pixel art, 32 × 32 logical, ×4) -----------------------------------------------------
+# --- Linh thạch (pixel art, 48 × 48 logical, ×4) -----------------------------------------------------
 
 def linhthach():
-    """Linh thạch: an emerald-cut spirit stone in pixel art, light from the upper left, a dark rim,
-    a bright table with a streak of light and a four-point glint of linh khí. Drawn on a 32 grid."""
-    n = 32
-    g = Image.new("L", (n, n), 0)
-    a = Image.new("L", (n, n), 0)
-    dg, da = ImageDraw.Draw(g), ImageDraw.Draw(a)
-    outer = [(11, 3), (20, 3), (26, 9), (26, 22), (20, 28), (11, 28), (5, 22), (5, 9)]
-    table = [(13, 9), (18, 9), (21, 12), (21, 19), (18, 22), (13, 22), (10, 19), (10, 12)]
-    facets = [  # (outer i, outer i+1, inner i+1, inner i), shade
-        (0, 230), (1, 175), (2, 120), (3, 80), (4, 100), (5, 140), (6, 190), (7, 215),
-    ]
-    for i, shade in facets:
-        pts = [outer[i], outer[(i + 1) % 8], table[(i + 1) % 8], table[i]]
-        dg.polygon(pts, fill=shade)
-        da.polygon(pts, fill=255)
-    dg.polygon(table, fill=165)
-    da.polygon(table, fill=255)
-    # The table darkens to the lower right in bands, as deep glass does.
-    px = g.load()
-    tmask = Image.new("L", (n, n), 0)
-    ImageDraw.Draw(tmask).polygon(table, fill=255)
-    for y in range(n):
-        for x in range(n):
-            if tmask.getpixel((x, y)):
-                d = (x - 10) + (y - 9)
-                px[x, y] = (205, 175, 145, 115)[min(3, d // 6)]
-    # Facet edges: light where they face the light, dark where they turn away.
-    for (x0, y0), (x1, y1) in zip(outer, table):
-        dg.line([(x0, y0), (x1, y1)], fill=70 if x0 + y0 > 33 else 240)
-    for i in range(8):
-        (x0, y0), (x1, y1) = table[i], table[(i + 1) % 8]
-        dg.line([(x0, y0), (x1, y1)], fill=245 if x0 + y0 + x1 + y1 < 64 else 75)
-    # The outer edge catches the light on the upper left.
-    for (x0, y0), (x1, y1) in [(outer[6], outer[7]), (outer[7], outer[0]), (outer[0], outer[1])]:
-        dg.line([(x0, y0), (x1, y1)], fill=250)
-    # A streak and a glint on the table.
-    for i in range(4):
-        px[12 + i, 15 - i] = 255
-        px[13 + i, 15 - i] = 230
-    px[14, 10] = 255; px[15, 10] = 255
-    # The inner shadow on the lower right, one pixel in from the rim.
-    inner = []
-    for y in range(n):
-        for x in range(n):
-            if a.getpixel((x, y)) and x + y > 30 and any(0 <= x + dx < n and 0 <= y + dy < n and not a.getpixel((x + dx, y + dy))
-                                                         for dx, dy in ((1, 0), (0, 1), (1, 1))):
-                inner.append((x, y))
-    for x, y in inner:
-        px[x, y] = 55
-    # The dark rim: every empty pixel touching the stone.
-    rim = []
-    for y in range(n):
-        for x in range(n):
-            if a.getpixel((x, y)) == 0 and any(0 <= x + dx < n and 0 <= y + dy < n and a.getpixel((x + dx, y + dy))
-                                               for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
-                rim.append((x, y))
-    for x, y in rim:
-        px[x, y] = 25
-        a.putpixel((x, y), 255)
-    # A four-point glint of linh khí above the right shoulder, and motes of linh khí.
-    for (x, y), v in [((28, 2), 255), ((28, 1), 60), ((28, 3), 60), ((27, 2), 60), ((29, 2), 60), ((28, 0), 30), ((28, 4), 30), ((26, 2), 30), ((30, 2), 30)]:
-        px[x, y] = v
-        a.putpixel((x, y), 255)
-    for x, y in [(3, 6), (29, 26), (2, 25), (30, 14)]:
-        px[x, y] = 120
-        a.putpixel((x, y), 255)
-    rgba = Image.merge("RGBA", (g, g, g, a))
-    return rgba.resize((128, 128), Image.NEAREST)
+    """Linh thạch: a cluster of spirit crystals grown from a vein of rock, in pixel art on a 48 grid
+    (×4). Hexagonal crystals: the left face lit, the front face with a streak of light, the right face
+    in shade; the faces glow toward the points, where linh khí gathers. Every piece is outlined in black."""
+    N = 48
+
+    def layer():
+        g = Image.new("L", (N, N), 0)
+        a = Image.new("L", (N, N), 0)
+        return g, a
+
+
+    def rim(g, a, v=22):
+        """Black outline on every empty pixel touching the shape (4-neighbours)."""
+        pts = []
+        for y in range(N):
+            for x in range(N):
+                if a.getpixel((x, y)) == 0 and any(0 <= x + dx < N and 0 <= y + dy < N and a.getpixel((x + dx, y + dy))
+                                                   for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                    pts.append((x, y))
+        for p in pts:
+            g.putpixel(p, v)
+            a.putpixel(p, 255)
+
+
+    def crystal(base, tip, w, shades=(232, 170, 96), tips=(250, 205, 130), streak=True):
+        """A hexagonal crystal seen from the front: left face lit, front face, right face in shade;
+        the point is three facets. `base` and `tip` are the axis ends, `w` the half width."""
+        g, a = layer()
+        d = ImageDraw.Draw(g)
+        da = ImageDraw.Draw(a)
+        bx, by = base
+        tx, ty = tip
+        L = math.hypot(tx - bx, ty - by)
+        ux, uy = (tx - bx) / L, (ty - by) / L       # along the axis
+        px, py = -uy, ux                           # across, to the right of the axis
+        if px < 0:
+            px, py = -px, -py
+        h = 1.25 * w                               # the point's height
+        sx, sy = tx - ux * h, ty - uy * h          # the shoulder on the axis
+        offs = [-w, -0.38 * w, 0.38 * w, w]
+
+        def at(cx, cy, o):
+            return (cx + px * o, cy + py * o)
+
+        for i in range(3):
+            o1, o2 = offs[i], offs[i + 1]
+            body = [at(bx, by, o1), at(sx, sy, o1), at(sx, sy, o2), at(bx, by, o2)]
+            d.polygon(body, fill=shades[i]); da.polygon(body, fill=255)
+            point = [at(sx, sy, o1), (tx, ty), at(sx, sy, o2)]
+            d.polygon(point, fill=tips[i]); da.polygon(point, fill=255)
+        # The edges between the faces.
+        for o, v in ((offs[1], 252), (offs[2], 70)):
+            d.line([at(bx, by, o), at(sx, sy, o)], fill=v)
+            d.line([at(sx, sy, o), (tx, ty)], fill=v)
+        # A line across at the shoulder: light on the lit faces, dark on the shaded one.
+        d.line([at(sx, sy, offs[0]), at(sx, sy, offs[2])], fill=245)
+        d.line([at(sx, sy, offs[2]), at(sx, sy, offs[3])], fill=60)
+        # The faces glow toward the point, as linh khí gathers there.
+        gp = g.load()
+        for y in range(N):
+            for x in range(N):
+                v = gp[x, y]
+                if a.getpixel((x, y)) and v < 250:
+                    f = ((x - bx) * ux + (y - by) * uy) / L
+                    gp[x, y] = max(0, min(250, v - int(34 * (1 - f)) + 8))
+        if streak:
+            # A streak of light down the front face, and the glow of linh khí deep inside.
+            o = offs[1] + 0.25 * w
+            for t in range(int(L * 0.15), int(L * 0.55)):
+                x, y = at(bx + ux * t, by + uy * t, o)
+                if a.getpixel((int(x), int(y))):
+                    g.putpixel((int(x), int(y)), 255)
+        rim(g, a)
+        return g, a
+
+
+    def rock():
+        g, a = layer()
+        d, da = ImageDraw.Draw(g), ImageDraw.Draw(a)
+        shape = [(7, 43), (9, 40), (13, 39), (17, 40), (21, 38), (26, 39), (30, 38), (35, 40), (39, 39), (42, 42), (41, 45), (36, 46), (12, 46), (8, 45)]
+        d.polygon(shape, fill=96); da.polygon(shape, fill=255)
+        px = g.load()
+        for y in range(N):
+            for x in range(N):
+                if a.getpixel((x, y)):
+                    if not a.getpixel((x, y - 1)):
+                        px[x, y] = 160
+                    elif y >= 45 or (not a.getpixel((x + 1, y)) and x > 24):
+                        px[x, y] = 66
+                    elif (x * 7 + y * 5) % 13 == 0:
+                        px[x, y] = 70
+                    elif (x * 3 + y * 11) % 17 == 0:
+                        px[x, y] = 135
+        rim(g, a)
+        return g, a
+
+
+    def paste(cg, ca, g, a):
+        cg.paste(g, (0, 0), a)
+        ca.paste(255, (0, 0), a)
+
+
+    cg, ca = layer()
+    # Back to front: the side crystals, the tall one, two small ones in front, the vein of rock.
+    paste(cg, ca, *crystal((15, 40), (5, 15), 5.0, streak=False))
+    paste(cg, ca, *crystal((33, 40), (43, 13), 5.2, streak=False))
+    paste(cg, ca, *crystal((24, 41), (24, 2), 7.0))
+    paste(cg, ca, *crystal((11, 43), (5, 32), 2.8, streak=False))
+    paste(cg, ca, *crystal((37, 43), (44, 31), 3.0, streak=False))
+    paste(cg, ca, *rock())
+    px = cg.load()
+    # A four-point glint of linh khí by the tall point, and motes rising.
+    for (x, y), v in [((32, 6), 255), ((32, 5), 90), ((32, 7), 90), ((31, 6), 90), ((33, 6), 90),
+                      ((32, 4), 40), ((32, 8), 40), ((30, 6), 40), ((34, 6), 40), ((32, 3), 25), ((32, 9), 25), ((29, 6), 25), ((35, 6), 25)]:
+        if not ca.getpixel((x, y)):
+            px[x, y] = v
+            ca.putpixel((x, y), 255)
+    for x, y in [(10, 6), (41, 3), (2, 26), (46, 22), (15, 2), (37, 20)]:
+        if not ca.getpixel((x, y)):
+            px[x, y] = 120
+            ca.putpixel((x, y), 255)
+    rgba = Image.merge("RGBA", (cg, cg, cg, ca))
+    return rgba.resize((192, 192), Image.NEAREST)
 
 
 ICONS = {'congphap': icon_congphap, 'dongphu': icon_dongphu, 'phapbao': icon_phapbao, 'daohieu': icon_daohieu,
