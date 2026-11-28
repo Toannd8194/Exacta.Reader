@@ -21,6 +21,9 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 [`docs/Thiet-ke-phan-hai-luc-gioi.md`](docs/Thiet-ke-phan-hai-luc-gioi.md), bản PDF
 [`docs/Thiet-ke-phan-hai-luc-gioi.pdf`](docs/Thiet-ke-phan-hai-luc-gioi.pdf).
 
+Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
+[`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
 ## Bản 3.0.1 · Sơn Môn Định Phận
 
 - **Tông môn mở dần theo cảnh giới**: 10 tông nhận đệ tử Luyện Khí (năm tông khai sơn, Thanh Vân Môn, Hắc Thạch Bảo, Bách Gia
