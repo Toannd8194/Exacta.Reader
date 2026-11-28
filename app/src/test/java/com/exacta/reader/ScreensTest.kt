@@ -394,7 +394,7 @@ class ScreensTest {
         val words = Store.totalWords
         Store.realmCap = 9
         Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 300_000
-        com.exacta.reader.data.TuLuyen.gioi = 2
+        com.exacta.reader.data.TuLuyen.gioi = 3
         com.exacta.reader.data.TienDinh.onCross(seen = true)
         com.exacta.reader.data.TienDinh.wordsAtCross = Store.totalWords - 120_000
         tabs(KetActivity::class.java, "ket")
@@ -441,6 +441,60 @@ class ScreensTest {
         shoot(root(h), "ma_home")
         com.exacta.reader.ui.Ink.recordCuts = false
         File(out, "ma_home_cuts.txt").writeText(com.exacta.reader.ui.Ink.cuts.joinToString(System.lineSeparator()))
+        tl.reset(); tl.started = true
+        td.reset(); td.started = true
+        com.exacta.reader.data.TuLuyen.gioi = -1
+        com.exacta.reader.data.TuLuyen.tamMa = tamMa
+        Store.realmCap = cap
+        Store.totalWords = words
+    }
+
+    /** 3.7: Bát Nhã opened: Thiền Viện with xá lợi and a fellow to free, the Kinh lâu, and Home. */
+    @Test fun thienVien() {
+        val tl = com.exacta.reader.data.TienLo
+        val td = com.exacta.reader.data.TienDinh
+        val bn = com.exacta.reader.data.BatNha
+        val cap = Store.realmCap
+        val words = Store.totalWords
+        val tamMa = com.exacta.reader.data.TuLuyen.tamMa
+        val saved = Store.books.keys.toSet()
+        Store.realmCap = 9
+        Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 900_000
+        com.exacta.reader.data.TuLuyen.gioi = 2
+        td.onCross(seen = true)
+        td.crossDay = Store.today() - 60
+        td.wordsAtCross = com.exacta.reader.data.TuLuyen.floor(9)
+        // Books read through since the crossing (the Kinh lâu), and one left long ago (the fellow's).
+        val titles = listOf("Kim Cương Kinh giảng giải", "Đạo Đức Kinh", "Nam Hoa Kinh", "Tâm Kinh chú", "Thiền Uyển Tập Anh", "Khóa Hư Lục", "Truyền Đăng Lục",
+            "Lục Tổ Đàn Kinh", "Pháp Cú", "Bích Nham Lục", "Vô Môn Quan", "Tín Tâm Minh", "Chứng Đạo Ca", "Lâm Tế Lục")
+        for ((i, t) in titles.withIndex()) {
+            val b = com.exacta.reader.data.Book("/screens/kinh$i.epub").apply {
+                id = 900 + i; title = t; author = if (i % 3 == 0) "" else "Cổ đức"; wordsRead = 50_000; finishDay = Store.today() - 2 - 3 * i
+                if (i == 1) backDay = finishDay - 20
+            }
+            Store.books[b.path] = b
+        }
+        val left = com.exacta.reader.data.Book("/screens/left.epub").apply { id = 990; title = "Thủ Lăng Nghiêm"; wordsRead = 9_000; lastDay = Store.today() - 120 }
+        Store.books[left.path] = left
+        tl.reset(); tl.started = true
+        tl.check()
+        tl.welcomeSeen = true
+        tl.resTenths = 2_380; tl.tienThach = 52; tl.halls[0] = 1; tl.halls[1] = 2
+        tl.check()
+        tl.join(1); tl.congHien = 40
+        com.exacta.reader.data.TuLuyen.tamMa = 22
+        bn.peak = 620; bn.used = 1; bn.guarded = 1
+        bn.lastXa = "Xá lợi giữ chuỗi qua ngày lỡ"
+        bn.doMonth = tl.monthOf(Store.today()); bn.doBook = 990; bn.doFellow = 2; bn.doDone = false
+        tabs(GioiActivity::class.java, "thien")
+        com.exacta.reader.ui.Ink.recordCuts = true
+        com.exacta.reader.ui.Ink.cuts.clear()
+        val h = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+        idle()
+        shoot(root(h), "thien_home")
+        com.exacta.reader.ui.Ink.recordCuts = false
+        File(out, "thien_home_cuts.txt").writeText(com.exacta.reader.ui.Ink.cuts.joinToString(System.lineSeparator()))
+        for (key in Store.books.keys.toList()) if (key !in saved) Store.books.remove(key)
         tl.reset(); tl.started = true
         td.reset(); td.started = true
         com.exacta.reader.data.TuLuyen.gioi = -1

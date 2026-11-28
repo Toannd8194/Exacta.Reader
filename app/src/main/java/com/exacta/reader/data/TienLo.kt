@@ -24,14 +24,18 @@ import kotlin.random.Random
  * the days at the tiền đình are counted the same way when the giới opens.
  *
  * Each giới writes its own part as [GioiRules]: Cửu Tiêu Vân Khuyết in 3.0 ([CuuTieu]), Huyết Nguyệt
- * Trầm Uyên in 3.5 ([HuyetNguyet]). The others wait at their tiền đình ([OPEN]).
+ * Trầm Uyên in 3.5 ([HuyetNguyet]), Bát Nhã Liên Đài in 3.7 ([BatNha]). The others wait at their tiền đình ([OPEN]).
  */
 object TienLo {
     /** The giới whose part two is written. */
-    val OPEN = intArrayOf(0, 1)
+    val OPEN = intArrayOf(0, 1, 2)
 
     /** The rules of the giới entered. */
-    fun rules(): GioiRules = if (gioi == 1) HuyetNguyet else CuuTieu
+    fun rules(): GioiRules = when (gioi) {
+        1 -> HuyetNguyet
+        2 -> BatNha
+        else -> CuuTieu
+    }
 
     val BAC_VAN = longArrayOf(0, 60, 140, 240, 360, 500, 660, 840, 1040)
     val BAC_RES = intArrayOf(0, 200, 500, 900, 1400, 2000, 2700, 3500, 4400)
@@ -98,6 +102,7 @@ object TienLo {
         halls.fill(0); faction = -1; congHien = 0; taskMonth = -1; tasksDone = 0; lastResult = ""
         CuuTieu.reset()
         HuyetNguyet.reset()
+        BatNha.reset()
     }
 
     private fun today() = Store.today()
@@ -255,7 +260,10 @@ object TienLo {
         var changed = false
         while (countedTo < t - 1) {
             countedTo++
-            if (countedTo >= openDay) resTenths += dayTenths(countedTo)
+            if (countedTo >= openDay) {
+                rules().beforeDay(countedTo)
+                resTenths += dayTenths(countedTo)
+            }
             changed = true
         }
         if (rules().check()) changed = true
@@ -339,8 +347,14 @@ object TienLo {
     private fun fail(i: Int, why: String) {
         kiepFails[i]++
         kiepActive = -1
-        injuryUntil = today() + INJURY_DAYS
         NhatKy.event(NhatKy.E_FAIL)
+        val w = rules().ward(i)
+        if (w != null) {
+            lastResult = "${kiepName(i)} hỏng: $why. $w, lần sau +10%"
+            Store.note(lastResult)
+            return
+        }
+        injuryUntil = today() + INJURY_DAYS
         lastResult = "${kiepName(i)} hỏng: $why. Thương thế $INJURY_DAYS ngày, lần sau +10%"
         Store.note(lastResult)
     }
@@ -429,6 +443,7 @@ object TienLo {
         .put("kiepFails", JSONArray().apply { kiepFails.forEach { put(it) } }).put("injury", injuryUntil)
         .put("halls", JSONArray().apply { halls.forEach { put(it) } }).put("faction", faction).put("cong", congHien)
         .put("taskMonth", taskMonth).put("tasks", tasksDone).put("last", lastResult).put("cuuTieu", CuuTieu.toJson()).put("huyetNguyet", HuyetNguyet.toJson())
+        .put("batNha", BatNha.toJson())
 
     fun read(o: JSONObject) {
         reset()
@@ -446,6 +461,7 @@ object TienLo {
         lastResult = o.optString("last")
         o.optJSONObject("cuuTieu")?.let { CuuTieu.read(it) }
         o.optJSONObject("huyetNguyet")?.let { HuyetNguyet.read(it) }
+        o.optJSONObject("batNha")?.let { BatNha.read(it) }
     }
 }
 

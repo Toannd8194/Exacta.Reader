@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.6.apk`](dist/Van-Quyen-Tien-Do-3.6.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.7.apk`](dist/Van-Quyen-Tien-Do-3.7.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,27 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.7 · Liên Đài Hóa Độ
+
+Giới thứ ba của phần hai mở cửa: **Bát Nhã Liên Đài**, nơi người đọc đều ngày thành Thiền Tiên. Chữ đọc chỉ là duyên; lên
+bậc tiên vị nhờ **công đức**.
+
+- **Công đức**: ngày đọc đủ 30 phút, không nhảy chương +2; mỗi 7 ngày chuỗi +1; đọc trọn một cuốn +20 (cuốn bỏ dở được đọc
+  tiếp tới hết +35). Nhảy chương −2; ngày tâm ma từ 50 không có công đức. Những ngày ở tiền đình được quy đổi hồi tố.
+- **Xá lợi**: mỗi 300 công đức kết một viên. Xá lợi tự giữ chuỗi qua một ngày lỡ (tắt được), hoặc đỡ một lần tiên kiếp hỏng:
+  kiếp vẫn phải độ lại nhưng không bị thương thế.
+- **Độ hóa đồng đạo**: mỗi tháng một đồng đạo lạc trong một cuốn của thư viện đã bỏ dở từ một tháng trở lên. Đọc tiếp cuốn ấy
+  3 ngày, mỗi ngày từ 10 phút: +40 công đức.
+- **Thiền Viện**: Kinh lâu (mỗi cuốn đọc trọn từ ngày qua cửa thành một bộ kinh trên giá, mỗi cấp thêm 4 công đức một bộ;
+  trang riêng liệt kê các bộ kinh), Xá lợi tháp (xá lợi kết sớm hơn 20 công đức mỗi cấp), Liên trì (mỗi ngày đọc tâm ma lắng
+  xuống 1 mỗi cấp).
+- **Liên tòa** chín bậc (Bồ Đoàn Tòa … Liên Hoa Thánh Tòa); thế lực Tây Lĩnh Thiền Viện, Liên Trì Tịnh Xá, Bồ Đề Học Đường;
+  việc tháng gồm giữ chuỗi 14 ngày và độ hóa một đồng đạo.
+- **Kiếp**: Vô niệm kiếp (bậc 3, 6): 21 ngày trong 30 ngày, mỗi ngày một buổi liền từ 45 phút, không nhảy chương. Đại kiếp
+  Liên Hoa (bậc 9): 49 ngày liền đọc từ 10 phút trong 70 ngày; ngày lỡ không có xá lợi giữ thì chuỗi tính lại.
+- Pháp khí thiền (tiên khí) từ cấp 9: nhảy chương không trừ công đức.
+- versionCode 370.
 
 ## Bản 3.6 · Cổ Vận Thanh Phong
 
@@ -505,6 +526,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn, án tham ngộ, tàn quyển, phế công, đồ phổ, tự sáng công pháp |
   | 3.5 | Huyết Nguyệt Đương Không | Huyết Nguyệt Trầm Uyên: ma khí, ma công đặt cược, phản phệ, Ma Cung, Tâm ma đại kiếp; logo mới |
   | 3.6 | Cổ Vận Thanh Phong | Câu chữ cổ phong, kỳ ngộ lục hai cột, Tiên lộ, pháp bảo và icon pixel, trình đọc tính bằng em, Home cân lại |
+  | 3.7 | Liên Đài Hóa Độ | Bát Nhã Liên Đài: công đức, xá lợi, độ hóa đồng đạo, Thiền Viện, Vô niệm kiếp, Đại kiếp Liên Hoa |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

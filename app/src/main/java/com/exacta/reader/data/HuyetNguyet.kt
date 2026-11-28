@@ -40,6 +40,10 @@ interface GioiRules {
     fun kiepEnd(i: Int): Boolean
     fun kiepWindow(i: Int): Int
     fun kiepNeed(i: Int): Int
+    /** 3.7: a day is about to be counted (Bát Nhã's xá lợi may keep its chain). */
+    fun beforeDay(d: Long) {}
+    /** 3.7: a kiếp failed; a ward may take the wound. Returns what took it, or null. */
+    fun ward(i: Int): String? = null
     fun toJson(): JSONObject
     fun read(o: JSONObject)
 }

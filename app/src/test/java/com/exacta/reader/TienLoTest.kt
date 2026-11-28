@@ -96,7 +96,7 @@ class TienLoTest {
     @Test
     fun theOtherGiớiStillWaitAtTheForecourt() {
         cross()
-        TienDinh.gioi = 2                                  // Bát Nhã waits; Huyết Nguyệt opened in 3.5
+        TienDinh.gioi = 3                                  // Hồng Hoang waits; Huyết Nguyệt opened in 3.5, Bát Nhã in 3.7
         TienLo.check()
         assertFalse(TienLo.opened)
         assertTrue(TienDinh.atForecourt())
