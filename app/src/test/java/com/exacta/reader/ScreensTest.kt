@@ -177,6 +177,24 @@ class ScreensTest {
         com.exacta.reader.data.BiCanh.choose(false)
         com.exacta.reader.data.BiCanh.resolve(com.exacta.reader.data.BiCanh.choices().indexOfLast { it.ok })
         com.exacta.reader.data.BiCanh.choose(true)
+        // 2.8: twenty days of the journal: evenings, a few nights, long sittings, a reread.
+        val nk = com.exacta.reader.data.NhatKy
+        nk.reset(); nk.migrate(); nk.since = today - 19
+        val ids = Store.books.values.map { nk.idOf(it) }
+        for (d in 0..19) {
+            val day = nk.day(today - d)
+            day.hours[20] = 1500L + 60 * d; day.hours[21] = 900
+            if (d % 3 == 0) { day.hours[23] = 1200; day.hours[0] = 600 }
+            if (d % 4 == 1) day.hours[5] = 1200
+            day.sittings.addAll(listOf(2400 + 60 * d, 900))
+            if (d % 5 == 0) day.sittings.add(5600)
+            day.books[ids[d % ids.size]] = 2400
+            day.reread = if (d % 6 == 0) 3000 else 0
+            day.tamMa = 20 + d
+            day.balance = 110
+            Store.dayWords[today - d] = 9000L + 200 * d
+        }
+        Store.books.values.forEachIndexed { i, b -> b.genre = listOf("Tiên hiệp", "Kiếm hiệp", "Khoa học")[i % 3]; b.lang = if (i % 4 == 0) "en" else "vi" }
     }
 
     private fun cover(f: File, title: String, i: Int) {

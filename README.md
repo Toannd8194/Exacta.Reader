@@ -4,9 +4,9 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.7.2.apk`](dist/Van-Quyen-Tien-Do-2.7.2.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.8.apk`](dist/Van-Quyen-Tien-Do-2.8.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
-Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.7.2): [`dist/Van-Quyen-Tien-Do-2.7.2-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.7.2-Cam-nang.pdf).
+Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
 pháp, 72 pháp bảo, 18 bộ, 18 đan dược và phù chú, 72 đạo hiệu. Dựng lại bằng `python tools/cam_nang.py` (số liệu đọc thẳng từ mã nguồn, in bằng Edge headless).
 
@@ -20,6 +20,22 @@ tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả 
 Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.8 và 3.0 – 3.6):
 [`docs/Thiet-ke-phan-hai-luc-gioi.md`](docs/Thiet-ke-phan-hai-luc-gioi.md), bản PDF
 [`docs/Thiet-ke-phan-hai-luc-gioi.pdf`](docs/Thiet-ke-phan-hai-luc-gioi.pdf).
+
+## Bản 2.8 · Tàng Kinh Lưu Ảnh
+
+Bản chuẩn bị cho phần hai: mỗi giới sống bằng một lối đọc, nên từ nay app ghi sổ theo **từng ngày**.
+
+- **Sổ đọc theo ngày**: giây đọc theo từng giờ, từng buổi đọc và độ dài, giây đọc ở mỗi cuốn, tâm ma cao nhất và độ cân bằng năm
+  thước đo cuối buổi. Thêm sự kiện: sách bỏ từ 90 ngày được mở lại, đọc lại trọn một cuốn, đột phá hay kiếp hỏng, chuyển thế.
+- **Chữ đọc lại**: sách đã đọc trọn, mở ra đọc lại từng trang từ chỗ đang đọc lại; nhảy bằng mục lục hay thanh trượt không tính,
+  như lần đọc đầu. Không cộng tu vi. Đọc tới cuối là một lần đọc lại trọn.
+- **Chữ ở sách quay lại**: chữ đọc trong cuốn bỏ dở được mở lại sau 90 ngày, tới khi đọc xong.
+- **Thể loại, ngôn ngữ**: đọc từ thông tin EPUB (subject, language). Sách cũ được đọc lại thông tin một lần khi mở Thư viện.
+- **Niên kỷ › Lối đọc** (2 trang): lối đọc 30 ngày qua (đọc đêm, sáng sớm, các buổi, nhảy chương, chữ đọc lại, sách quay lại,
+  tác giả, thể loại, ngôn ngữ), biểu đồ giờ đọc; trang 2 tính thử tài nguyên của cả sáu giới theo luật nháp phần hai.
+- **Tiền đình** (Tiên đồ): tài nguyên dự tính của giới mình từ ngày qua cửa; ngày trước khi có sổ tính 1,5 điểm.
+- Sổ bắt đầu từ ngày cài bản 2.8; dữ liệu cũ chỉ có tổng (không theo giờ từng ngày) nên không dựng lại được.
+- versionCode 280.
 
 ## Bản 2.7.2 · Hộ Thân Họa Phù
 
@@ -279,6 +295,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.7 | Tiên Môn Tiếp Dẫn | Lục Giới Môn, tiên hiệu theo giới, màn kết phần một, tiền đình |
   | 2.7.1 | Tế Luyện Bố Trận | Tế luyện 36 tầng cấm chế, bảy trận pháp |
   | 2.7.2 | Hộ Thân Họa Phù | Ô trang bị, phù thất vẽ chín loại phù |
+  | 2.8 | Tàng Kinh Lưu Ảnh | Sổ đọc theo ngày cho phần hai, Niên kỷ › Lối đọc, tài nguyên dự tính |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

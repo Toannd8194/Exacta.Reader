@@ -7,6 +7,7 @@ import android.os.Bundle
 import com.exacta.reader.data.DaoLo
 import com.exacta.reader.data.DoKiep
 import com.exacta.reader.data.LinhGioi
+import com.exacta.reader.data.NhatKy
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TienDinh
 import com.exacta.reader.data.TongMon
@@ -200,14 +201,23 @@ class KetActivity : TabActivity() {
             else "Phần hai của ${TuLuyen.GIOI[g]} chưa mở. Đạo hữu đứng ở tiền đình: tu vi vẫn tăng theo chữ đọc và được ghi lại từng chữ, " +
                 "để khi giới mở, mọi chữ đã đọc đều được tính. Những gì mang qua cửa (bản mệnh, công pháp, linh căn, kiếp ấn) chờ cùng đạo hữu."
         y = para(c, k, text, a.left, y, a.width(), small, 6) + 16 * u
+
+        // 2.8: what the journal has kept since the crossing, counted by the giới's rules.
+        y = k.section(c, a.left, y, a.width(), "TÀI NGUYÊN DỰ TÍNH (PHẦN HAI)")
+        val e = NhatKy.estimate(g, TienDinh.crossDay, Store.today())
+        k.pair(c, NhatKy.RESOURCE[g].replaceFirstChar { it.uppercase() } + " từ ngày qua cửa", "${e.points}", a.left, y, a.width())
+        y += sl + 10 * u
+        k.pair(c, "Ngày có sổ · ngày tính trung bình", "${e.measured} · ${e.filled}", a.left, y, a.width())
+        y += sl + 14 * u
+        y = para(c, k, "Sống bằng: " + NhatKy.WAY[g], a.left, y, a.width(), small, 2) + 16 * u
         y = k.section(c, a.left, y, a.width(), "LUẬT SỐNG Ở GIỚI ẤY (PHẦN HAI)")
         val rules = arrayOf(
-            "Chín phẩm Thiên Tiên, tiên lực, tiên phủ.",
-            "Tâm ma thành sức mạnh; ma công đổi tu vi lấy liều; đọc đêm được thưởng.",
-            "Công đức thay tu vi; xá lợi; độ hóa tâm ma.",
-            "Huyết mạch, hóa hình; sức mạnh theo giờ đọc.",
-            "Luân hồi, hồn lực; sách đọc lại có giá trị riêng.",
-            "Thần quốc lớn dần theo số tác giả đã đọc.",
+            "Chín bậc tiên vị tới Cửu Tiêu Tiên Đế; thiên quy tuần, tiên chức; tiên phủ.",
+            "Tâm ma thành lò lửa; ma công đặt cược ma khí; tâm ma vượt 90 là phản phệ.",
+            "Công đức; mỗi 300 kết một viên xá lợi; độ hóa cuốn sách bỏ dở.",
+            "Sáu huyết mạch cổ thú, hóa hình ở bậc 6; mỗi tuần săn một hoang thú.",
+            "Sổ sinh tử của sách bỏ dở; mỗi tháng qua sông Vong Xuyên; đứt chuỗi không mất gì.",
+            "Thần quốc: mỗi tác giả đọc trọn là một đảo; năm tác giả cùng thể loại mở văn mạch.",
         )
         para(c, k, rules[g], a.left, y, a.width(), small, 3)
         return 1

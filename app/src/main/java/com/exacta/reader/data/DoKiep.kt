@@ -224,6 +224,7 @@ object DoKiep {
     private fun fail(why: String) {
         val t = active
         fails[t]++
+        NhatKy.event(NhatKy.E_FAIL)
         active = -1
         activeDay = -1
         TuLuyen.stir(10)
@@ -328,6 +329,7 @@ object DoKiep {
         val was = Store.realmCap
         prevMax = maxOf(prevMax, was)
         rebirths++
+        NhatKy.event(NhatKy.E_REBORN)
         TuLuyen.reborn()
         DaoLo.dan = -1; DaoLo.than = -1
         passed = 0; active = -1; activeDay = -1; fails.fill(0); an.clear(); suyStart = -1; suyPassed = false

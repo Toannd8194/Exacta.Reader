@@ -649,6 +649,10 @@ LAWS25 = [(m[0], m[2], m[3], *m[4:]) for m in re.findall(
 assert len(LAWS25) == 8, len(LAWS25)
 
 TIEN_HIEU = strings(read('data', 'TienDinh.kt'), 'TIEN_HIEU')
+NHATKY = read('data', 'NhatKy.kt')
+RESOURCE28 = strings(NHATKY, 'RESOURCE')
+WAY28 = strings(NHATKY, 'WAY')
+assert len(RESOURCE28) == 6 and len(WAY28) == 6, (RESOURCE28, WAY28)
 assert len(TIEN_HIEU) == 6
 DOKIEP = read('data', 'DoKiep.kt')
 KIEP26 = re.findall(r'Tang\("([^"]+)", (\w+), (\d+), "([^"]+)"\)', DOKIEP)
@@ -691,6 +695,7 @@ GIOI24 = [
 
 
 def part2e():
+    ways28 = table(['Giới', 'Tài nguyên', 'Sống bằng'], [[f'<b>{e(GIOI24[i][0])}</b>', e(RESOURCE28[i]), e(WAY28[i])] for i in range(6)], 'lib')
     ways = table(['Đường', 'Sống bằng', 'Kết anh · hóa thần', 'Mạnh', 'Yếu', 'Ngưng đan'],
                  [[f'<b>{e(w[0])}</b>'] + [e(x) for x in w[1:]] for w in WAYS24], 'lib')
     gioi = table(['Giới', 'Thành', 'Hành', 'Đạo lộ', 'Tông môn', 'Đời tu'],
@@ -766,6 +771,14 @@ cảm ứng mạnh nhất tiếp dẫn; người tu thành tiên nhân của gi�
 chữ, giờ, sách, tác giả, chuỗi, kỳ ngộ, pháp bảo, đạo hiệu, nghiệp lực), đạo đồ từng cảnh giới và hành trang. Năm giới chưa có
 phần hai: người tu đứng ở <b>tiền đình</b>, mọi chữ đọc từ ngày qua cửa được ghi lại để tính khi giới mở. Cửu Tiêu Vân Khuyết tiếp
 nối chín phẩm Thiên Tiên.</p>
+
+{h2('Sổ đọc cho phần hai', True)}
+<p>Từ bản 2.8 app ghi sổ theo từng ngày: giờ đọc, từng buổi đọc, giây đọc mỗi cuốn, <b>chữ đọc lại</b> (sách đã trọn đọc lại từng
+trang; nhảy không tính, không cộng tu vi), chữ ở <b>sách quay lại</b> sau 90 ngày bỏ dở, thể loại và ngôn ngữ sách (thông tin
+EPUB). Mỗi giới phần hai sống bằng một lối đọc; sổ này để khi giới mở, chữ ở tiền đình được quy đổi đúng cách người tu đã đọc.
+Niên kỷ › Lối đọc cho xem lối đọc 30 ngày qua và tính thử tài nguyên của cả sáu giới; tiền đình hiện tài nguyên dự tính của giới
+mình. Luật phần hai còn là nháp, con số có thể đổi.</p>
+{ways28}
 
 {h2('Lục Giới cảm ứng', True)}
 <p>Không ai chọn được giới để phi thăng. Mỗi giới chấm điểm cả đời tu; giới cao điểm nhất tiếp dẫn. Cửa Lục Giới Môn đòi cảm ứng

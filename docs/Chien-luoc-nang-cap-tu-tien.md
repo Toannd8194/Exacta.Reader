@@ -355,7 +355,8 @@ Mỗi bước là một bản phát hành chơi được, có test chụp màn h
 | 2.5 | Phi thăng; Linh giới, pháp tắc, Hợp Thể, Đại Thừa, đạo vực; 36 tông môn (đã làm) | Linh giới |
 | 2.6 | Độ Kiếp chín tầng, Phi Thăng kỳ, thiên nhân ngũ suy; chế độ Chân Tu (đã làm) | Độ Kiếp |
 | 2.7 | Lục Giới Môn: cảm ứng thay lời gọi, giới tiếp dẫn, mang theo, tiên hiệu, màn kết phần một, tiền đình (đã làm) | Tiên đồ |
-| 3.x | Mỗi giới một phần riêng (Tiên, Ma, Phật, Yêu, Minh, Thần), để ngỏ | theo giới |
+| 2.8 | Sổ đọc theo ngày cho phần hai: giờ, buổi, chữ đọc lại, sách quay lại, thể loại và ngôn ngữ; tài nguyên dự tính (đã làm) | Niên kỷ › Lối đọc |
+| 3.x | Mỗi giới một phần riêng, xem bản thiết kế phần hai (`Thiet-ke-phan-hai-luc-gioi.md`) | theo giới |
 
 ### Nguyên tắc cân bằng
 

@@ -57,7 +57,7 @@ class LibraryActivity : TabActivity() {
             refresh()
             // Fill in titles, covers and word counts, recent books first.
             for (b in books.sortedByDescending { it.lastOpened }) {
-                if (b.words >= 0 && b.cover.isNotEmpty()) continue
+                if (b.words >= 0 && b.cover.isNotEmpty() && b.meta) continue
                 Library.prepare(this@LibraryActivity, b)
                 refresh()
             }

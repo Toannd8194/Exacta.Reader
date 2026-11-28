@@ -4,6 +4,7 @@ import android.graphics.Canvas
 import android.graphics.RectF
 import android.os.Bundle
 import com.exacta.reader.data.DaoPhap
+import com.exacta.reader.data.NhatKy
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.Lunar
@@ -19,7 +20,7 @@ import java.time.LocalDate
 
 /**
  * Niên kỷ: one tab per lunar year with a journal, each summed up on one page; then the stats of
- * the whole way, and the book of the 36 kỳ ngộ.
+ * the whole way, the way of reading kept for part two (2.8), and the book of the 36 kỳ ngộ.
  */
 class NienKyActivity : TabActivity() {
     private val reports = HashMap<Int, NienKy.Report>()
@@ -28,7 +29,7 @@ class NienKyActivity : TabActivity() {
     private fun report(back: Int) = reports.getOrPut(back) { NienKy.report(back) }
 
     override fun title() = "Niên Kỷ"
-    override fun tabs() = (0 until years).map { if (it == 0) "Năm nay" else "Năm " + Lunar.yearName(report(it).lunarYear) } + listOf("Thống kê", "Kỳ ngộ")
+    override fun tabs() = (0 until years).map { if (it == 0) "Năm nay" else "Năm " + Lunar.yearName(report(it).lunarYear) } + listOf("Thống kê", "Lối đọc", "Kỳ ngộ")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         years = NienKy.yearsWithData()
@@ -46,7 +47,8 @@ class NienKyActivity : TabActivity() {
 
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int {
         if (tab == years) return stats(c, k, area)
-        if (tab == years + 1) return kyNgo(c, k, area, page)
+        if (tab == years + 1) return way(c, k, area, page)
+        if (tab == years + 2) return kyNgo(c, k, area, page)
         val u = k.u
         val r = report(tab)
         val small = k.small
@@ -159,6 +161,102 @@ class NienKyActivity : TabActivity() {
             k.centered(c, LocalDate.ofEpochDay(d - 13 + i).dayOfMonth.toString(), bx, slot, y + chartH + 3 * u, if (i == 13) k.smallBold else small)
         }
         return 1
+    }
+
+    // --- Lối đọc: the journal of 2.8, and what part two would make of it --------------------------------
+
+    private fun way(c: Canvas, k: Ink, a: RectF, page: Int): Int {
+        if (page == 1) return giois(c, k, a)
+        val u = k.u
+        val d = Store.today()
+        val small = k.small
+        val sl = k.lineH(small)
+        val s = NhatKy.summary(d - 29, d)
+        val jumps = (d - 29..d).sumOf { TuLuyen.dayJumps[it] ?: 0 }
+        val rows = listOf(
+            "Đọc đêm (22 – 4 giờ)" to HomeView.duration(s.night),
+            "Sáng sớm (4 – 7 giờ)" to HomeView.duration(s.dawn),
+            "Buổi đọc" to "${s.sittings} buổi",
+            "Buổi dài nhất" to HomeView.duration(s.longest.toLong()),
+            "Buổi từ 45 phút" to "${s.long45} buổi",
+            "Buổi từ 90 phút" to "${s.long90} buổi",
+            "Nhảy chương" to "$jumps lần",
+            "Cân bằng năm thước đo" to "${NhatKy.balance()}%",
+            "Chữ đọc lại" to "${Realm.van(s.reread)} vạn",
+            "Sách quay lại sau 90 ngày" to "${s.comeBack} cuốn",
+            "Chữ ở sách quay lại" to "${Realm.van(s.back)} vạn",
+            "Sách đã đọc" to "${s.books} cuốn · ${s.authors} tác giả",
+            "Thể loại" to "${s.genres}",
+            "Ngôn ngữ" to "${s.langs}",
+        )
+        var y = k.section(c, a.left, a.top, a.width(), "LỐI ĐỌC 30 NGÀY QUA")
+        val cols = if (k.W >= 600) 2 else 1
+        val colW = (a.width() - (cols - 1) * 28 * u) / cols
+        val per = (rows.size + cols - 1) / cols
+        val rowH = sl + 10 * u
+        for ((i, p) in rows.withIndex()) k.pair(c, p.first, p.second, a.left + (i / per) * (colW + 28 * u), y + (i % per) * rowH, colW)
+        y += per * rowH + 18 * u
+
+        // The hours of the last 30 days.
+        y = k.section(c, a.left, y, a.width(), "GIỜ ĐỌC 30 NGÀY QUA (PHÚT)")
+        val hours = LongArray(24)
+        for (day in d - 29..d) NhatKy.days[day]?.hours?.forEachIndexed { i, v -> hours[i] += v }
+        val noteH = 2 * sl + 10 * u
+        val chartH = (a.bottom - y - sl - 6 * u - noteH).coerceAtMost(260 * u)
+        val peak = maxOf(hours.maxOrNull() ?: 0L, 60L)
+        val slot = a.width() / 24
+        for ((i, v) in hours.withIndex()) {
+            val bx = a.left + i * slot
+            val bh = if (v < 60) 0f else maxOf(3 * u, v.toFloat() / peak * (chartH - 6 * u))
+            c.drawRect(bx, y + chartH - u, bx + slot - u, y + chartH, k.fill)
+            if (bh > 0) c.drawRect(bx + 2 * u, y + chartH - bh, bx + slot - 3 * u, y + chartH, if (i >= 22 || i < 4) k.fill else k.gray)
+            if (i % 3 == 0) k.centered(c, "$i", bx, slot, y + chartH + 3 * u, small)
+        }
+        y += chartH + sl + 14 * u
+        val since = if (NhatKy.since >= 0) date(NhatKy.since) else "hôm nay"
+        val note = "Sổ ghi theo ngày từ $since (bản 2.8): giờ đọc, từng buổi, chữ đọc lại, thể loại và ngôn ngữ sách. Phần hai dùng sổ này để tính tài nguyên mỗi giới."
+        for (l in k.wrap(note, a.width(), small, 2)) {
+            k.text(c, l, a.left, y, small)
+            y += sl
+        }
+        return 2
+    }
+
+    private fun giois(c: Canvas, k: Ink, a: RectF): Int {
+        val u = k.u
+        val d = Store.today()
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        var y = k.section(c, a.left, a.top, a.width(), "NẾU ĐÃ Ở LỤC GIỚI · 30 NGÀY QUA")
+        val est = (0 until 6).map { NhatKy.estimate(it, d - 29, d) }
+        val best = est.indices.maxByOrNull { est[it].points } ?: 0
+        val pad = 12 * u
+        val gap = 10 * u
+        val noteH = 3 * sl + 8 * u
+        val h = ((a.bottom - y - noteH - 5 * gap) / 6).coerceAtMost(2 * pad + k.lineH(k.ui10Bold) + 4 * u + 2 * sl)
+        for (g in 0 until 6) {
+            val r = RectF(a.left, y, a.right, y + h)
+            k.card(c, r, selected = g == best && est[g].points > 0)
+            val e = est[g]
+            val value = "${e.points} ${NhatKy.RESOURCE[g]}"
+            k.right(c, value, r.right - pad, r.top + pad, k.ui10Bold)
+            val nameW = r.width() - 2 * pad - k.ui10Bold.measureText(value) - 16 * u
+            k.text(c, k.fit(TuLuyen.GIOI[g], nameW, k.ui10Bold), r.left + pad, r.top + pad, k.ui10Bold)
+            var ly = r.top + pad + k.lineH(k.ui10Bold) + 4 * u
+            for (l in k.wrap(NhatKy.WAY[g], r.width() - 2 * pad, small, 2)) {
+                k.text(c, l, r.left + pad, ly, small)
+                ly += sl
+            }
+            y = r.bottom + gap
+        }
+        val measured = est.firstOrNull()?.measured ?: 0
+        val note = "Dự tính theo luật nháp của phần hai, có sổ $measured/30 ngày; ngày chưa có sổ tính 1,5 điểm. Giới thật do cảm ứng định, không do chọn."
+        for (l in k.wrap(note, a.width(), sb, 3)) {
+            k.text(c, l, a.left, y, sb)
+            y += sl
+        }
+        return 2
     }
 
     // --- Kỳ ngộ: the 36, met or still waiting ---------------------------------------------------------

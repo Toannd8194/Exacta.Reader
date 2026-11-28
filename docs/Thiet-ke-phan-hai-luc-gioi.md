@@ -284,13 +284,13 @@ App hiện ghi theo ngày: phút đọc, chữ đọc, buổi dài nhất, số 
 | Ngày một cuốn bỏ dở được mở lại | Vong Xuyên, Bát Nhã | suy ra được từ ngày đọc cuối |
 | **Thể loại, ngôn ngữ** của sách (thông tin EPUB) | Thư Hải | chưa đọc |
 
-Những thứ này nên được ghi **ngay ở bản 2.8**, trước khi giới nào mở, để chữ ở tiền đình quy đổi được chính xác.
+Những thứ này được ghi **từ bản 2.8** (Tàng Kinh Lưu Ảnh), trước khi giới nào mở, để chữ ở tiền đình quy đổi được chính xác. Ngày trước khi cài 2.8 chỉ có tổng, nên vẫn tính theo mức trung bình 1,5 điểm.
 
 ## Lộ trình làm
 
 | Bản | Nội dung | Màn mới |
 |---|---|---|
-| 2.8 | Ghi dữ liệu theo ngày (khung giờ, các buổi, chữ đọc lại, thể loại và ngôn ngữ sách); tiền đình hiện tài nguyên dự tính của giới | — |
+| 2.8 | Ghi dữ liệu theo ngày (khung giờ, các buổi, chữ đọc lại, thể loại và ngôn ngữ sách); tiền đình hiện tài nguyên dự tính của giới (**đã làm**) | Niên kỷ › Lối đọc |
 | 3.0 | Khung chung: tiên lộ chín bậc, tiên thạch, cơ sở, thế lực, tiên kiếp; **Cửu Tiêu Vân Khuyết** | Thiên Đình |
 | 3.1 | **Huyết Nguyệt Trầm Uyên**: ma khí, ma công cược, phản phệ | Ma Cung |
 | 3.2 | **Bát Nhã Liên Đài**: công đức, xá lợi, độ hóa | Thiền Viện |

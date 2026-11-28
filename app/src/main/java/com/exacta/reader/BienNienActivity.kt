@@ -140,6 +140,8 @@ class BienNienActivity : TabActivity() {
                 "Tế luyện 36 tầng cấm chế: pháp khí, pháp bảo, linh bảo, thông thiên linh bảo; bảy trận pháp trong động phủ, trận nhãn theo linh mạch; linh thạch vẽ lại."),
             Era("2.7.2", "Hộ Thân Họa Phù",
                 "Ô trang bị từ Kim Đan, chỉ món đeo mới dùng được trong biến cố và kiếp; phù thất: vẽ chín loại phù bằng phù chỉ, chu sa và một buổi đọc liền."),
+            Era("2.8", "Tàng Kinh Lưu Ảnh",
+                "Sổ đọc theo ngày cho phần hai: giờ đọc, từng buổi, chữ đọc lại, sách quay lại, thể loại và ngôn ngữ sách; Niên kỷ › Lối đọc; tiền đình hiện tài nguyên dự tính."),
         )
     }
 }

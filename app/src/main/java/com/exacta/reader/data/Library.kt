@@ -56,6 +56,9 @@ object Library {
     suspend fun describe(context: Context, book: Book, pub: Publication) {
         pub.metadata.title?.takeIf { it.isNotBlank() }?.let { book.title = it }
         book.author = pub.metadata.authors.joinToString(", ") { it.name }
+        book.genre = pub.metadata.subjects.joinToString(", ") { it.name }
+        book.lang = pub.metadata.languages.joinToString(",")
+        book.meta = true
         if (book.cover.isEmpty() || (book.cover != NO_COVER && !File(book.cover).exists())) {
             val bitmap = runCatching { pub.cover() }.getOrNull()
             book.cover = if (bitmap != null) withContext(Dispatchers.IO) { saveCover(context, book, bitmap) } else NO_COVER
@@ -94,7 +97,7 @@ object Library {
 
     /** Opens the book if needed and fills in what is missing (title, cover, words). */
     suspend fun prepare(context: Context, book: Book) {
-        if (book.words >= 0 && book.cover.isNotEmpty()) return
+        if (book.words >= 0 && book.cover.isNotEmpty() && book.meta) return
         val pub = open(File(book.path)) ?: return
         try {
             describe(context, book, pub)

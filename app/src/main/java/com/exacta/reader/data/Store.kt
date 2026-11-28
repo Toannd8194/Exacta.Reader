@@ -32,6 +32,18 @@ class Book(val path: String) {
     var cover = ""           // cached cover PNG
     var forged = false       // its finishing treasure was given
     var tang = 0             // highest tầng công pháp reached step by step
+    // 2.8: the journal of part two.
+    var id = 0               // a short id the journal keeps per day
+    var genre = ""           // the EPUB's subjects, joined by ", "
+    var lang = ""            // the EPUB's languages, joined by ","
+    var meta = false         // subjects and languages read
+    var backDay = -1L        // the day the book was opened again after 90 days or more
+    var rereadMax = 0.0      // how far the reread of a book read through stands
+    var rereads = 0          // rereads finished
+    var rereadDay = -1L      // the day the last reread finished
+
+    fun genres() = genre.split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+    fun langs() = lang.split(',').map { it.trim().lowercase().substringBefore('-') }.filter { it.isNotEmpty() }
 
     val percent get() = (progress * 100).toInt().coerceIn(0, 100)
 
@@ -40,6 +52,8 @@ class Book(val path: String) {
         put("progress", progress); put("maxProgress", maxProgress); put("wordsRead", wordsRead); put("seconds", seconds)
         put("firstDay", firstDay); put("lastDay", lastDay); put("finishDay", finishDay); put("lastOpened", lastOpened)
         put("locator", locator); put("cover", cover); put("forged", forged); put("tang", tang)
+        put("id", id); put("genre", genre); put("lang", lang); put("meta", meta); put("backDay", backDay)
+        put("rereadMax", rereadMax); put("rereads", rereads); put("rereadDay", rereadDay)
     }
 
     companion object {
@@ -50,6 +64,9 @@ class Book(val path: String) {
             lastDay = o.optLong("lastDay", -1); finishDay = o.optLong("finishDay", -1); lastOpened = o.optLong("lastOpened")
             locator = o.optString("locator"); cover = o.optString("cover"); forged = o.optBoolean("forged")
             tang = o.optInt("tang", Realm.tangOf((maxProgress * 100).toInt()))
+            id = o.optInt("id"); genre = o.optString("genre"); lang = o.optString("lang"); meta = o.optBoolean("meta")
+            backDay = o.optLong("backDay", -1); rereadMax = o.optDouble("rereadMax", 0.0); rereads = o.optInt("rereads")
+            rereadDay = o.optLong("rereadDay", -1)
         }
     }
 }
@@ -252,6 +269,7 @@ object Store {
         if (!TranPhap.started) TranPhap.migrate()
         if (!TrangBi.started) TrangBi.migrate()
         if (!PhuLuc.started) PhuLuc.migrate()
+        if (!NhatKy.started) NhatKy.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -334,6 +352,7 @@ object Store {
         o.optJSONObject("tranPhap")?.let { TranPhap.read(it) }
         o.optJSONObject("trangBi")?.let { TrangBi.read(it) }
         o.optJSONObject("phuLuc")?.let { PhuLuc.read(it) }
+        o.optJSONObject("nhatKy")?.let { NhatKy.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -424,6 +443,7 @@ object Store {
             put("tranPhap", TranPhap.toJson())
             put("trangBi", TrangBi.toJson())
             put("phuLuc", PhuLuc.toJson())
+            put("nhatKy", NhatKy.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -485,6 +505,7 @@ object Store {
         TranPhap.reset()
         TrangBi.reset()
         PhuLuc.reset()
+        NhatKy.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -503,6 +524,7 @@ object Store {
         if (!TranPhap.started) TranPhap.migrate()
         if (!TrangBi.started) TrangBi.migrate()
         if (!PhuLuc.started) PhuLuc.migrate()
+        if (!NhatKy.started) NhatKy.migrate()
         dirty = true
         save()
         return true
@@ -528,6 +550,7 @@ object Store {
 
     /** A sitting is over: `seconds` long (the tâm ma kiếp counts the ones given up early). */
     fun endSession(seconds: Long) {
+        NhatKy.onSitting(seconds)
         TuLuyen.onSessionEnd(seconds)
         DongPhu.onSessionEnd(seconds)
         PhuLuc.onSessionEnd(seconds)
@@ -545,6 +568,7 @@ object Store {
         daySeconds[d] = dayBefore + seconds
         val hour = LocalTime.now().hour
         hourSeconds[hour] += seconds
+        NhatKy.onSeconds(book, seconds, hour)
         book.seconds += seconds
         totalSeconds += seconds
         book.lastDay = d
@@ -596,6 +620,7 @@ object Store {
      */
     fun moveTo(book: Book, progression: Double, pageTurn: Boolean = false) {
         book.progress = progression
+        NhatKy.onMove(book, progression, pageTurn)
         if (pageTurn && book.maxProgress < 0.5 && progression >= 0.5) fortune(KyNgo.T_HALF_BOOK)
         val step = progression - book.maxProgress
         if (step > 0) {
@@ -654,6 +679,7 @@ object Store {
         if (words <= 0) return
         val d = today()
         dayWords[d] = (dayWords[d] ?: 0) + words
+        NhatKy.onCredit(book, words)
         book.wordsRead += words
         val before = tuViRaw()
         val state = TuLuyen.state()

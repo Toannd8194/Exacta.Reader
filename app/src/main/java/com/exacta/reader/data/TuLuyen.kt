@@ -514,6 +514,7 @@ object TuLuyen {
         Store.trialBonus = 0
         Store.trialSpare = 0
         Store.failCount++
+        NhatKy.event(NhatKy.E_FAIL)
         Store.failDay = t
         failDays.add(t)
         while (failDays.size > 20) failDays.removeAt(0)
@@ -599,6 +600,7 @@ object TuLuyen {
             // The độn thuật and the công pháp soften the fall.
             val f = DaoPhap.soften(failKind(rate))
             breakFails++
+            NhatKy.event(NhatKy.E_FAIL)
             fails++
             pill = false
             Store.failCount++
