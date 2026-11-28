@@ -180,7 +180,7 @@ object NhatKy {
     fun nightSeconds(d: Day) = listOf(22, 23, 0, 1, 2, 3).sumOf { d.hours[it] }
     fun dawnSeconds(d: Day) = listOf(4, 5, 6).sumOf { d.hours[it] }
 
-    private fun fullMoon(day: Long): Boolean {
+    fun fullMoon(day: Long): Boolean {
         val d = LocalDate.ofEpochDay(day)
         return Lunar.fromSolar(d.dayOfMonth, d.monthValue, d.year).day == 15
     }

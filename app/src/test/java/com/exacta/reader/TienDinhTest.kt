@@ -65,8 +65,8 @@ class TienDinhTest {
         assertEquals(1, TienDinh.gioi)
         assertEquals("Huyết Nguyệt Ma Tôn", TienDinh.tienHieu())
         assertFalse(TienDinh.endSeen)
-        assertTrue(TienDinh.atForecourt())
-        assertEquals("Nghịch Tiên · tiền đình", TuLuyen.name())
+        assertFalse(TienDinh.atForecourt())                // 3.5: Huyết Nguyệt is open
+        assertTrue(TuLuyen.name().startsWith("Nghịch Tiên"))
         // Words after the crossing are kept at the tiền đình.
         Store.totalWords += 30_000
         assertEquals(30_000L, TienDinh.keptWords())

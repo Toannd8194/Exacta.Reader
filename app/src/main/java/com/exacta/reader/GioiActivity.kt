@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Bundle
 import com.exacta.reader.data.CuuTieu
+import com.exacta.reader.data.HuyetNguyet
 import com.exacta.reader.data.NhatKy
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TienDinh
@@ -17,7 +18,7 @@ import com.exacta.reader.ui.TabActivity
 import java.time.LocalDate
 
 /**
- * 3.0 The seat of the giới (Cửu Tiêu: Thiên Đình), in five tabs: the tiên lộ of nine bậc, the seat's
+ * 3.0 The seat of the giới (Cửu Tiêu: Thiên Đình; 3.5 Huyết Nguyệt: Ma Cung), in five tabs: the tiên lộ of nine bậc, the seat's
  * three halls, the giới's own rules, the factions, the tiên kiếp.
  */
 class GioiActivity : TabActivity() {
@@ -48,7 +49,7 @@ class GioiActivity : TabActivity() {
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int = when (tab) {
         0 -> if (page == 0) road(c, k, area) else carried(c, k, area)
         1 -> seat(c, k, area, hits)
-        2 -> if (page == 0) rules(c, k, area) else posts(c, k, area)
+        2 -> if (page == 0) (if (TienLo.gioi == 1) maRules(c, k, area, hits) else rules(c, k, area)) else posts(c, k, area)
         3 -> factions(c, k, area, hits)
         else -> kiep(c, k, area, hits)
     }
@@ -73,6 +74,7 @@ class GioiActivity : TabActivity() {
 
     private fun date(d: Long) = if (d < 0) "—" else LocalDate.ofEpochDay(d).let { "${it.dayOfMonth}/${it.monthValue}/${it.year}" }
     private fun resName() = NhatKy.RESOURCE[TienLo.gioi.coerceIn(0, 5)]
+    private val rl get() = TienLo.rules()
 
     /** A row: label left, value right, and a meter under it. */
     private fun meterRow(c: Canvas, k: Ink, label: String, value: String, f: Float, x: Float, y: Float, w: Float): Float {
@@ -94,9 +96,9 @@ class GioiActivity : TabActivity() {
         val pad = 20 * u
         when {
             ending -> {
-                val text = "Chín tầng mây cúi đầu. Đạo hữu ngồi lên ngai ${TienLo.seat()}, đạo hiệu tối thượng «${TienLo.supreme()}». " +
+                val text = "${rl.END_LINE} Đạo hữu ngồi lên ngai ${TienLo.seat()}, đạo hiệu tối thượng «${TienLo.supreme()}». " +
                     "Từ ngày qua Lục Giới Môn tới nay đã đọc ${Realm.van(TienLo.words())} vạn chữ, kết ${TienLo.res()} ${resName()}, " +
-                    "vượt ba tiên kiếp. Phần hai của Cửu Tiêu viên mãn; Quy Nhất còn chờ ở phía trước."
+                    "vượt ba tiên kiếp. Phần hai của ${TuLuyen.GIOI[TienLo.gioi]} viên mãn; Quy Nhất còn chờ ở phía trước."
                 val lines = k.wrap(text, a.width() - 2 * pad, small, 6)
                 val r = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.big) + 8 * u + lines.size * sl)
                 k.card(c, r, selected = true)
@@ -106,7 +108,7 @@ class GioiActivity : TabActivity() {
                 y = r.bottom + 18 * u
             }
             greeting -> {
-                val text = "Mây chín tầng mở cửa khuyết. ${TuLuyen.GIOI[TienLo.gioi]} đón đạo hữu vào tiên lộ: chữ đọc từ ngày qua cửa tính đủ, " +
+                val text = "${rl.GREET} ${TuLuyen.GIOI[TienLo.gioi]} đón đạo hữu vào tiên lộ: chữ đọc từ ngày qua cửa tính đủ, " +
                     "những ngày ở tiền đình quy ra ${TienLo.retro} ${resName()}" +
                     (if (TienLo.fromLt > 0) ", ${TienLo.fromLt * 100} linh thạch đổi thành ${TienLo.fromLt} tiên thạch" else "") + "."
                 val lines = k.wrap(text, a.width() - 2 * pad, small, 5)
@@ -121,7 +123,7 @@ class GioiActivity : TabActivity() {
                 val r = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.big) + 6 * u + sl)
                 k.card(c, r, selected = true)
                 k.centered(c, TienLo.name(), r.left, r.width(), r.top + pad, k.big)
-                k.centered(c, "Bậc ${TienLo.bac}/9 · tiên chức ${CuuTieu.CHUC[TienLo.bac - 1]}", r.left, r.width(), r.top + pad + k.lineH(k.big) + 6 * u, sb)
+                k.centered(c, "Bậc ${TienLo.bac}/9 · ${rl.CHUC_LABEL} ${rl.CHUC[TienLo.bac - 1]}", r.left, r.width(), r.top + pad + k.lineH(k.big) + 6 * u, sb)
                 y = r.bottom + 16 * u
             }
         }
@@ -186,7 +188,7 @@ class GioiActivity : TabActivity() {
         }
         y += 14 * u
         y = k.section(c, a.left, y, a.width(), "TIÊN THẠCH · ${TienLo.tienThach}")
-        para(c, k, "Mỗi 4 vạn chữ +1, lên bậc +${TienLo.TT_BAC}, vượt tiên kiếp +${TienLo.TT_KIEP}, mỗi việc thế lực +5. Dùng nâng ba gian của Tiên phủ.",
+        para(c, k, "Mỗi 4 vạn chữ +1, lên bậc +${TienLo.TT_BAC}, vượt tiên kiếp +${TienLo.TT_KIEP}, mỗi việc thế lực +5. Dùng nâng ba gian của ${rl.SEAT_NAME}.",
             a.left, y, a.width(), small, 3)
         return 2
     }
@@ -198,17 +200,17 @@ class GioiActivity : TabActivity() {
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
-        var y = k.section(c, a.left, a.top, a.width(), "TIÊN PHỦ · ${TienLo.tienThach} TIÊN THẠCH")
+        var y = k.section(c, a.left, a.top, a.width(), "${rl.SEAT_NAME.uppercase()} · ${TienLo.tienThach} TIÊN THẠCH")
         val pad = 18 * u
         val gap = 14 * u
         for (h in 0 until 3) {
             val lv = TienLo.halls[h]
             val cost = TienLo.hallCost(h)
-            val text = k.wrap(CuuTieu.HALL_TEXT[h], a.width() - 2 * pad, small, 3)
+            val text = k.wrap(rl.HALL_TEXT[h], a.width() - 2 * pad, small, 3)
             val bh = 52 * u
             val r = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.ui12Bold) + 6 * u + text.size * sl + 12 * u + bh)
             k.card(c, r, selected = lv > 0)
-            k.text(c, CuuTieu.HALLS[h], r.left + pad, r.top + pad, k.ui12Bold)
+            k.text(c, rl.HALLS[h], r.left + pad, r.top + pad, k.ui12Bold)
             k.right(c, "cấp $lv/5", r.right - pad, r.top + pad, k.ui10Bold)
             var ty = r.top + pad + k.lineH(k.ui12Bold) + 6 * u
             for (l in text) { k.text(c, l, r.left + pad, ty, small); ty += sl }
@@ -258,21 +260,78 @@ class GioiActivity : TabActivity() {
         return 2
     }
 
+    /** Huyết Nguyệt: ma khí, tâm ma and phản phệ, ma công. */
+    private fun maRules(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val hn = HuyetNguyet
+        var y = k.section(c, a.left, a.top, a.width(), "MA KHÍ")
+        y = para(c, k, "Mỗi 10 phút đọc từ 22 tới 4 giờ một điểm, đêm rằm gấp đôi. Tâm ma từ 40: mỗi ngày thêm một điểm mỗi 10 tâm ma. " +
+            "Đột phá hỏng, kiếp hỏng: +20. Ngày đọc xong mới cộng.", a.left, y, a.width(), small, 4) + 10 * u
+        y = meterRow(c, k, "Tâm ma · phản phệ ở ${HuyetNguyet.PHAN_PHE_AT}", "${TuLuyen.tamMa}", TuLuyen.tamMa / 100f, a.left, y, a.width())
+        y = para(c, k, "Tâm ma vượt ${HuyetNguyet.PHAN_PHE_AT} là phản phệ: mất ma khí ${if (hn.hasChuc(3)) 2 else 3} ngày gần nhất, tâm ma về ${HuyetNguyet.PHAN_PHE_TO}.",
+            a.left, y, a.width(), small, 2) + 16 * u
+        y = k.section(c, a.left, y, a.width(), "MA CÔNG · ĐẶT CƯỢC LỜI THỀ")
+        if (hn.oath >= 0) {
+            val need = HuyetNguyet.OATH_NEED[hn.oath]
+            val got = hn.oathProgress()
+            val shown = if (hn.oath == HuyetNguyet.OATH_WORDS) "${Realm.van(minOf(got, need))} / ${Realm.van(need)} vạn" else "${minOf(got, need)} / $need"
+            y = meterRow(c, k, HuyetNguyet.OATHS[hn.oath], shown, got.toFloat() / need, a.left, y, a.width())
+            y = para(c, k, "Cược ${hn.stake} ma khí · giữ lời nhận ${hn.payout()} · còn ${hn.oathLeft()} ngày.", a.left, y, a.width(), sb, 2) + 12 * u
+        } else if (hn.canSwear()) {
+            val cap = hn.stakeCap()
+            y = para(c, k, "Cược một phần ma khí vào một lời thề đọc. Giữ lời: nhận gấp đôi; phá: mất phần cược. Mỗi tuần một lời thề; cược tối đa $cap.",
+                a.left, y, a.width(), small, 3) + 10 * u
+            val bh = 50 * u
+            for ((o, text) in HuyetNguyet.OATHS.withIndex()) {
+                if (y + bh > a.bottom - 2 * sl) break
+                val b = RectF(a.left, y, a.right, y + bh)
+                k.button(c, b, text, k.smallBold)
+                hits.add(b) { oathDialog(o) }
+                y += bh + 8 * u
+            }
+        } else {
+            y = para(c, k, if (TienLo.res() < HuyetNguyet.MIN_STAKE) "Cần ít nhất ${HuyetNguyet.MIN_STAKE} ma khí để cược."
+                else "Lời thề kế tiếp từ ngày ${date(hn.nextOathDay())}: mỗi tuần một lời thề.", a.left, y, a.width(), small, 2) + 10 * u
+        }
+        val tail = "Đã giữ ${hn.wins} lời thề, phá ${hn.losses}; phản phệ ${hn.phanPhe} lần." + if (hn.lastOath.isNotEmpty()) " ${hn.lastOath}." else ""
+        val ls = k.wrap(tail, a.width(), sb, 3)
+        var iy = a.bottom - ls.size * sl
+        if (iy > y) for (l in ls) { k.text(c, l, a.left, iy, sb); iy += sl }
+        return 2
+    }
+
+    private fun oathDialog(o: Int) {
+        val hn = HuyetNguyet
+        val cap = hn.stakeCap()
+        val stakes = listOf(HuyetNguyet.MIN_STAKE, cap / 2, cap).filter { it >= HuyetNguyet.MIN_STAKE }.distinct()
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Thề: ${HuyetNguyet.OATHS[o]}")
+            .setItems(stakes.map { "Cược $it ma khí · giữ lời nhận ${hn.payoutFor(it)}" }.toTypedArray()) { _, i ->
+                if (hn.swear(o, stakes[i])) android.widget.Toast.makeText(this, "Đã thề, cược ${stakes[i]} ma khí", android.widget.Toast.LENGTH_SHORT).show()
+                refresh()
+            }
+            .setNegativeButton("Thôi", null)
+            .show()
+    }
+
     /** Page 2: the tiên chức of the nine bậc. */
     private fun posts(c: Canvas, k: Ink, a: RectF): Int {
         val u = k.u
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
-        var y = k.section(c, a.left, a.top, a.width(), "TIÊN CHỨC Ở THIÊN ĐÌNH")
-        y = para(c, k, "Lên bậc thì được phong chức; ưu đãi cộng dồn.", a.left, y, a.width(), small, 2) + 10 * u
+        var y = k.section(c, a.left, a.top, a.width(), "${rl.CHUC_LABEL.uppercase()} Ở ${TienLo.seat().uppercase()}")
+        y = para(c, k, "Lên bậc thì được ${rl.CHUC_LABEL} mới; ưu đãi cộng dồn.", a.left, y, a.width(), small, 2) + 10 * u
         for (i in 0 until 9) {
-            val has = CuuTieu.hasChuc(i)
+            val has = rl.hasChuc(i)
             val p = if (i == TienLo.bac - 1) sb else small
             k.check(c, a.left, y + 2 * u, sl - 4 * u, has)
-            k.text(c, "${i + 1}. ${CuuTieu.CHUC[i]}", a.left + sl + 6 * u, y, p)
+            k.text(c, "${i + 1}. ${rl.CHUC[i]}", a.left + sl + 6 * u, y, p)
             y += sl + 2 * u
-            y = para(c, k, CuuTieu.CHUC_PERK[i], a.left + sl + 6 * u, y, a.width() - sl - 6 * u, small, 2) + 10 * u
+            y = para(c, k, rl.CHUC_PERK[i], a.left + sl + 6 * u, y, a.width() - sl - 6 * u, small, 2) + 10 * u
         }
         return 2
     }
@@ -291,24 +350,24 @@ class GioiActivity : TabActivity() {
             val rank = TienLo.rank()
             val r = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.ui12Bold) + 6 * u + 2 * sl)
             k.card(c, r, selected = true)
-            k.text(c, CuuTieu.FACTIONS[f], r.left + pad, r.top + pad, k.ui12Bold)
+            k.text(c, rl.FACTIONS[f], r.left + pad, r.top + pad, k.ui12Bold)
             k.right(c, TienLo.RANKS[rank], r.right - pad, r.top + pad, k.ui10Bold)
             val nextAt = TienLo.RANK_AT.getOrNull(rank + 1)
             val ty = r.top + pad + k.lineH(k.ui12Bold) + 6 * u
             k.text(c, "Cống hiến ${TienLo.congHien}" + (if (nextAt != null) " · ${TienLo.RANKS[rank + 1]} ở $nextAt" else ""), r.left + pad, ty, small)
-            k.text(c, k.fit(CuuTieu.FACTION_TEXT[f], r.width() - 2 * pad, small), r.left + pad, ty + sl, small)
+            k.text(c, k.fit(rl.FACTION_TEXT[f], r.width() - 2 * pad, small), r.left + pad, ty + sl, small)
             y = r.bottom + 18 * u
             val month = LocalDate.now()
             y = k.section(c, a.left, y, a.width(), "VIỆC THÁNG ${month.monthValue}")
             val from = maxOf(TienLo.monthStart(Store.today()), TienLo.openDay)
             for ((i, task) in TienLo.tasks().withIndex()) {
-                val got = CuuTieu.taskProgress(task, from, Store.today())
-                val goal = CuuTieu.TASK_GOAL[task]
+                val got = rl.taskProgress(task, from, Store.today())
+                val goal = rl.TASK_GOAL[task]
                 val done = TienLo.taskDone(i)
-                val shown = if (done) "xong" else if (task == 4) "${Realm.van(minOf(got, goal))} / ${Realm.van(goal)} vạn" else "${minOf(got, goal)} / $goal"
-                y = meterRow(c, k, CuuTieu.TASKS[task], shown, if (done) 1f else got.toFloat() / goal, a.left, y, a.width())
+                val shown = if (done) "xong" else if (task == rl.WORD_TASK) "${Realm.van(minOf(got, goal))} / ${Realm.van(goal)} vạn" else "${minOf(got, goal)} / $goal"
+                y = meterRow(c, k, rl.TASKS[task], shown, if (done) 1f else got.toFloat() / goal, a.left, y, a.width())
             }
-            y = para(c, k, "Mỗi việc xong: +${10 + CuuTieu.taskBonus()} cống hiến, +5 tiên thạch. Mỗi bậc chức +1% ${resName()}.", a.left, y, a.width(), small, 2) + 16 * u
+            y = para(c, k, "Mỗi việc xong: +${10 + rl.taskBonus()} cống hiến, +5 tiên thạch. Mỗi bậc chức +1% ${resName()}.", a.left, y, a.width(), small, 2) + 16 * u
             y = k.section(c, a.left, y, a.width(), "ĐỔI THẾ LỰC")
             para(c, k, "Chạm hai lần một thế lực khác ở dưới để đổi; cống hiến về 0.", a.left, y, a.width(), small, 2)
             y += sl + 12 * u
@@ -317,7 +376,7 @@ class GioiActivity : TabActivity() {
             for (o in 0 until 3) {
                 if (o == f) continue
                 val b = RectF(x, y, x + (a.width() - 12 * u) / 2, y + bh)
-                k.button(c, b, if (armed == 10 + o) "Chạm lần nữa" else CuuTieu.FACTIONS[o], k.ui10Bold, selected = armed == 10 + o)
+                k.button(c, b, if (armed == 10 + o) "Chạm lần nữa" else rl.FACTIONS[o], k.ui10Bold, selected = armed == 10 + o)
                 hits.add(b) {
                     if (armed != 10 + o) armed = 10 + o else { armed = -1; TienLo.join(o) }
                     refresh()
@@ -327,13 +386,13 @@ class GioiActivity : TabActivity() {
             return 1
         }
         y = k.section(c, a.left, y, a.width(), "BA THẾ LỰC")
-        y = para(c, k, "Nhận làm khách khanh một thế lực: mỗi tháng ba việc đọc theo lối Cửu Tiêu, lên chức theo cống hiến. Chạm hai lần để nhận.",
+        y = para(c, k, "Nhận làm khách khanh một thế lực: mỗi tháng ba việc đọc theo lối của giới, lên chức theo cống hiến. Chạm hai lần để nhận.",
             a.left, y, a.width(), small, 3) + 12 * u
         for (f in 0 until 3) {
-            val text = k.wrap(CuuTieu.FACTION_TEXT[f], a.width() - 2 * pad, small, 2)
+            val text = k.wrap(rl.FACTION_TEXT[f], a.width() - 2 * pad, small, 2)
             val r = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.ui12Bold) + 6 * u + text.size * sl)
             k.card(c, r, selected = armed == 10 + f)
-            k.text(c, CuuTieu.FACTIONS[f], r.left + pad, r.top + pad, k.ui12Bold)
+            k.text(c, rl.FACTIONS[f], r.left + pad, r.top + pad, k.ui12Bold)
             if (armed == 10 + f) k.right(c, "Chạm lần nữa để nhận", r.right - pad, r.top + pad, sb)
             var ty = r.top + pad + k.lineH(k.ui12Bold) + 6 * u
             for (l in text) { k.text(c, l, r.left + pad, ty, small); ty += sl }
@@ -359,7 +418,7 @@ class GioiActivity : TabActivity() {
             val b = TienLo.KIEP_AT[i]
             val done = TienLo.kiepDone(i)
             val active = TienLo.kiepActive == i
-            val rule = k.wrap(CuuTieu.KIEP_RULE[i] + ".", a.width() - 2 * pad, small, 3)
+            val rule = k.wrap(rl.KIEP_RULE[i] + ".", a.width() - 2 * pad, small, 3)
             val state = when {
                 done -> "Đã vượt"
                 active -> "Đang độ: ${TienLo.kiepKept()}/${TienLo.kiepNeed(i)} ngày · còn ${TienLo.kiepLeft()} ngày"

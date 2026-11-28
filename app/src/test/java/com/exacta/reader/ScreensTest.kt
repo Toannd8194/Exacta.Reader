@@ -394,12 +394,57 @@ class ScreensTest {
         val words = Store.totalWords
         Store.realmCap = 9
         Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 300_000
-        com.exacta.reader.data.TuLuyen.gioi = 1
+        com.exacta.reader.data.TuLuyen.gioi = 2
         com.exacta.reader.data.TienDinh.onCross(seen = true)
         com.exacta.reader.data.TienDinh.wordsAtCross = Store.totalWords - 120_000
         tabs(KetActivity::class.java, "ket")
         com.exacta.reader.data.TienDinh.reset(); com.exacta.reader.data.TienDinh.started = true
         com.exacta.reader.data.TuLuyen.gioi = -1
+        Store.realmCap = cap
+        Store.totalWords = words
+    }
+
+    /** 3.5: Huyết Nguyệt opened: Ma Cung with an oath sworn, then the oaths to choose from, and Home. */
+    @Test fun maCung() {
+        val tl = com.exacta.reader.data.TienLo
+        val td = com.exacta.reader.data.TienDinh
+        val hn = com.exacta.reader.data.HuyetNguyet
+        val cap = Store.realmCap
+        val words = Store.totalWords
+        val tamMa = com.exacta.reader.data.TuLuyen.tamMa
+        Store.realmCap = 9
+        Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 700_000
+        com.exacta.reader.data.TuLuyen.gioi = 1
+        td.onCross(seen = true)
+        td.crossDay = Store.today() - 40
+        td.wordsAtCross = com.exacta.reader.data.TuLuyen.floor(9)
+        tl.reset(); tl.started = true
+        tl.check()
+        tl.welcomeSeen = true
+        tl.resTenths = 2_460; tl.tienThach = 41; tl.halls[0] = 1; tl.halls[2] = 2
+        tl.check()
+        tl.join(1); tl.congHien = 30
+        com.exacta.reader.data.TuLuyen.tamMa = 57
+        hn.wins = 1; hn.losses = 1; hn.lastOath = "Giữ lời thề «3 đêm liền, mỗi đêm 40 phút sau 22 giờ»: nhận 44 ma khí"
+        hn.oath = 2; hn.stake = 30; hn.oathStart = Store.today() - 2; hn.lastOathDay = hn.oathStart
+        tabs(GioiActivity::class.java, "ma")
+        // No oath sworn: the six to choose from.
+        hn.oath = -1; hn.lastOathDay = -1
+        val g = Robolectric.buildActivity(GioiActivity::class.java).setup().get()
+        g.selectTab(2)
+        idle()
+        shoot(root(g), "ma_2_oaths")
+        com.exacta.reader.ui.Ink.recordCuts = true
+        com.exacta.reader.ui.Ink.cuts.clear()
+        val h = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+        idle()
+        shoot(root(h), "ma_home")
+        com.exacta.reader.ui.Ink.recordCuts = false
+        File(out, "ma_home_cuts.txt").writeText(com.exacta.reader.ui.Ink.cuts.joinToString(System.lineSeparator()))
+        tl.reset(); tl.started = true
+        td.reset(); td.started = true
+        com.exacta.reader.data.TuLuyen.gioi = -1
+        com.exacta.reader.data.TuLuyen.tamMa = tamMa
         Store.realmCap = cap
         Store.totalWords = words
     }

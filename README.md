@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.4.apk`](dist/Van-Quyen-Tien-Do-3.4.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.5.apk`](dist/Van-Quyen-Tien-Do-3.5.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,28 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.5 · Huyết Nguyệt Đương Không
+
+- **Huyết Nguyệt Trầm Uyên mở phần hai** (giới thứ hai sau Cửu Tiêu). Người tu đang đứng ở tiền đình được đưa vào tiên lộ: chữ
+  từ ngày qua cửa tính đủ, những ngày ở tiền đình quy ra ma khí theo sổ đọc, linh thạch đổi tiên thạch 100 : 1. Chín bậc Nghịch
+  Tiên → Nghịch Thiên Ma Đế; Home hiện bậc của giới, nút giới là **Ma Cung**.
+- **Ma khí**: mỗi 10 phút đọc từ 22 tới 4 giờ một điểm, đêm rằm gấp đôi; tâm ma từ 40 thêm mỗi ngày một điểm mỗi 10 tâm ma;
+  đột phá hỏng, kiếp hỏng +20 (ngã là có lời). Tâm ma ở giới này không trừ gì.
+- **Ma công**: đặt cược một phần ma khí vào một lời thề đọc (sáu lời thề: 3 đêm liền 40 phút, 7 ngày liền 30 phút, 5 đêm trong
+  7 ngày, đọc trọn một cuốn trong 10 ngày, 10 vạn chữ trong 7 ngày, 14 ngày liền 20 phút). Giữ lời nhận gấp đôi, phá mất phần
+  cược. Mỗi tuần một lời thề; cược tối đa một phần tư ma khí bảy ngày qua (Ám điện, ma ấn thứ hai nâng lên), nên đường liều
+  nhanh hơn tối đa khoảng một phần tư.
+- **Phản phệ**: tâm ma vượt 90 thì mất ma khí ba ngày gần nhất, tâm ma về 60.
+- **Ma ấn** chín bậc (thay tiên chức), **Ma cung** ba gian (Huyết trì: ma binh +1% ma khí mỗi cấp; Ma binh doanh: tiên kiếp +2%;
+  Ám điện: cược thêm, thua được hoàn một phần), ba thế lực **Huyết Hải Ma Cung, U Ảnh Điện, Thiên Ma Lĩnh** với việc tháng theo
+  lối đêm.
+- **Tâm ma đại kiếp** (bậc 3, 6): 14 ngày trong 30 ngày đọc, tâm ma giữ trong 40 – 80. **Đại kiếp Ma Đế** (bậc 9): 21 đêm trong
+  30 ngày, tâm ma không vượt 90.
+- Khung tiên lộ tách luật riêng của từng giới (`GioiRules`), để các giới sau gắn vào; Cửu Tiêu giữ nguyên luật cũ.
+- **Logo mới, tối giản**: ba cuốn sách xếp thành bậc thang đi lên một vầng trăng tròn: vạn quyển thành tiên đồ. Trắng trên đen,
+  cho cả icon launcher.
+- versionCode 350.
 
 ## Bản 3.4 · Tàng Kinh Cửu Lâu
 
@@ -459,6 +481,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.2.1 | Bát Quái Khai Trận | Khoáng thạch pixel 32 ô có màu, tĩnh thất tới 90 phút và tiềm tu 120, 18 trận pháp |
   | 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, khống chế, thi triển, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông |
   | 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn, án tham ngộ, tàn quyển, phế công, đồ phổ, tự sáng công pháp |
+  | 3.5 | Huyết Nguyệt Đương Không | Huyết Nguyệt Trầm Uyên: ma khí, ma công đặt cược, phản phệ, Ma Cung, Tâm ma đại kiếp; logo mới |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

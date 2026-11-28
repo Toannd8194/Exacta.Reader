@@ -272,6 +272,8 @@ object TuLuyen {
     fun name(): String {
         val r = realm()
         if (r >= 9 && TienLo.opened) return TienLo.name()
+        // 3.5: in a giới of its own part, the bậc of its tiên lộ (Cửu Tiêu keeps its nine phẩm).
+        if (r >= 9 && TienLo.opened && TienLo.gioi != 0) return TienLo.name()
         if (r >= 9) return if (TienDinh.atForecourt()) "${tienKind()} · tiền đình" else Realm.name(Store.level()).replace("Tiên nhân", tienKind())
         val s = shownSub()
         return if (r == 0) "Luyện Khí " + (if (atCeiling()) TIEU[3] else LK_KY[s / 3]) else "${shortName(r)} ${TIEU[s]}"

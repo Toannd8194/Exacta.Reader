@@ -156,6 +156,8 @@ class BienNienActivity : TabActivity() {
                 "36 thuật pháp sáu loại, thêm khống chế; thi triển trong bí cảnh, kiếp, đột phá hỏng; hồi chiêu tính bằng ngày đọc; thuần thục theo lần dùng và buổi đọc; tám hợp kích; mười hai bản mệnh thần thông."),
             Era("3.4", "Tàng Kinh Cửu Lâu",
                 "Tàng Kinh chín tầng lầu, kinh các tông môn mở theo cống hiến và chức vụ; án tham ngộ: đọc đủ chữ mới học được ngọc giản; tàn quyển Linh, Tiên phẩm; phản tông thì phế công; đồ phổ; tự sáng công pháp."),
+            Era("3.5", "Huyết Nguyệt Đương Không",
+                "Huyết Nguyệt Trầm Uyên mở: ma khí từ đọc đêm và tâm ma, ma công đặt cược lời thề, phản phệ, Ma Cung ba gian, ba thế lực, Tâm ma đại kiếp; logo mới tối giản."),
         )
     }
 }

@@ -23,11 +23,15 @@ import kotlin.random.Random
  * The resource is counted from the journal of 2.8 ([NhatKy.estimate]), day by day once a day is over;
  * the days at the tiền đình are counted the same way when the giới opens.
  *
- * Only Cửu Tiêu Vân Khuyết is written in 3.0 ([OPEN]); its own rules are in [CuuTieu].
+ * Each giới writes its own part as [GioiRules]: Cửu Tiêu Vân Khuyết in 3.0 ([CuuTieu]), Huyết Nguyệt
+ * Trầm Uyên in 3.5 ([HuyetNguyet]). The others wait at their tiền đình ([OPEN]).
  */
 object TienLo {
     /** The giới whose part two is written. */
-    val OPEN = intArrayOf(0)
+    val OPEN = intArrayOf(0, 1)
+
+    /** The rules of the giới entered. */
+    fun rules(): GioiRules = if (gioi == 1) HuyetNguyet else CuuTieu
 
     val BAC_VAN = longArrayOf(0, 60, 140, 240, 360, 500, 660, 840, 1040)
     val BAC_RES = intArrayOf(0, 200, 500, 900, 1400, 2000, 2700, 3500, 4400)
@@ -93,6 +97,7 @@ object TienLo {
         kiepPassed = 0; kiepActive = -1; kiepStart = -1; kiepDays.clear(); kiepFails.fill(0); injuryUntil = -1
         halls.fill(0); faction = -1; congHien = 0; taskMonth = -1; tasksDone = 0; lastResult = ""
         CuuTieu.reset()
+        HuyetNguyet.reset()
     }
 
     private fun today() = Store.today()
@@ -166,7 +171,7 @@ object TienLo {
             if (i >= 0 && !kiepDone(i)) break
             bac++
             tienThach += TT_BAC
-            Store.note("Lên ${viName()}: tiên chức ${CuuTieu.CHUC[bac - 1]}")
+            Store.note("Lên ${viName()}: ${rules().CHUC_LABEL} ${rules().CHUC[bac - 1]}")
             if (bac == 9 && endDay < 0) {
                 endDay = today()
                 endSeen = false
@@ -177,7 +182,7 @@ object TienLo {
     // --- What was carried: the resource in percent ---------------------------------------------------
 
     /** Tiên khí cấp: the bản mệnh's cấm chế (a cấp each 4 tầng), raised by the seat's furnace. */
-    fun tienKhi(): Int = (LinhGioi.banMenh.maxOfOrNull { TeLuyen.level(it) } ?: 0) / 4 + (if (gioi == 0) halls[1] else 0)
+    fun tienKhi(): Int = (LinhGioi.banMenh.maxOfOrNull { TeLuyen.level(it) } ?: 0) / 4 + rules().tienKhiBonus()
 
     fun parts(): List<Pair<String, Int>> {
         val g = gioi.coerceIn(0, 5)
@@ -192,7 +197,7 @@ object TienLo {
         if (roots.any { it in attrs }) list.add("Tiên căn hợp giới" to 10)
         if (DoKiep.an.isNotEmpty()) list.add("Kiếp ấn ${DoKiep.an.size}" to DoKiep.an.size + DoKiep.an.count { DoKiep.BY_GIOI[it.by] == g })
         if (LinhGioi.vuc.any { it in LAWS_OF[g] }) list.add("Đạo vực «${LinhGioi.vucName}» vọng lại" to 5)
-        if (g == 0) list.addAll(CuuTieu.parts())
+        list.addAll(rules().parts())
         return list
     }
 
@@ -201,7 +206,7 @@ object TienLo {
     /** The resource of day `d` by the giới's rules and what was carried (halved while wounded). */
     fun dayTenths(d: Long): Long {
         var t = NhatKy.estimate(gioi, d, d).tenths * percent() / 100
-        if (gioi == 0) t += CuuTieu.dayExtra(d)
+        t += rules().dayExtra(d)
         if (d <= injuryUntil) t /= 2
         return t
     }
@@ -232,7 +237,7 @@ object TienLo {
             bac = fromPham
             for ((i, b) in KIEP_AT.withIndex()) if (bac >= b) kiepPassed = kiepPassed or (1 shl i)
         }
-        CuuTieu.onOpen()
+        rules().onOpen()
         advance()
         Store.note("${TuLuyen.GIOI[gioi]} mở cửa: ${viName()}, ${res()} ${NhatKy.RESOURCE[gioi]}")
         Store.touch()
@@ -253,7 +258,7 @@ object TienLo {
             if (countedTo >= openDay) resTenths += dayTenths(countedTo)
             changed = true
         }
-        if (gioi == 0 && CuuTieu.check()) changed = true
+        if (rules().check()) changed = true
         if (checkKiep()) changed = true
         if (checkTasks()) changed = true
         val before = bac
@@ -272,20 +277,20 @@ object TienLo {
 
     // --- Kiếp ---------------------------------------------------------------------------------------
 
-    fun kiepName(i: Int) = CuuTieu.KIEP_NAME[i]
-    fun kiepRule(i: Int) = CuuTieu.KIEP_RULE[i]
-    fun kiepWindow(i: Int) = if (i == 2) 90 else 30
-    fun kiepNeed(i: Int) = if (i == 2) 81 else 21
+    fun kiepName(i: Int) = rules().KIEP_NAME[i]
+    fun kiepRule(i: Int) = rules().KIEP_RULE[i]
+    fun kiepWindow(i: Int) = rules().kiepWindow(i)
+    fun kiepNeed(i: Int) = rules().kiepNeed(i)
 
     fun kiepChance(i: Int): Int {
-        val v = 60 + 10 * kiepFails[i] + CuuTieu.kiepBonus() + minOf(10, DoKiep.an.size)
+        val v = 60 + 10 * kiepFails[i] + rules().kiepParts().sumOf { it.second } + minOf(10, DoKiep.an.size)
         return v.coerceIn(10, 95)
     }
 
     fun kiepParts(i: Int): List<Pair<String, Int>> = buildList {
         add("Gốc" to 60)
         if (kiepFails[i] > 0) add("Lần trước hỏng ×${kiepFails[i]}" to 10 * kiepFails[i])
-        addAll(CuuTieu.kiepParts())
+        addAll(rules().kiepParts())
         if (DoKiep.an.isNotEmpty()) add("Kiếp ấn" to minOf(10, DoKiep.an.size))
     }
 
@@ -307,8 +312,8 @@ object TienLo {
         val i = kiepActive
         if (i < 0) return false
         val t = today()
-        if (CuuTieu.kiepDayKept(i, t) && kiepDays.add(t)) Store.touch()
-        if (kiepDays.size >= kiepNeed(i) && CuuTieu.kiepEnd(i)) {
+        if (rules().kiepDayKept(i, t) && kiepDays.add(t)) Store.touch()
+        if (kiepDays.size >= kiepNeed(i) && rules().kiepEnd(i)) {
             roll(i)
             return true
         }
@@ -349,7 +354,7 @@ object TienLo {
         if (cost < 0 || tienThach < cost) return false
         tienThach -= cost
         halls[h]++
-        Store.note("${CuuTieu.HALLS[h]} lên cấp ${halls[h]}")
+        Store.note("${rules().HALLS[h]} lên cấp ${halls[h]}")
         Store.touch()
         return true
     }
@@ -366,16 +371,16 @@ object TienLo {
         faction = f
         taskMonth = monthOf(today())
         tasksDone = 0
-        Store.note("Làm khách khanh ${CuuTieu.FACTIONS[f]}")
+        Store.note("Làm khách khanh ${rules().FACTIONS[f]}")
         Store.touch()
     }
 
     fun monthOf(d: Long): Long = LocalDate.ofEpochDay(d).let { it.year * 12L + it.monthValue - 1 }
     fun monthStart(d: Long): Long = LocalDate.ofEpochDay(d).withDayOfMonth(1).toEpochDay()
 
-    /** The three tasks of the month: indices in [CuuTieu.TASKS]. */
+    /** The three tasks of the month: indices in the giới's TASKS. */
     fun tasks(month: Long = monthOf(today())): IntArray {
-        val n = CuuTieu.TASKS.size
+        val n = rules().TASKS.size
         val m = (month % n).toInt()
         return intArrayOf(m, (m + 2) % n, (m + 4) % n)
     }
@@ -395,11 +400,11 @@ object TienLo {
         val from = maxOf(monthStart(t), openDay)
         for ((k, task) in tasks(m).withIndex()) {
             if (taskDone(k)) continue
-            if (CuuTieu.taskProgress(task, from, t) >= CuuTieu.TASK_GOAL[task]) {
+            if (rules().taskProgress(task, from, t) >= rules().TASK_GOAL[task]) {
                 tasksDone = tasksDone or (1 shl k)
-                congHien += 10 + CuuTieu.taskBonus()
+                congHien += 10 + rules().taskBonus()
                 tienThach += 5
-                Store.note("Xong việc ${CuuTieu.FACTIONS[faction]}: ${CuuTieu.TASKS[task]}")
+                Store.note("Xong việc ${rules().FACTIONS[faction]}: ${rules().TASKS[task]}")
                 changed = true
             }
         }
@@ -423,7 +428,7 @@ object TienLo {
         .put("kiepDays", JSONArray().apply { kiepDays.forEach { put(it) } })
         .put("kiepFails", JSONArray().apply { kiepFails.forEach { put(it) } }).put("injury", injuryUntil)
         .put("halls", JSONArray().apply { halls.forEach { put(it) } }).put("faction", faction).put("cong", congHien)
-        .put("taskMonth", taskMonth).put("tasks", tasksDone).put("last", lastResult).put("cuuTieu", CuuTieu.toJson())
+        .put("taskMonth", taskMonth).put("tasks", tasksDone).put("last", lastResult).put("cuuTieu", CuuTieu.toJson()).put("huyetNguyet", HuyetNguyet.toJson())
 
     fun read(o: JSONObject) {
         reset()
@@ -440,6 +445,7 @@ object TienLo {
         faction = o.optInt("faction", -1); congHien = o.optInt("cong"); taskMonth = o.optLong("taskMonth", -1); tasksDone = o.optInt("tasks")
         lastResult = o.optString("last")
         o.optJSONObject("cuuTieu")?.let { CuuTieu.read(it) }
+        o.optJSONObject("huyetNguyet")?.let { HuyetNguyet.read(it) }
     }
 }
 
@@ -448,9 +454,14 @@ object TienLo {
  * balance of the five measures (0,6 – 1,4). Thiên quy each week, tiên chức each bậc, the Tiên phủ
  * (Tiên điền, Tiên lô, Tiên trận), the factions Thiên Đình, Dao Trì, Tử Phủ, the Thiên Nhân kiếp.
  */
-object CuuTieu {
-    val CHUC = arrayOf("Thiên Binh", "Tuần Thiên Sứ", "Tinh Quân", "Thiên Tướng", "Thiên Vương", "Tiên Khanh", "Đế Quân", "Thiên Tôn", "Tiên Đế")
-    val CHUC_PERK = arrayOf(
+object CuuTieu : GioiRules {
+    override val CHUC_LABEL = "tiên chức"
+    override val SEAT_NAME = "Tiên phủ"
+    override val GREET = "Mây chín tầng mở cửa khuyết."
+    override val END_LINE = "Chín tầng mây cúi đầu."
+    override val WORD_TASK = 4
+    override val CHUC = arrayOf("Thiên Binh", "Tuần Thiên Sứ", "Tinh Quân", "Thiên Tướng", "Thiên Vương", "Tiên Khanh", "Đế Quân", "Thiên Tôn", "Tiên Đế")
+    override val CHUC_PERK = arrayOf(
         "Thiên quy giữ được: +30 tiên lực",
         "Thiên quy thêm 10 tiên lực",
         "Giữ thiên quy được 2 tiên thạch",
@@ -461,7 +472,6 @@ object CuuTieu {
         "Tiên kiếp +5% nữa",
         "Đạo hiệu tối thượng «Cửu Tiêu Tiên Đế»",
     )
-    fun hasChuc(i: Int) = TienLo.bac >= i + 1
 
     val RULES = arrayOf(
         "Đọc 5 ngày trong tuần",
@@ -471,19 +481,19 @@ object CuuTieu {
         "Ba buổi đọc liền từ 30 phút",
         "Đọc 4 vạn chữ",
     )
-    val HALLS = arrayOf("Tiên điền", "Tiên lô", "Tiên trận")
-    val HALL_TEXT = arrayOf(
+    override val HALLS = arrayOf("Tiên điền", "Tiên lô", "Tiên trận")
+    override val HALL_TEXT = arrayOf(
         "Trồng tiên thảo theo ngày đọc: mỗi ngày đọc từ 30 phút +1 tiên lực mỗi cấp.",
         "Luyện tiên khí từ bản mệnh: mỗi cấp +1 cấp tiên khí (+1% tiên lực).",
         "Trận pháp hộ thân khi độ kiếp: mỗi cấp tiên kiếp +2%.",
     )
-    val FACTIONS = arrayOf("Thiên Đình", "Dao Trì", "Tử Phủ")
-    val FACTION_TEXT = arrayOf(
+    override val FACTIONS = arrayOf("Thiên Đình", "Dao Trì", "Tử Phủ")
+    override val FACTION_TEXT = arrayOf(
         "Triều đình chín tầng mây, trọng phép tắc. Tiên lực +5%.",
         "Tiên cung bên ao ngọc, trọng nề nếp. Thiên quy thêm 15 tiên lực.",
         "Phủ sao Tử Vi, trọng thiên cơ. Tiên kiếp +5%.",
     )
-    val TASKS = arrayOf(
+    override val TASKS = arrayOf(
         "Đọc 20 ngày trong tháng",
         "Đọc trọn 2 cuốn",
         "10 ngày cân bằng từ 110%",
@@ -491,9 +501,9 @@ object CuuTieu {
         "Đọc 15 vạn chữ",
         "14 ngày đọc không nhảy chương",
     )
-    val TASK_GOAL = longArrayOf(20, 2, 10, 15, 150_000, 14)
-    val KIEP_NAME = arrayOf("Thiên Nhân kiếp thứ nhất", "Thiên Nhân kiếp thứ hai", "Đại kiếp Tiên Đế")
-    val KIEP_RULE = arrayOf(
+    override val TASK_GOAL = longArrayOf(20, 2, 10, 15, 150_000, 14)
+    override val KIEP_NAME = arrayOf("Thiên Nhân kiếp thứ nhất", "Thiên Nhân kiếp thứ hai", "Đại kiếp Tiên Đế")
+    override val KIEP_RULE = arrayOf(
         "21 ngày trong 30 ngày đọc từ 10 phút, năm thước đo không thước nào dưới 35%",
         "21 ngày trong 30 ngày đọc từ 10 phút, năm thước đo không thước nào dưới 45%",
         "81 ngày đọc trong 90 ngày, ngày cuối năm thước đo cân bằng từ 120%",
@@ -506,13 +516,13 @@ object CuuTieu {
     var broken = 0
     var lastRule = ""
 
-    fun reset() {
+    override fun reset() {
         ruleWeek = -1; kept = 0; broken = 0; lastRule = ""
     }
 
     private fun today() = Store.today()
 
-    fun parts(): List<Pair<String, Int>> = buildList {
+    override fun parts(): List<Pair<String, Int>> = buildList {
         if (hasChuc(3)) add("Tiên chức ${CHUC[3]}" to 3)
         if (hasChuc(5)) add("Tiên chức ${CHUC[5]}" to 3)
         if (TienLo.faction == 0) add("Thế lực Thiên Đình" to 5)
@@ -520,17 +530,20 @@ object CuuTieu {
     }
 
     /** Tiên điền: a point a level on each day of 30 minutes (in tenths). */
-    fun dayExtra(d: Long): Long = if (Store.minutes(d) >= 30) 10L * TienLo.halls[0] else 0
+    override fun dayExtra(d: Long): Long = if (Store.minutes(d) >= 30) 10L * TienLo.halls[0] else 0
 
     fun kiepBonus() = kiepParts().sumOf { it.second }
-    fun kiepParts(): List<Pair<String, Int>> = buildList {
+    override fun kiepParts(): List<Pair<String, Int>> = buildList {
         if (TienLo.halls[2] > 0) add("Tiên trận cấp ${TienLo.halls[2]}" to 2 * TienLo.halls[2])
         if (TienLo.faction == 2) add("Thế lực Tử Phủ" to 5)
         if (hasChuc(4)) add("Tiên chức ${CHUC[4]}" to 5)
         if (hasChuc(7)) add("Tiên chức ${CHUC[7]}" to 5)
     }
 
-    fun taskBonus() = if (hasChuc(6)) 5 else 0
+    override fun taskBonus() = if (hasChuc(6)) 5 else 0
+    override fun tienKhiBonus() = TienLo.halls[1]
+    override fun kiepWindow(i: Int) = if (i == 2) 90 else 30
+    override fun kiepNeed(i: Int) = if (i == 2) 81 else 21
 
     fun ruleReward() = RULE_REWARD + (if (hasChuc(1)) 10 else 0) + (if (TienLo.faction == 1) 15 else 0)
 
@@ -555,12 +568,12 @@ object CuuTieu {
         }
     }
 
-    fun onOpen() {
+    override fun onOpen() {
         ruleWeek = Store.weekStart(today()) - 7
     }
 
     /** Each finished week is judged once. */
-    fun check(): Boolean {
+    override fun check(): Boolean {
         val now = Store.weekStart(today())
         var changed = false
         while (ruleWeek + 7 < now) {
@@ -583,7 +596,7 @@ object CuuTieu {
 
     // --- Tasks of the factions --------------------------------------------------------------------
 
-    fun taskProgress(task: Int, from: Long, to: Long): Long {
+    override fun taskProgress(task: Int, from: Long, to: Long): Long {
         val days = from..to
         return when (task) {
             0 -> days.count { Store.minutes(it) >= 10 }.toLong()
@@ -598,7 +611,7 @@ object CuuTieu {
     // --- Kiếp ---------------------------------------------------------------------------------------
 
     /** A day counts in the kiếp: read 10 minutes, and for the Thiên Nhân kiếp no measure below the line. */
-    fun kiepDayKept(i: Int, d: Long): Boolean {
+    override fun kiepDayKept(i: Int, d: Long): Boolean {
         if (Store.minutes(d) < 10) return false
         if (i == 2) return true
         val line = if (i == 0) 0.35 else 0.45
@@ -606,11 +619,11 @@ object CuuTieu {
     }
 
     /** The đại kiếp ends only on a day the five measures stand balanced. */
-    fun kiepEnd(i: Int) = i != 2 || NhatKy.balance() >= 120
+    override fun kiepEnd(i: Int) = i != 2 || NhatKy.balance() >= 120
 
-    fun toJson(): JSONObject = JSONObject().put("week", ruleWeek).put("kept", kept).put("broken", broken).put("last", lastRule)
+    override fun toJson(): JSONObject = JSONObject().put("week", ruleWeek).put("kept", kept).put("broken", broken).put("last", lastRule)
 
-    fun read(o: JSONObject) {
+    override fun read(o: JSONObject) {
         reset()
         ruleWeek = o.optLong("week", -1); kept = o.optInt("kept"); broken = o.optInt("broken"); lastRule = o.optString("last")
     }
