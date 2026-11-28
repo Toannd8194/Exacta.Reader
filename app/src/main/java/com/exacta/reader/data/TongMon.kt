@@ -117,6 +117,23 @@ object TongMon {
 
     // --- Admission -----------------------------------------------------------------------------------
 
+    /**
+     * 3.0.1: the sects open their gates by realm. Ten take a Luyện Khí disciple, nine look for Trúc Cơ,
+     * nine for Kim Đan, four for Nguyên Anh, four (the greatest) for Hóa Thần.
+     */
+    val OPENS_AT = intArrayOf(
+        0, 0, 0, 0, 0,          // the five founding sects
+        2, 1, 1, 1, 0, 2,       // Pháp tu: Thái Hư, Lôi Âm, Xích Viêm, Huyền Thủy, Thanh Vân, Thiên Diễn
+        3, 1, 2, 2, 0, 3,       // Thể tu: Bá Thể, Man Hoang, Kim Cương, Huyết Sát, Hắc Thạch, Long Tượng
+        2, 1, 3, 2, 4, 0,       // Thần tu: Tinh Thần, Huyễn Mộng, Thái Thượng, Băng Tâm, Vô Niệm, Bách Gia
+        4, 2, 3, 1, 0, 1,       // Kiếm tu: Thục Sơn, Phong Lôi, Thiên Kiếm, Tuyệt Tình, Lạc Hà, Liệt Hỏa
+        4, 4, 0, 1, 2, 2, 1,    // Bách nghệ: Đan Đỉnh, Thiên Công, Phù Lục, Dược Vương, Trận Đạo, Linh Thú, Tạp Học
+    )
+    fun opened(i: Int) = Store.realmCap >= OPENS_AT[i]
+    fun openCount() = SECTS.indices.count { opened(it) }
+    /** The next realm at which more sects open, and how many: null when all are open. */
+    fun nextOpening(): Pair<Int, Int>? = SECTS.indices.filter { !opened(it) }.groupBy { OPENS_AT[it] }.minByOrNull { it.key }?.let { it.key to it.value.size }
+
     private fun attrOk(s: Sect) = s.attrs.any { it in DaoPhap.roots || it == DaoPhap.di || it == DaoPhap.activeDef()?.attr }
 
     /** Whether one thing a sect asks is met, and how it reads. */
@@ -160,7 +177,7 @@ object TongMon {
     fun choiceCount() = (6 + (if (DaoPhap.roots.size in 1..2) 1 else 0) + (if (DaoPhap.roots.size == 1) 1 else 0) + (if (DaoPhap.di >= 0) 1 else 0)).coerceAtMost(8)
 
     /** The sects that would take this cultivator now, the best fitting first. */
-    fun choices(): List<Int> = SECTS.indices.filter { it != sect && admits(it) }.sortedByDescending { fit(it) * 100 - it }.take(choiceCount())
+    fun choices(): List<Int> = SECTS.indices.filter { it != sect && opened(it) && it !in betrayed && admits(it) }.sortedByDescending { fit(it) * 100 - it }.take(choiceCount())
 
     /** The line of the sect joined, or -1. */
     fun family() = if (joined()) SECTS[sect].family else -1
@@ -170,6 +187,14 @@ object TongMon {
     /** The realm each rank asks besides the cống hiến (Trưởng lão: Nguyên Anh; Thái thượng: Hóa Thần). */
     val RANK_REALM = intArrayOf(0, 0, 2, 3, 4)
     val SALARY = longArrayOf(20, 40, 80, 150, 250)
+    /** 3.0.1: a rank also asks days in the sect: one stays long to rise. */
+    val RANK_DAYS = intArrayOf(0, 14, 60, 150, 300)
+    /** Bổng ngày: linh thạch each day of 10 minutes read, by rank; cống hiến adds 1 a 500 (10 at most). */
+    val DAILY = longArrayOf(1, 2, 4, 7, 12)
+    const val DAILY_MINUTES = 10
+    const val BAN_DAYS = 30
+    const val FINE_PERCENT = 30
+    const val BETRAY_TAM_MA = 15
 
     // --- The weekly tasks -----------------------------------------------------------------------------
 
@@ -213,6 +238,13 @@ object TongMon {
     var ahead = false
     var quarter = -1           // the quarter of the last đại bỉ held
     var lastRank = 0
+    // 3.0.1: the daily stipend and the betrayals.
+    var paidDay = -1L
+    var paidTotal = 0L
+    var banUntil = -1L
+    var betrayals = 0
+    val betrayed = ArrayList<Int>()
+    var lastLeave = ""
     val lastTable = ArrayList<Pair<String, Long>>()
     var rng: Random = Random.Default
 
@@ -222,16 +254,19 @@ object TongMon {
         started = false; sect = -1; joinDay = -1; changed = false; gongs = 0; gongsTotal = 0; week = -1
         tasks.clear(); claimed.clear(); bonusClaimed = false; baseMade = 0; baseKyNgo = 0; baseBeQuan = 0
         rivalName = ""; rivalWords = 0.0; rivalDay = -1; ahead = false; quarter = -1; lastRank = 0; lastTable.clear()
+        paidDay = -1; paidTotal = 0; banUntil = -1; betrayals = 0; betrayed.clear(); lastLeave = ""
     }
 
     fun joined() = sect >= 0
-    fun canJoin() = !joined() && DaoPhap.awakened()
+    fun canJoin() = !joined() && DaoPhap.awakened() && !banned()
+    fun banned() = today() <= banUntil
+    fun daysIn() = if (joined()) (today() - joinDay).toInt().coerceAtLeast(0) else 0
     /** The perks of a line: the founding sect's index is the line's. */
     fun perk(line: Int) = joined() && SECTS[sect].family == line
 
     fun rank(): Int {
         var r = 0
-        for (i in RANK_AT.indices) if (gongsTotal >= RANK_AT[i] && Store.realmCap >= RANK_REALM[i]) r = i
+        for (i in RANK_AT.indices) if (gongsTotal >= RANK_AT[i] && Store.realmCap >= RANK_REALM[i] && daysIn() >= RANK_DAYS[i]) r = i
         return r
     }
 
@@ -252,14 +287,9 @@ object TongMon {
 
     /** Joins sect s if it would take the cultivator (`check` off: for the tests and old saves). */
     fun join(s: Int, check: Boolean = true): Boolean {
-        if (s !in SECTS.indices || s == sect || (check && s !in choices())) return false
-        if (joined()) {
-            // Leaving one sect for another, once: the cống hiến stays behind.
-            if (changed) return false
-            changed = true
-            gongs = 0
-            gongsTotal = 0
-        } else if (!DaoPhap.awakened()) return false
+        if (s !in SECTS.indices || joined() || (check && s !in choices())) return false
+        if (check && !canJoin()) return false
+        if (!check && !DaoPhap.awakened()) return false
         sect = s
         joinDay = today()
         week = -1
@@ -466,10 +496,50 @@ object TongMon {
         return text
     }
 
+    // --- Bổng ngày and phản tông ---------------------------------------------------------------------
+
+    fun stipend(): Long = if (!joined()) 0 else DAILY[rank()] + minOf(10, gongsTotal / 500).toLong()
+
+    /** Paid once a day, on the day the cultivator reads 10 minutes. */
+    private fun pay() {
+        val t = today()
+        if (paidDay >= t || Store.minutes(t) < DAILY_MINUTES) return
+        paidDay = t
+        val n = stipend()
+        paidTotal += n
+        Store.gainLinhThach(n)
+    }
+
+    /** The fine of leaving: 30% of the linh thạch held. */
+    fun fine(): Long = Store.linhThach * FINE_PERCENT / 100
+
+    /**
+     * Phản tông: the cultivator leaves the sect. The cống hiến is struck off, the sect takes 30% of the
+     * linh thạch, tâm ma rises 15, no sect will take a phản đồ for 30 days, the old sect never again;
+     * the deed weighs on nghiệp lực.
+     */
+    fun leave(): Boolean {
+        if (!joined()) return false
+        val name = SECTS[sect].name
+        val f = fine()
+        Store.linhThach -= f
+        TuLuyen.stir(BETRAY_TAM_MA)
+        betrayed.add(sect)
+        betrayals++
+        banUntil = today() + BAN_DAYS
+        sect = -1; joinDay = -1; gongs = 0; gongsTotal = 0; week = -1; tasks.clear(); claimed.clear(); bonusClaimed = false
+        rivalName = ""; rivalWords = 0.0
+        lastLeave = "Phản xuất $name: mất cống hiến, nộp $f linh thạch, tâm ma +$BETRAY_TAM_MA, $BAN_DAYS ngày không tông nào nhận"
+        Store.note(lastLeave)
+        Store.touch()
+        return true
+    }
+
     // --- Each day, and saving ---------------------------------------------------------------------
 
     fun check() {
         if (!started || !joined()) return
+        pay()
         rollWeek()
         tickRival()
         holdContest()
@@ -490,6 +560,8 @@ object TongMon {
         put("baseMade", baseMade); put("baseKyNgo", baseKyNgo); put("baseBeQuan", baseBeQuan)
         put("rival", rivalName); put("rivalWords", rivalWords); put("rivalDay", rivalDay); put("ahead", ahead)
         put("quarter", quarter); put("lastRank", lastRank)
+        put("paidDay", paidDay); put("paid", paidTotal); put("ban", banUntil); put("betrayals", betrayals)
+        put("betrayed", JSONArray().apply { betrayed.forEach { put(it) } }); put("leave", lastLeave)
         put("table", JSONArray().apply { lastTable.forEach { put(JSONArray().put(it.first).put(it.second)) } })
     }
 
@@ -506,6 +578,9 @@ object TongMon {
         baseMade = o.optInt("baseMade"); baseKyNgo = o.optInt("baseKyNgo"); baseBeQuan = o.optInt("baseBeQuan")
         rivalName = o.optString("rival"); rivalWords = o.optDouble("rivalWords", 0.0); rivalDay = o.optLong("rivalDay", -1)
         ahead = o.optBoolean("ahead"); quarter = o.optInt("quarter", -1); lastRank = o.optInt("lastRank")
+        paidDay = o.optLong("paidDay", -1); paidTotal = o.optLong("paid"); banUntil = o.optLong("ban", -1); betrayals = o.optInt("betrayals")
+        o.optJSONArray("betrayed")?.let { a -> for (i in 0 until a.length()) betrayed.add(a.getInt(i)) }
+        lastLeave = o.optString("leave")
         o.optJSONArray("table")?.let { a -> for (i in 0 until a.length()) a.getJSONArray(i).let { lastTable.add(it.getString(0) to it.getLong(1)) } }
     }
 }

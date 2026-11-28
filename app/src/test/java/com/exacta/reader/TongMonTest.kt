@@ -101,6 +101,7 @@ class TongMonTest {
         awaken()
         TongMon.join(TongMon.VAN_QUYEN, check = false)
         TongMon.gain(1_200, "thử")
+        TongMon.joinDay = Store.today() - 90       // 3.0.1: ranks also ask days in the sect
         assertEquals(1, TongMon.rank())            // Chân truyền asks Kim Đan
         Store.realmCap = 2
         assertEquals(2, TongMon.rank())
@@ -252,6 +253,11 @@ class TongMonTest {
         DaoPhap.started = true
         DaoPhap.roots.addAll(listOf(com.exacta.reader.game.PhapMon.HOA, com.exacta.reader.game.PhapMon.THUY, com.exacta.reader.game.PhapMon.THO))
         assertEquals(6, TongMon.choiceCount())
+        // 3.0.1: ten sects at Luyện Khí; Xích Viêm Cốc opens at Trúc Cơ.
+        assertEquals(10, TongMon.openCount())
+        assertEquals(1 to 9, TongMon.nextOpening())
+        assertFalse(TongMon.SECTS.indices.first { TongMon.SECTS[it].name == "Xích Viêm Cốc" } in TongMon.choices())
+        Store.realmCap = 1
         val list = TongMon.choices()
         assertTrue(list.size <= 6 && list.isNotEmpty())
         assertTrue(list.all { TongMon.admits(it) })
@@ -261,6 +267,52 @@ class TongMonTest {
         assertTrue(TongMon.join(TongMon.SECTS.indices.first { TongMon.SECTS[it].name == "Xích Viêm Cốc" }))
         assertTrue(TongMon.perk(TongMon.VAN_QUYEN))
         assertEquals(0, TongMon.family())
+    }
+
+    @Test
+    fun ranksTakeTimeAndPayEachDay() {
+        awaken()
+        assertTrue(TongMon.join(TongMon.KIEM_LU))
+        TongMon.gain(1_200, "thử")
+        assertEquals(0, TongMon.rank())                        // the cống hiến, not yet the days
+        TongMon.joinDay = Store.today() - 20
+        assertEquals(1, TongMon.rank())                        // Nội môn after 14 days
+        Store.realmCap = 2
+        TongMon.joinDay = Store.today() - 70
+        assertEquals(2, TongMon.rank())                        // Chân truyền: 60 days and Kim Đan
+        assertEquals(4L + 2, TongMon.stipend())                // 4 for the rank, 1 each 500 cống hiến
+        TongMon.started = true
+        Store.linhThach = 0
+        TongMon.check()
+        assertEquals(0L, Store.linhThach)                      // no reading today yet
+        Store.daySeconds[Store.today()] = 600
+        TongMon.check(); TongMon.check()
+        assertEquals(6L, Store.linhThach)                      // once a day
+        assertEquals(6L, TongMon.paidTotal)
+    }
+
+    @Test
+    fun aTraitorPays() {
+        awaken()
+        assertTrue(TongMon.join(TongMon.KIEM_LU))
+        TongMon.gain(400, "thử")
+        Store.linhThach = 1_000
+        val tamMa = TuLuyen.tamMa
+        assertTrue(TongMon.leave())
+        assertFalse(TongMon.joined())
+        assertEquals(700L, Store.linhThach)
+        assertEquals(0, TongMon.gongsTotal)
+        assertTrue(TuLuyen.tamMa > tamMa)
+        assertTrue(TongMon.banned())
+        assertFalse(TongMon.canJoin())
+        TongMon.banUntil = Store.today() - 1
+        assertTrue(TongMon.canJoin())
+        assertFalse(TongMon.KIEM_LU in TongMon.choices())       // never again
+        assertTrue(com.exacta.reader.data.DaoLo.karmaParts().any { it.first.startsWith("Phản tông") && it.second < 0 })
+        val o = JSONObject(TongMon.toJson().toString())
+        TongMon.reset(); TongMon.read(o)
+        assertEquals(listOf(TongMon.KIEM_LU), TongMon.betrayed)
+        assertEquals(1, TongMon.betrayals)
     }
 
     @Test

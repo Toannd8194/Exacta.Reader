@@ -144,6 +144,8 @@ class BienNienActivity : TabActivity() {
                 "Sổ đọc theo ngày cho phần hai: giờ đọc, từng buổi, chữ đọc lại, sách quay lại, thể loại và ngôn ngữ sách; Niên kỷ › Lối đọc; tiền đình hiện tài nguyên dự tính."),
             Era("3.0", "Cửu Tiêu Khai Thiên",
                 "Phần hai mở: Cửu Tiêu Vân Khuyết, chín bậc tiên vị theo chữ và tiên lực; thiên quy tuần, tiên chức, Tiên phủ ba gian, ba thế lực, ba tiên kiếp; linh thạch vẽ lại."),
+            Era("3.0.1", "Sơn Môn Định Phận",
+                "36 tông môn mở cửa dần theo cảnh giới; chức vụ cần ở tông đủ lâu; bổng linh thạch mỗi ngày đọc theo chức và cống hiến; phản tông bị phạt."),
         )
     }
 }

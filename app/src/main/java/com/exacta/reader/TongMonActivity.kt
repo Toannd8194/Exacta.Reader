@@ -19,7 +19,7 @@ import java.time.LocalDate
 class TongMonActivity : TabActivity() {
     override fun title() = "Tông Môn"
     override fun right() = if (TongMon.joined()) "${TongMon.gongs} cống hiến" else "Tán tu"
-    override fun tabs() = if (TongMon.joined()) listOf("Tông môn", "Nhiệm vụ", "Bảo khố", "Đại bỉ") else listOf("Năm tông môn")
+    override fun tabs() = if (TongMon.joined()) listOf("Tông môn", "Nhiệm vụ", "Bảo khố", "Đại bỉ") else listOf("Tông môn")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Store.checkRealm()
@@ -89,10 +89,15 @@ class TongMonActivity : TabActivity() {
     private fun choose(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
         val u = k.u
         val small = k.small
-        val list = if (DaoPhap.awakened()) TongMon.choices() else emptyList()
-        var y = k.section(c, a.left, a.top, a.width(), "BA MƯƠI SÁU TÔNG · ${list.size} TÔNG CHỊU NHẬN")
-        y = para(c, k, if (DaoPhap.awakened()) "Không phải tông nào cũng nhận. Tùy tư chất, linh căn, công pháp, đạo lộ, mỗi lúc chỉ ${TongMon.choiceCount()} tông hợp nhất mở cửa cho bạn; tu thêm thì tông khác sẽ để mắt. Chạm một tông để xem."
-            else "Linh căn thức tỉnh (Luyện Khí trung kỳ) thì các tông mới nhận đệ tử. Trước đó, đạo hữu là tán tu.", a.left, y, a.width(), small, 4) + 10 * u
+        val list = if (DaoPhap.awakened() && !TongMon.banned()) TongMon.choices() else emptyList()
+        var y = k.section(c, a.left, a.top, a.width(), "${TongMon.openCount()}/36 TÔNG MỞ CỬA · ${list.size} TÔNG CHỊU NHẬN")
+        val later = TongMon.nextOpening()?.let { (r, n) -> " Thêm $n tông mở cửa khi tới ${Realm.baseName(r)}." } ?: ""
+        val intro = when {
+            !DaoPhap.awakened() -> "Linh căn thức tỉnh (Luyện Khí trung kỳ) thì các tông mới nhận đệ tử. Trước đó, đạo hữu là tán tu.$later"
+            TongMon.banned() -> "${TongMon.lastLeave}. Tiếng phản đồ còn vang: tới ${date(TongMon.banUntil)} không tông nào nhận.$later"
+            else -> "Tông môn mở cửa dần theo cảnh giới, và không phải tông nào cũng nhận: mỗi lúc chỉ ${TongMon.choiceCount()} tông hợp tư chất nhất chịu nhận.$later Chạm một tông để xem."
+        }
+        y = para(c, k, intro, a.left, y, a.width(), small, 4) + 10 * u
         val gap = 8 * u
         val h = minOf(2 * 14 * u + k.lineH(k.ui10Bold) + 4 * u + k.lineH(small), (a.bottom - y - (list.size - 1) * gap) / list.size.coerceAtLeast(1))
         for ((n, i) in list.withIndex()) {
@@ -106,13 +111,12 @@ class TongMonActivity : TabActivity() {
     private fun joinDialog(i: Int) {
         val s = TongMon.SECTS[i]
         val asks = s.reqs.joinToString("\n") { TongMon.reqText(s, it).let { (t, ok) -> (if (ok) "✓ " else "✗ ") + t } }.ifEmpty { "Không đòi gì." }
-        val can = if (TongMon.joined()) !TongMon.changed else TongMon.canJoin()
         val d = AlertDialog.Builder(this)
-            .setTitle((if (TongMon.joined()) "Chuyển sang " else "Bái nhập ") + "${s.name}?")
+            .setTitle("Bái nhập ${s.name}?")
             .setMessage("${s.text}\n\nĐường tu: ${s.way}. Ưu đãi: ${s.perk}.\n\nTông đòi:\n$asks\n\n" +
-                if (TongMon.joined()) "Chỉ được chuyển tông một lần, cống hiến ở lại tông cũ." else "Về sau chỉ được chuyển tông một lần, và cống hiến không mang theo.")
-        if (can) d.setPositiveButton(if (TongMon.joined()) "Chuyển tông" else "Bái nhập") { _, _ ->
-            if (TongMon.join(i)) toast((if (TongMon.joined()) "Đã vào " else "Đã bái nhập ") + s.name)
+                "Ở lâu thì lên chức, mỗi ngày đọc nhận bổng linh thạch theo chức và cống hiến. Bỏ tông là phản tông: mất cống hiến, nộp phạt linh thạch, tâm ma tăng, ${TongMon.BAN_DAYS} ngày không tông nào nhận.")
+        if (TongMon.canJoin()) d.setPositiveButton("Bái nhập") { _, _ ->
+            if (TongMon.join(i)) toast("Đã bái nhập ${s.name}")
             refresh()
         }
         d.setNegativeButton("Suy nghĩ thêm", null).show()
@@ -143,9 +147,11 @@ class TongMonActivity : TabActivity() {
         k.pair(c, "Cống hiến đã nhận", "${TongMon.gongsTotal}", a.left, y, a.width()); y += sl + 6 * u
         val next = if (rank < 4) {
             val realm = TongMon.RANK_REALM[rank + 1]
-            "${TongMon.RANKS[rank + 1]}: ${TongMon.RANK_AT[rank + 1]} cống hiến" + if (realm > 0) ", cảnh giới ${Realm.baseName(realm)}" else ""
+            val days = TongMon.RANK_DAYS[rank + 1]
+            "${TongMon.RANK_AT[rank + 1]} cống hiến · ${minOf(TongMon.daysIn(), days)}/$days ngày" + if (realm > 0) " · ${Realm.baseName(realm)}" else ""
         } else "Đã là bậc cao nhất"
-        k.pair(c, "Bậc kế tiếp", next, a.left, y, a.width()); y += sl + 6 * u
+        k.pair(c, if (rank < 4) "Lên ${TongMon.RANKS[rank + 1]}" else "Chức vụ", next, a.left, y, a.width()); y += sl + 6 * u
+        k.pair(c, "Bổng ngày (đọc từ ${TongMon.DAILY_MINUTES} phút)", "${TongMon.stipend()} linh thạch · đã nhận ${TongMon.paidTotal}", a.left, y, a.width()); y += sl + 6 * u
         k.pair(c, "Bổng lộc tuần (xong cả ba nhiệm vụ)", "${TongMon.SALARY[rank]} linh thạch", a.left, y, a.width()); y += sl + 16 * u
 
         // The rival.
@@ -163,19 +169,24 @@ class TongMonActivity : TabActivity() {
         k.line(c, "Tu theo nhịp đọc 30 ngày của bạn, nhanh hơn một phần mười.", card.left + pad, cy, card.width() - 2 * pad, small)
         y = card.bottom + 18 * u
 
-        if (!TongMon.changed) {
-            val b = RectF(a.left, a.bottom - 50 * u, a.right, a.bottom)
-            k.button(c, b, "Chuyển tông (một lần, mất cống hiến)", sb)
-            hits.add(b) { changeDialog() }
-        }
+        val b = RectF(a.left, a.bottom - 50 * u, a.right, a.bottom)
+        k.button(c, b, "Phản tông (mất cống hiến, bị phạt)", sb)
+        hits.add(b) { leaveDialog() }
         return 1
     }
 
-    private fun changeDialog() {
-        val names = TongMon.choices()
+    private fun leaveDialog() {
+        val s = TongMon.SECTS[TongMon.sect]
         AlertDialog.Builder(this)
-            .setTitle("Tông nào chịu nhận?")
-            .setItems(names.map { "${TongMon.SECTS[it].name} · ${TongMon.SECTS[it].way}" }.toTypedArray()) { _, i -> joinDialog(names[i]) }
+            .setTitle("Phản xuất ${s.name}?")
+            .setMessage("Phản đồ phải trả giá:\n• mất toàn bộ ${TongMon.gongsTotal} cống hiến và chức ${TongMon.RANKS[TongMon.rank()]}\n" +
+                "• tông truy thu ${TongMon.FINE_PERCENT}% linh thạch: ${TongMon.fine()} linh thạch\n• tâm ma +${TongMon.BETRAY_TAM_MA}\n" +
+                "• ${TongMon.BAN_DAYS} ngày không tông nào nhận; ${s.name} không bao giờ nhận lại\n• ác nghiệp: nghiệp lực −10")
+            .setPositiveButton("Phản tông") { _, _ ->
+                if (TongMon.leave()) toast("Đã rời ${s.name}")
+                selectTab(0)
+                refresh()
+            }
             .setNegativeButton("Ở lại", null)
             .show()
     }

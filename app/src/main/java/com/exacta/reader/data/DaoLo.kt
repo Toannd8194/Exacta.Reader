@@ -290,6 +290,7 @@ object DaoLo {
         val tier = TuLuyen.tamCanhTier()
         if (tier > 0) list.add("Tâm cảnh ${TuLuyen.TAM_CANH_TIERS[tier]}" to 5 * tier)
         if (TongMon.gongsTotal >= 100) list.add("Cống hiến tông môn" to minOf(20, TongMon.gongsTotal / 100))
+        if (TongMon.betrayals > 0) list.add("Phản tông ${TongMon.betrayals} lần" to -minOf(30, 10 * TongMon.betrayals))
         val left = Store.books.values.count { it.finishDay < 0 && it.progress in 0.05..0.95 && it.lastDay in 0..(t - 90) }
         if (left > 0) list.add("Bỏ rơi $left cuốn đọc dở" to -minOf(30, 3 * left))
         val jumps = TuLuyen.dayJumps.values.sum()

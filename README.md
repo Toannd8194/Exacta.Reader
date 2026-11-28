@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.0.apk`](dist/Van-Quyen-Tien-Do-3.0.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.0.1.apk`](dist/Van-Quyen-Tien-Do-3.0.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -20,6 +20,20 @@ tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả 
 Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.8 và 3.0 – 3.6):
 [`docs/Thiet-ke-phan-hai-luc-gioi.md`](docs/Thiet-ke-phan-hai-luc-gioi.md), bản PDF
 [`docs/Thiet-ke-phan-hai-luc-gioi.pdf`](docs/Thiet-ke-phan-hai-luc-gioi.pdf).
+
+## Bản 3.0.1 · Sơn Môn Định Phận
+
+- **Tông môn mở dần theo cảnh giới**: 10 tông nhận đệ tử Luyện Khí (năm tông khai sơn, Thanh Vân Môn, Hắc Thạch Bảo, Bách Gia
+  Học Cung, Lạc Hà Kiếm Trang, Phù Lục Sơn), thêm 9 ở Trúc Cơ, 9 ở Kim Đan, 4 ở Nguyên Anh (Bá Thể Tông, Long Tượng Môn, Thái
+  Thượng Thư Viện, Thiên Kiếm Tông), 4 ở Hóa Thần (Vô Niệm Thiền Viện, Thục Sơn Kiếm Phái, Đan Đỉnh Tông, Thiên Công Các).
+  Trong các tông đã mở, vẫn chỉ 6 – 8 tông hợp tư chất chịu nhận.
+- **Chức vụ cần ở lâu**: Nội môn 14 ngày, Chân truyền 60, Trưởng lão 150, Thái thượng trưởng lão 300 ngày ở tông, cùng cống
+  hiến và cảnh giới như trước.
+- **Bổng ngày**: mỗi ngày đọc từ 10 phút nhận linh thạch theo chức (1, 2, 4, 7, 12) cộng 1 mỗi 500 cống hiến (tối đa 10).
+  Bổng lộc tuần khi xong ba nhiệm vụ vẫn giữ.
+- **Phản tông** thay cho «chuyển tông một lần»: rời tông lúc nào cũng được, nhưng mất toàn bộ cống hiến và chức, tông truy thu
+  30% linh thạch, tâm ma +15, 30 ngày không tông nào nhận, tông cũ không bao giờ nhận lại, nghiệp lực −10 mỗi lần.
+- versionCode 301.
 
 ## Bản 3.0 · Cửu Tiêu Khai Thiên
 
@@ -319,6 +333,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.7.2 | Hộ Thân Họa Phù | Ô trang bị, phù thất vẽ chín loại phù |
   | 2.8 | Tàng Kinh Lưu Ảnh | Sổ đọc theo ngày cho phần hai, Niên kỷ › Lối đọc, tài nguyên dự tính |
   | 3.0 | Cửu Tiêu Khai Thiên | Phần hai: Cửu Tiêu, chín bậc tiên vị, tiên lực, Thiên Đình |
+  | 3.0.1 | Sơn Môn Định Phận | Tông môn mở theo cảnh giới, chức vụ theo thời gian, bổng ngày, phản tông |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.
