@@ -162,6 +162,8 @@ Từ bản 2.4, người tu **không chọn** giới. Mỗi giới chấm một 
 
 Nghiệp lực là hệ quả của cả đời tu, chỉ hiện ra ở Phi Thăng kỳ và từ đó đè nặng lên Lục Giới. Thiện nghiệp đến từ sách đọc trọn, chuỗi ngày dài nhất, tâm cảnh, cống hiến tông môn; ác nghiệp từ sách bỏ rơi quá ba tháng, nhảy chương, tâm ma, tẩu hỏa nhập ma, Đạo Tâm Chủng Ma, đan độc. Nghiệp lực từ −100 tới +100 (Nghiệp chướng, Ác nghiệp, Quân bình, Thiện nghiệp, Đại thiện). Thiện nghiệp nâng Cửu Tiêu, Bát Nhã, Thư Hải; ác nghiệp kéo về Huyết Nguyệt, Vong Xuyên; Hồng Hoang ưa người quân bình. Cửa Lục Giới Môn cộng nghiệp lực chia mười vào tỉ lệ.
 
+Luật sống ở mỗi giới được thiết kế chi tiết trong bản thiết kế phần hai (`docs/Thiet-ke-phan-hai-luc-gioi.md`).
+
 Nguyên tắc chung cho cả sáu giới, để phần sau không lệch:
 
 - **Vẫn chỉ sinh ra từ việc đọc.** Mỗi giới đổi cách đọc được thưởng, không đổi nguồn.

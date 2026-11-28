@@ -15,7 +15,11 @@ Bản thiết kế nâng cấp hệ tu tiên (Nhân giới tới Linh giới, Đ
 [`docs/Chien-luoc-nang-cap-tu-tien.pdf`](docs/Chien-luoc-nang-cap-tu-tien.pdf) (`python tools/md_pdf.py <tệp .md>`).
 Bản 2.0, 2.1, 2.2 là ba bước đầu của lộ trình; các bước 2.3 – 2.7 còn đó. Từ 2.1, bản thiết kế có thêm chương Độ Kiếp
 (giai đoạn đặc biệt chín tầng kiếp) và chương Phi Thăng kỳ: cảnh giới cuối của Linh giới, nơi Lục Giới Môn mở và người
-tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả đời tu và nghiệp lực. Phần sau cửa để ngỏ cho các bản 3.x.
+tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả đời tu và nghiệp lực.
+
+Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.8 và 3.0 – 3.6):
+[`docs/Thiet-ke-phan-hai-luc-gioi.md`](docs/Thiet-ke-phan-hai-luc-gioi.md), bản PDF
+[`docs/Thiet-ke-phan-hai-luc-gioi.pdf`](docs/Thiet-ke-phan-hai-luc-gioi.pdf).
 
 ## Bản 2.7.2 · Hộ Thân Họa Phù
 
