@@ -4,7 +4,8 @@
     python tools/ve_do_hoa.py --preview  # chỉ vẽ bảng xem thử vào build/do_hoa.png
 
 Vẽ ba nhóm:
-  - art_ore_0..5: sáu khoáng thạch, từ hòn đá thô (Hoàng) tới tinh cầu hỗn độn (Hỗn Độn);
+  - art_ore_0..5: sáu khoáng thạch, từ hòn đá thô (Hoàng) tới tinh thể hỗn độn (Hỗn Độn); từ 3.1 vẽ
+    pixel trong tools/khoang_thach.py (chỉ vẽ lại chúng: --khoangthach);
   - realm_0..9: mười biểu tượng cảnh giới, hình đen trên nền trong;
   - badge_48..59: khung Âm Dương phẩm của pháp bảo (giữ hình pháp bảo bên trong, nét pixel).
 Tất cả là đồ họa vẽ bằng hình học, xám trên nền trong, hợp màn e-ink.
@@ -259,7 +260,10 @@ def ore5():
     return p.image(160)
 
 
-ORES = [ore0, ore1, ore2, ore3, ore4, ore5]
+ORES_2_1 = [ore0, ore1, ore2, ore3, ore4, ore5]
+# 3.1: the ores in pixel art, in the style of the linh thạch (tools/khoang_thach.py).
+import khoang_thach  # noqa: E402
+ORES = khoang_thach.ORES
 
 
 # --- Ten realms (160 × 160, black) -----------------------------------------------------------------
@@ -894,6 +898,11 @@ def main():
         sheet.paste(small, (180, 50), small)
         sheet.save(os.path.join(ROOT, "build", "linhthach.png"))
         print("linhthach")
+        return
+    if "--khoangthach" in sys.argv:
+        for i, f in enumerate(ORES):
+            f().save(os.path.join(RES, f"art_ore_{i}.png"))
+        print("khoangthach")
         return
     if "--icons" in sys.argv:
         for name, f in ICONS.items():
