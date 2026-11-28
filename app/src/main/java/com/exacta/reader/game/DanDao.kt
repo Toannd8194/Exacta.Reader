@@ -7,8 +7,9 @@ package com.exacta.reader.game
 object DanDao {
     // --- Linh thảo ---------------------------------------------------------------------------------
 
-    val HERBS = arrayOf("Tụ Linh Thảo", "Bích Ngọc Lan", "Huyết Sâm", "Hỏa Linh Chi", "Băng Tâm Liên", "Kim Tủy Quả", "Tử Vân Đằng", "Cửu Diệp Linh Chi")
-    val SEED_PRICES = longArrayOf(10, 15, 20, 25, 25, 30, 40, 80)
+    val HERBS = arrayOf("Tụ Linh Thảo", "Bích Ngọc Lan", "Huyết Sâm", "Hỏa Linh Chi", "Băng Tâm Liên", "Kim Tủy Quả", "Tử Vân Đằng", "Cửu Diệp Linh Chi",
+        "Ngưng Thần Hoa", "Long Huyết Thảo", "Thiên Sơn Tuyết Liên", "Bất Tử Thảo")
+    val SEED_PRICES = longArrayOf(10, 15, 20, 25, 25, 30, 40, 80, 40, 60, 80, 120)
     /** Năm of dược linh a day of 30 minutes gives, before the linh mạch. */
     const val YEARS_A_DAY = 10
     const val MAX_YEARS = 9_999
@@ -45,7 +46,10 @@ object DanDao {
     const val G_LUYEN_THE = 4
     const val G_GIAI_DOC = 5
     const val G_HIEM = 6
-    val GROUPS = arrayOf("Tu luyện", "Phá cảnh", "Chữa thương", "Tâm cảnh", "Luyện thể", "Giải độc", "Hiếm")
+    const val G_LUYEN_THAN = 7
+    const val G_THO = 8
+    const val G_CAN_CO = 9
+    val GROUPS = arrayOf("Tu luyện", "Phá cảnh", "Chữa thương", "Tâm cảnh", "Luyện thể", "Giải độc", "Hiếm", "Luyện thần", "Thọ nguyên", "Căn cơ")
 
     /**
      * An đan phương: herbs (kind, năm at least), the minutes of hỏa hầu (one sitting), the cấp it
@@ -71,6 +75,24 @@ object DanDao {
     const val KIM_THAN = 12
     const val GIAI_DOC = 13
     const val TAY_LINH = 14
+    // 2.6: seventeen more, to thirty-two.
+    const val HOA_LINH = 15
+    const val HUYEN_NGUYEN = 16
+    const val THAI_THANH = 17
+    const val HOP_THE = 18
+    const val DAI_THUA = 19
+    const val DO_KIEP = 20
+    const val BO_KHI = 21
+    const val TINH_TAM = 22
+    const val DONG_BI = 23
+    const val NGOC_TUY = 24
+    const val KHAI_THUC = 25
+    const val DUONG_THAN = 26
+    const val THANH_DOC = 27
+    const val DIEN_THO = 28
+    const val BOI_NGUYEN = 29
+    const val NGO_DAO = 30
+    const val SONG_ANH = 31
 
     val RECIPES = listOf(
         Recipe("Tụ Khí Đan", G_TU_LUYEN, listOf(0 to 50), 20, 1, 6, "Linh lực +5.000 chữ", value = 5_000),
@@ -88,6 +110,23 @@ object DanDao {
         Recipe("Kim Thân Đan", G_LUYEN_THE, listOf(5 to 500, 3 to 300), 60, 6, 14, "Thể phách +30", value = 30),
         Recipe("Giải Độc Đan", G_GIAI_DOC, listOf(1 to 50), 20, 1, 0, "Đan độc −25", value = 25),
         Recipe("Tẩy Linh Đan", G_HIEM, listOf(7 to 800, 6 to 500), 60, 7, 15, "Tẩy linh căn thêm một lần, không tốn linh thạch"),
+        Recipe("Hóa Linh Đan", G_TU_LUYEN, listOf(5 to 300, 1 to 300), 40, 4, 10, "Linh lực +30.000 chữ", value = 30_000),
+        Recipe("Huyền Nguyên Đan", G_TU_LUYEN, listOf(6 to 500, 8 to 300), 50, 6, 12, "Linh lực +60.000 chữ", value = 60_000),
+        Recipe("Thái Thanh Đan", G_TU_LUYEN, listOf(7 to 1_000, 10 to 500), 60, 8, 14, "Linh lực +100.000 chữ", value = 100_000),
+        Recipe("Hợp Thể Đan", G_PHA_CANH, listOf(9 to 800, 4 to 800), 60, 7, 18, "Đột phá vào Hợp Thể +10%", gate = 6, value = 10),
+        Recipe("Đại Thừa Đan", G_PHA_CANH, listOf(10 to 1_000, 7 to 1_000), 60, 8, 20, "Đột phá vào Đại Thừa +8%", gate = 7, value = 8),
+        Recipe("Độ Kiếp Đan", G_PHA_CANH, listOf(11 to 1_500, 9 to 1_000), 60, 9, 20, "Tầng Độ Kiếp kế tiếp +8%", gate = 8, value = 8),
+        Recipe("Bổ Khí Đan", G_CHUA_THUONG, listOf(2 to 300, 0 to 200), 40, 4, 10, "Hết hồi khí và lành kinh mạch cùng lúc"),
+        Recipe("Tĩnh Tâm Đan", G_TAM_CANH, listOf(4 to 500, 8 to 200), 50, 5, 10, "Tâm ma −30", value = 30),
+        Recipe("Đồng Bì Đan", G_LUYEN_THE, listOf(2 to 50), 25, 1, 5, "Thể phách +5", value = 5),
+        Recipe("Ngọc Tủy Đan", G_LUYEN_THE, listOf(5 to 1_000, 9 to 500), 60, 8, 16, "Thể phách +60", value = 60),
+        Recipe("Khai Thức Đan", G_LUYEN_THAN, listOf(8 to 100), 30, 2, 6, "Thần thức +3", value = 3),
+        Recipe("Dưỡng Thần Đan", G_LUYEN_THAN, listOf(8 to 400, 4 to 300), 50, 5, 10, "Thần thức +8", value = 8),
+        Recipe("Thanh Độc Đan", G_GIAI_DOC, listOf(1 to 300, 4 to 200), 40, 4, 0, "Đan độc −50", value = 50),
+        Recipe("Diên Thọ Đan", G_THO, listOf(11 to 500, 0 to 300), 50, 5, 12, "Thọ nguyên +50 năm", value = 50),
+        Recipe("Bồi Nguyên Đan", G_CAN_CO, listOf(2 to 500, 10 to 300), 50, 6, 14, "Căn cơ +3 mãi mãi (tối đa +15)", value = 3),
+        Recipe("Ngộ Đạo Đan", G_HIEM, listOf(8 to 800, 10 to 800), 60, 7, 15, "Ngộ tính +2", value = 2),
+        Recipe("Song Anh Đan", G_HIEM, listOf(9 to 1_000, 11 to 1_000), 60, 8, 18, "Lần thử Song Anh kế tiếp +15%", value = 15),
     )
 
     /** The phá cảnh recipe of a gate, or -1. */

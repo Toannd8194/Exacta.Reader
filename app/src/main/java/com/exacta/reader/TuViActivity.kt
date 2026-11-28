@@ -208,9 +208,9 @@ class TuViActivity : TabActivity() {
         }
 
         // Page 2: tâm ma, wounds, and the foundation laid at Trúc Cơ and Kim Đan.
-        var y = k.section(c, a.left, a.top, a.width(), "ÁP LỰC VÀ ĐẠO CƠ")
+        var y = k.section(c, a.left, a.top, a.width(), "ÁP LỰC, THỌ NGUYÊN VÀ ĐẠO CƠ")
         val gap = 10 * u
-        val rowH = (a.bottom - y - 3 * gap) / 4
+        val rowH = (a.bottom - y - 4 * gap) / 5
         fun row(i: Int) = RectF(a.left, y + i * (rowH + gap), a.right, y + i * (rowH + gap) + rowH)
         val tm = TuLuyen.tamMa
         val tmTier = when {
@@ -220,7 +220,7 @@ class TuViActivity : TabActivity() {
             else -> "nguy: hỏng là tẩu hỏa"
         }
         measure(c, k, row(0), "Tâm ma", tmTier, "$tm / 100", tm / 100f,
-            "Tăng: đứt chuỗi +10, nhảy chương quá 3 lần một ngày +2, đột phá hỏng +10, kiếp hỏng +15. Giảm: buổi từ 45 phút −3, ngày đọc 30 phút −1, đọc xong sách −10, Định Thần Phù −10.")
+            "Tăng: đứt chuỗi +10, nhảy chương nhiều +2, đột phá hỏng +10, kiếp hỏng +15. Giảm: buổi 45 phút −3, ngày 30 phút −1, đọc xong sách −10.")
 
         val wounds = ArrayList<String>()
         if (TuLuyen.injured()) wounds.add("Kinh mạch tổn thương: còn ${TuLuyen.injuryUntil - today} ngày, tu luyện 70%; Thọ Nguyên Đan chữa được")
@@ -240,6 +240,17 @@ class TuViActivity : TabActivity() {
         val tally = "Đột phá thành công ${TuLuyen.breaks} lần, hỏng ${TuLuyen.breakFails} lần; vượt kiếp ${Store.trialPassed} lần, thất bại ${Store.failCount} lần." +
             if (TuLuyen.lastResult.isNotEmpty()) " Gần nhất: ${TuLuyen.lastResult}." else ""
         measure(c, k, row(3), "Đạo đồ", "${TuLuyen.breaks + TuLuyen.breakFails} lần phá cảnh", "", -1f, tally)
+
+        // Thọ nguyên: a day is a year.
+        val d = com.exacta.reader.data.DoKiep
+        val span = d.span()
+        val life = if (span == Int.MAX_VALUE) "Tiên nhân: thọ nguyên vô tận." else
+            "Tuổi ${d.age()} năm, hạn ${span} năm của ${Realm.baseName(Store.realmCap.coerceIn(0, 9))}; mỗi ngày là một năm, lên cảnh giới thì hạn dài thêm. " +
+                (if (d.lifeGamble() != null) "Sắp cạn: đột phá liều mạng +10%. " else "") +
+                (if (Store.chanTu) "Chân Tu: cạn là tọa hóa, chuyển thế trùng tu." else "Tùy Duyên: thọ nguyên chỉ là cảm giác thời gian.") +
+                if (d.rebirths > 0) " Đã chuyển thế ${d.rebirths} lần." else ""
+        measure(c, k, row(4), "Thọ nguyên", if (span == Int.MAX_VALUE) "vô tận" else if (Store.chanTu) "Chân Tu" else "Tùy Duyên",
+            if (span == Int.MAX_VALUE) "" else "${d.age()} / $span", if (span == Int.MAX_VALUE) -1f else d.age().toFloat() / span, life)
         return 2
     }
 
@@ -401,6 +412,10 @@ class TuViActivity : TabActivity() {
                     }
                     refresh()
                 }
+            }
+            g == 8 && Store.realmCap == 7 -> {
+                k.button(c, main, "Độ chín tầng kiếp ở Linh giới ›", k.ui10Bold)
+                hits.add(main) { startActivity(Intent(this, LinhGioiActivity::class.java).putExtra(EXTRA_TAB, 4)) }
             }
             g == 2 && com.exacta.reader.data.DaoLo.canChoose() -> {
                 k.button(c, main, "Chọn đạo lộ trước khi ngưng đan ›", k.ui10Bold)

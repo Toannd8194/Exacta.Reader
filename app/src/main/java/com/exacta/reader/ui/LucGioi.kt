@@ -66,6 +66,9 @@ object LucGioi {
             if (dans.isNotEmpty()) append("\n· Kim Đan $dans: 10")
             if (thans.isNotEmpty()) append("\n· Hóa Thần $thans: 10")
             append("\n· Nghiệp lực (từ Phi Thăng): ${DaoLo.KARMA_TEXT[i]}")
+            val by = com.exacta.reader.data.DoKiep.BY.indices.filter { com.exacta.reader.data.DoKiep.BY_GIOI[it] == i }.joinToString(", ") { com.exacta.reader.data.DoKiep.BY[it] }
+            if (by.isNotEmpty()) append("\n· Kiếp ấn vượt nhờ $by: 3 mỗi ấn")
+            if (i == 4) append("\n· Chuyển thế ở chế độ Chân Tu: 10 mỗi lần")
             append("\n\nKhông chọn được: giới nào đáp lại mạnh nhất thì phi thăng về đó.")
         }
     }

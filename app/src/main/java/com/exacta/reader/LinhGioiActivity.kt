@@ -19,13 +19,20 @@ import java.time.LocalDate
 class LinhGioiActivity : TabActivity() {
     override fun title() = "Linh Giới"
     override fun right() = if (LinhGioi.ascended()) "Đã phi thăng" else "Nhân giới"
-    override fun tabs() = listOf("Phi thăng", "Pháp tắc", "Đạo vực", "Di bảo")
+    override fun tabs() = listOf("Phi thăng", "Pháp tắc", "Đạo vực", "Di bảo", "Độ Kiếp")
 
     /** Phi thăng and Di bảo open at Hóa Thần, pháp tắc at Luyện Hư, đạo vực at Hợp Thể. */
     override fun opensAt(tab: Int) = when (tab) {
         1 -> 5
         2 -> 6
+        4 -> 7
         else -> 4
+    }
+
+    private var armed = false
+
+    override fun onTab(tab: Int) {
+        armed = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +44,112 @@ class LinhGioiActivity : TabActivity() {
         0 -> phiThang(c, k, area, hits)
         1 -> laws(c, k, area, page, hits)
         2 -> vuc(c, k, area, hits)
-        else -> treasures(c, k, area, page, hits)
+        3 -> treasures(c, k, area, page, hits)
+        else -> (if (page == 0) doKiep(c, k, area, hits) else seals(c, k, area)).let { 2 }
+    }
+
+    // --- Độ Kiếp ----------------------------------------------------------------------------------------
+
+    private fun doKiep(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val d = com.exacta.reader.data.DoKiep
+        var y = k.section(c, a.left, a.top, a.width(), "CHÍN TẦNG KIẾP · ĐÃ VƯỢT ${d.passed}/9")
+        // Nine cells: passed dark, the one under way ringed.
+        val gap = 8 * u
+        val cw = (a.width() - 8 * gap) / 9
+        for (i in 0 until 9) {
+            val r = RectF(a.left + i * (cw + gap), y + 4 * u, a.left + i * (cw + gap) + cw, y + 4 * u + cw * 0.8f)
+            when {
+                i < d.passed -> c.drawRoundRect(r, 6 * u, 6 * u, k.fill)
+                i == d.active -> c.drawRoundRect(k.inset(r, u), 6 * u, 6 * u, k.stroke(3f))
+                else -> c.drawRoundRect(k.inset(r, u), 6 * u, 6 * u, k.stroke(1.4f))
+            }
+            k.centered(c, "${i + 1}", r.left, r.width(), r.centerY() - k.lineH(sb) / 2, if (i < d.passed) k.paint(Ink.SMALL, bold = true, color = android.graphics.Color.WHITE) else sb)
+        }
+        y += cw * 0.8f + 20 * u
+        if (d.passed >= 9) {
+            para(c, k, "Độ Kiếp viên mãn: chín tầng đã qua, chín kiếp ấn ghi ở trang sau. Phi Thăng mở đầu bằng thiên nhân ngũ suy (trang sau).", a.left, y, a.width(), small, 3)
+            return 2
+        }
+        val t = if (d.active >= 0) d.active else d.passed
+        val tang = d.TANGS[t]
+        val pad = 18 * u
+        val (_, _, prog) = d.trial()
+        val rule = k.wrap(tang.rule.replaceFirstChar { it.uppercase() } + ".", a.width() - 2 * pad, small, 3)
+        val card = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.ui12Bold) + 6 * u + rule.size * sl + (if (d.active >= 0) sl + 6 * u else 0f))
+        k.card(c, card, selected = d.active >= 0)
+        k.text(c, "Tầng ${t + 1} · ${tang.name}", a.left + pad, y + pad, k.ui12Bold)
+        var ty = y + pad + k.lineH(k.ui12Bold) + 6 * u
+        for (l in rule) { k.text(c, l, a.left + pad, ty, small); ty += sl }
+        if (d.active >= 0) k.text(c, "Đang độ: $prog", a.left + pad, ty + 6 * u, sb)
+        y = card.bottom + 14 * u
+        y = k.section(c, a.left, y, a.width(), "TỈ LỆ ĐỠ KIẾP")
+        val bh = 60 * u
+        for ((label, v, _) in d.parts(t)) {
+            if (y + sl > a.bottom - bh - 3 * sl) break
+            k.pair(c, label, if (v >= 0) "+$v%" else "−${-v}%", a.left, y, a.width())
+            y += sl + 4 * u
+        }
+        k.pair(c, "Tổng (10 – 95%)", "${d.chance(t)}%", a.left, y, a.width(), sb, sb)
+        val b = RectF(a.left, a.bottom - bh, a.right, a.bottom)
+        if (d.lastResult.isNotEmpty()) {
+            val ls = k.wrap(d.lastResult, a.width(), sb, 2)
+            var iy = b.top - 10 * u - ls.size * sl
+            for (l in ls) { k.text(c, l, a.left, iy, sb); iy += sl }
+        }
+        when {
+            d.active >= 0 -> k.button(c, b, "Đang độ tầng ${t + 1}: đọc theo luật, xong là kiếp giáng", sb, enabled = false)
+            d.canStart() -> {
+                k.button(c, b, if (armed) "Chạm lần nữa để độ tầng ${t + 1}" else "Độ tầng ${t + 1} · ${tang.name}", k.ui10Bold, selected = armed)
+                hits.add(b) {
+                    if (!armed) armed = true else { armed = false; d.start() }
+                    refresh()
+                }
+            }
+            d.resting() -> k.button(c, b, "Hồi khí tới ${dayText(d.restUntil)}", sb, enabled = false)
+            else -> k.button(c, b, "Cần Đại Thừa đại viên mãn và đủ điều kiện cửa Độ Kiếp", sb, enabled = false)
+        }
+        return 2
+    }
+
+    /** Page 2: the kiếp ấn, and the thiên nhân ngũ suy of Phi Thăng. */
+    private fun seals(c: Canvas, k: Ink, a: RectF): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val d = com.exacta.reader.data.DoKiep
+        var y = k.section(c, a.left, a.top, a.width(), "KIẾP ẤN · ${d.an.size}")
+        if (d.an.isEmpty()) {
+            y = para(c, k, "Mỗi tầng kiếp vượt qua để lại một kiếp ấn, ghi lại nhờ gì mà đỡ được: pháp bảo, nhục thân, pháp tắc, thần thức, tâm cảnh hay kiên trì. " +
+                "Kiếp ấn nghiêng Lục Giới về giới hợp với nó.", a.left, y, a.width(), small, 4) + 12 * u
+        } else {
+            for (an in d.an) {
+                k.pair(c, "Tầng ${an.tang + 1} · ${d.TANGS[an.tang].name}", "nhờ ${d.BY[an.by]}" + if (an.fails > 0) " · hỏng ${an.fails}" else "", a.left, y, a.width())
+                y += sl + 4 * u
+            }
+            y += 10 * u
+        }
+        y = k.section(c, a.left, y, a.width(), "THIÊN NHÂN NGŨ SUY")
+        when {
+            Store.realmCap < 8 -> para(c, k, "Vào Phi Thăng thì ngũ suy giáng xuống: căn cơ, tâm cảnh giảm ${d.SUY_DROP}; trong 30 ngày phải kéo năm thước đo về ngưỡng, không thì lặp lại tháng sau. Qua rồi Lục Giới Môn mới mở.",
+                a.left, y, a.width(), small, 4)
+            d.suyPassed -> para(c, k, "Đã qua thiên nhân ngũ suy. Lục Giới Môn đã mở.", a.left, y, a.width(), sb, 2)
+            else -> {
+                val left = d.suyWindow() + d.SUY_DAYS - Store.today()
+                y = para(c, k, "Căn cơ, tâm cảnh đang −${d.SUY_DROP}. Còn $left ngày trong đợt này.", a.left, y, a.width(), sb, 2) + 8 * u
+                val box = 22 * u
+                for (n in d.suyNeeds()) {
+                    k.check(c, a.left + 4 * u, y + (sl - box) / 2, box, n.met)
+                    k.line(c, n.text, a.left + box + 16 * u, y, a.width() - box - 16 * u, if (n.met) small else sb)
+                    y += sl + 8 * u
+                }
+            }
+        }
+        return 2
     }
 
     private fun para(c: Canvas, k: Ink, s: String, x: Float, y: Float, w: Float, p: Paint, max: Int = 4): Float {

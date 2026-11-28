@@ -160,7 +160,58 @@ class DongPhuActivity : TabActivity() {
 
     // --- Dược viên --------------------------------------------------------------------------------------
 
+    /** The luống being sown (picker shown), -2 for the seed shop, -1 for neither. */
+    var picking = -1
+
+    override fun onTab(tab: Int) {
+        picking = -1
+    }
+
+    /** Seeds as cards, two a row: tap to sow (or, in the shop, to buy one; a seed lacking is bought then sown). */
+    private fun seedPicker(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val shop = picking == -2
+        var y = k.section(c, a.left, a.top, a.width(), if (shop) "MUA HẠT GIỐNG · CÓ ${Store.linhThach} LINH THẠCH" else "GIEO VÀO LUỐNG ${picking + 1} · CHỌN MỘT HẠT")
+        val gap = 10 * u
+        val cw = (a.width() - gap) / 2
+        val back = RectF(a.left, a.bottom - 54 * u, a.right, a.bottom)
+        val rows = (HERBS.size + 1) / 2
+        val ch = ((back.top - 12 * u - y - (rows - 1) * gap) / rows).coerceAtMost(110 * u)
+        val pad = 14 * u
+        for (i in HERBS.indices) {
+            val x = a.left + (i % 2) * (cw + gap)
+            val cy = y + (i / 2) * (ch + gap)
+            val r = RectF(x, cy, x + cw, cy + ch)
+            val have = DongPhu.seeds[i]
+            val price = DanDao.SEED_PRICES[i]
+            val afford = Store.linhThach >= price
+            val usable = if (shop) afford else have > 0 || afford
+            if (usable) k.card(c, r, selected = !shop && have > 0) else c.drawRoundRect(k.inset(r, u), 14 * u, 14 * u, k.faint)
+            k.line(c, HERBS[i], r.left + pad, r.top + pad, r.width() - 2 * pad, k.ui10Bold)
+            val line = if (shop) "Có $have hạt · $price LT" else if (have > 0) "Còn $have hạt" else "Hết hạt · mua $price LT"
+            k.line(c, line, r.left + pad, r.top + pad + k.lineH(k.ui10Bold) + 4 * u, r.width() - 2 * pad, if (usable) sb else small)
+            if (usable) hits.add(r) {
+                if (shop) {
+                    if (DongPhu.buySeed(i)) toast("Mua một hạt ${HERBS[i]}")
+                } else {
+                    if (have <= 0) DongPhu.buySeed(i)
+                    if (DongPhu.plant(picking, i)) {
+                        toast("Đã gieo ${HERBS[i]} vào luống ${picking + 1}")
+                        picking = -1
+                    }
+                }
+                refresh()
+            }
+        }
+        k.button(c, back, if (shop) "Xong" else "Thôi, không gieo", sb)
+        hits.add(back) { picking = -1; refresh() }
+        return 1
+    }
+
     private fun duocVien(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        if (picking != -1) return seedPicker(c, k, a, hits)
         val u = k.u
         val small = k.small
         val sb = k.smallBold
@@ -189,9 +240,8 @@ class DongPhuActivity : TabActivity() {
                 p.herb < 0 -> {
                     k.text(c, "Luống ${i + 1} · trống", tx, r.top + pad, k.ui10Bold)
                     k.text(c, k.fit("Gieo một hạt, đọc đều để thảo lớn", tw, small), tx, r.top + pad + k.lineH(k.ui10Bold) + 4 * u, small)
-                    val any = DongPhu.seeds.any { it > 0 }
-                    k.button(c, b, if (any) "Gieo hạt" else "Hết hạt", sb, enabled = any)
-                    if (any) hits.add(b) { sowDialog(i) }
+                    k.button(c, b, "Gieo hạt", sb)
+                    hits.add(r) { picking = i; refresh() }
                 }
                 else -> {
                     val years = DongPhu.years(i)
@@ -220,31 +270,8 @@ class DongPhuActivity : TabActivity() {
         val room = ((buy.top - 10 * u - y) / sl).toInt().coerceAtLeast(1)
         para(c, k, herbs.ifEmpty { "Chưa thu hoạch. Thảo càng già, đan càng dễ thành." }, a.left, y, a.width(), small, room)
         k.button(c, buy, "Mua hạt giống", sb)
-        hits.add(buy) { seedShop() }
+        hits.add(buy) { picking = -2; refresh() }
         return 1
-    }
-
-    private fun sowDialog(plot: Int) {
-        val kinds = HERBS.indices.filter { DongPhu.seeds[it] > 0 }
-        AlertDialog.Builder(this)
-            .setTitle("Gieo vào luống ${plot + 1}")
-            .setItems(kinds.map { "${HERBS[it]} · còn ${DongPhu.seeds[it]} hạt" }.toTypedArray()) { _, i ->
-                if (DongPhu.plant(plot, kinds[i])) toast("Đã gieo ${HERBS[kinds[i]]}")
-                refresh()
-            }
-            .setNegativeButton("Thôi", null)
-            .show()
-    }
-
-    private fun seedShop() {
-        AlertDialog.Builder(this)
-            .setTitle("Hạt giống · có ${Store.linhThach} linh thạch")
-            .setItems(HERBS.indices.map { "${HERBS[it]} · ${DanDao.SEED_PRICES[it]} linh thạch · đang có ${DongPhu.seeds[it]}" }.toTypedArray()) { _, i ->
-                if (DongPhu.buySeed(i)) toast("Mua một hạt ${HERBS[i]}") else toast("Cần ${DanDao.SEED_PRICES[i]} linh thạch")
-                refresh()
-            }
-            .setNegativeButton("Đóng", null)
-            .show()
     }
 
     // --- Đan phòng ---------------------------------------------------------------------------------------
@@ -284,11 +311,21 @@ class DongPhuActivity : TabActivity() {
             y += sl + 8 * u
         }
         y = k.section(c, a.left, y, a.width(), "ĐAN PHƯƠNG · ${DongPhu.known.size}/${RECIPES.size} · LUYỆN ĐAN SƯ ${DanDao.CAP[DongPhu.cap() - 1].uppercase()}")
-        val list = DongPhu.known.sortedWith(compareBy<Int>({ !DongPhu.canBrew(it) }, { RECIPES[it].cap }, { it }))
+        val list = RECIPES.indices.sortedWith(compareBy<Int>({ it !in DongPhu.known }, { !DongPhu.canBrew(it) }, { RECIPES[it].cap }, { it }))
         val h = rowH(k)
         val per = ((a.bottom - y) / (h + 8 * u)).toInt().coerceAtLeast(1)
         for (r in list.drop(page * per).take(per)) {
             val rec = RECIPES[r]
+            if (r !in DongPhu.known) {
+                val price = DanDao.recipePrice(r)
+                row(c, k, RectF(a.left, y, a.right, y + h), rec.name, DanDao.GROUPS[rec.group], "Chưa có đan phương · cần ${DanDao.CAP[rec.cap - 1].lowercase()} luyện đan sư",
+                    rec.text, "Mua · $price LT", Store.linhThach >= price, hits) {
+                    if (DongPhu.buyRecipe(r)) toast("Có đan phương ${rec.name}")
+                    refresh()
+                }
+                y += h + 8 * u
+                continue
+            }
             val (btn, ok) = when {
                 DongPhu.brew >= 0 -> "Lò đang đỏ" to false
                 DongPhu.cap() < rec.cap -> "Cần ${DanDao.CAP[rec.cap - 1].lowercase()}" to false
@@ -380,8 +417,8 @@ class DongPhuActivity : TabActivity() {
             para(c, k, "Đọc đủ phút thì viên mãn, nhận ${Store.beQuanReward(Store.beQuanTarget)} linh thạch. Trong lúc bế quan: lò luyện ×1,5, kỳ ngộ ×2.",
                 tx, card.top + pad + k.lineH(k.ui12Bold) + 30 * u, tw, small, 2)
         } else {
-            k.text(c, "Tĩnh thất", tx, card.top + pad, k.ui12Bold)
-            para(c, k, "Bế quan là một hẹn đọc: chọn số phút, đọc cho đủ (cộng dồn) thì viên mãn. Trong lúc bế quan lò luyện cháy ×1,5, kỳ ngộ ×2.",
+            k.text(c, "Tĩnh thất ${Store.TT_DANG[Store.tinhThat - 1].lowercase()} · ${Store.TINH_THAT[Store.tinhThat - 1]}", tx, card.top + pad, k.ui12Bold)
+            para(c, k, "Mỗi đẳng tĩnh thất giữ được một độ dài bế quan. Chọn đẳng, đọc cho đủ phút (cộng dồn) thì viên mãn; đẳng càng cao lò luyện càng nóng, kỳ ngộ ×2.",
                 tx, card.top + pad + k.lineH(k.ui12Bold) + 4 * u, tw, small, 3)
         }
         y = card.bottom + 16 * u
@@ -394,16 +431,29 @@ class DongPhuActivity : TabActivity() {
             }
             y = b.bottom + 18 * u
         } else {
-            y = k.section(c, a.left, y, a.width(), "BẾ QUAN")
-            for (m in Store.BE_QUAN_CHOICES) {
-                val b = RectF(a.left, y, a.right, y + 54 * u)
-                k.button(c, b, "Bế quan $m phút · ${Store.beQuanReward(m)} linh thạch", sb)
-                hits.add(b) {
+            y = k.section(c, a.left, y, a.width(), "SÁU ĐẲNG TĨNH THẤT")
+            val h = 2 * 12 * u + k.lineH(k.ui10Bold) + 2 * u + sl
+            for (i in 0 until 6) {
+                val m = Store.TT_MINUTES[i]
+                val r = RectF(a.left, y, a.right, y + h)
+                val own = i < Store.tinhThat
+                val next = i == Store.tinhThat
+                if (own || next) k.card(c, r, selected = false) else c.drawRoundRect(k.inset(r, u), 12 * u, 12 * u, k.faint)
+                val tag = if (own) "$m phút" else if (next) "nâng: ${Store.TT_PRICE[i]} LT" else "chưa mở"
+                k.right(c, tag, r.right - 14 * u, r.top + 12 * u + (k.lineH(k.ui10Bold) - k.lineH(sb)) / 2, sb)
+                k.line(c, "${Store.TT_DANG[i]} · ${Store.TINH_THAT[i]}", r.left + 14 * u, r.top + 12 * u, r.width() - 28 * u - sb.measureText(tag) - 10 * u, k.ui10Bold)
+                k.line(c, "Bế quan $m phút · ${Store.TT_REWARD[i]} linh thạch · lò ×${(15 + i) / 10},${(15 + i) % 10}", r.left + 14 * u, r.top + 12 * u + k.lineH(k.ui10Bold) + 2 * u,
+                    r.width() - 28 * u, if (own) small else k.paint(Ink.SMALL, color = Ink.DARK))
+                if (own) hits.add(r) {
                     Store.startBeQuan(m)
                     toast("Bế quan $m phút: mở sách mà đọc")
                     refresh()
+                } else if (next) hits.add(r) {
+                    if (Store.upgradeTinhThat()) toast("Tĩnh thất lên ${Store.TT_DANG[Store.tinhThat - 1].lowercase()}")
+                    else toast("Cần ${Store.TT_PRICE[i]} linh thạch")
+                    refresh()
                 }
-                y = b.bottom + 10 * u
+                y = r.bottom + 8 * u
             }
             y += 8 * u
         }

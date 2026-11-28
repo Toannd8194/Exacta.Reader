@@ -93,6 +93,7 @@ class SettingsActivity : TabActivity() {
                     Store.kyNgoPopup = !Store.kyNgoPopup
                     Store.touch()
                 },
+                Row("Chế độ tu", if (Store.chanTu) "Chân Tu · thọ nguyên là thật, cạn là tọa hóa, chuyển thế" else "Tùy Duyên · thọ nguyên chỉ là cảm giác thời gian") { modeDialog() },
                 Row("Luật tu tiên", "Cảnh giới, thiên kiếp, bí cảnh, pháp bảo, đạo hiệu") { showRules() },
             )
         }
@@ -267,5 +268,22 @@ class SettingsActivity : TabActivity() {
             }
             .setNegativeButton("Thôi", null)
             .show()
+    }
+
+    /** Tùy Duyên and Chân Tu: the choice is asked twice for Chân Tu. */
+    private fun modeDialog() {
+        if (Store.chanTu) {
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Về Tùy Duyên?")
+                .setMessage("Thọ nguyên thôi là thật; cạn cũng không tọa hóa. Đổi lại được bất cứ lúc nào.")
+                .setPositiveButton("Về Tùy Duyên") { _, _ -> Store.chanTu = false; Store.touch(); refresh() }
+                .setNegativeButton("Giữ Chân Tu", null).show()
+            return
+        }
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Bước vào Chân Tu?")
+            .setMessage("Mỗi ngày là một năm; mỗi cảnh giới một hạn thọ nguyên (Luyện Khí 120 năm, Trúc Cơ 250, Kim Đan 500, Nguyên Anh 1.000…). " +
+                "Cạn hạn mà chưa lên cảnh giới mới là tọa hóa: chuyển thế, tu lại từ Luyện Khí, nhanh gấp rưỡi tới cảnh giới kiếp trước. " +
+                "Pháp bảo, đạo hiệu, Niên kỷ, chữ đã đọc vẫn giữ. Nếu thọ nguyên đã quá nửa, được trả về một nửa.")
+            .setPositiveButton("Bước vào Chân Tu") { _, _ -> com.exacta.reader.data.DoKiep.chanTuOn(); refresh() }
+            .setNegativeButton("Ở Tùy Duyên", null).show()
     }
 }

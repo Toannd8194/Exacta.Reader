@@ -205,6 +205,7 @@ object Store {
     var textWeight = 3          // 2.4 and before: 0 Mảnh … 5 Rất đậm (read once into weightRef)
     var weightRef = 600         // CSS weight of 100%: the step the reader had in 2.4
     var weightPct = 100         // độ đậm, 5% a step
+    var chanTu = false          // 2.6: thọ nguyên is real; a span run out is tọa hóa
     var footerMode = 0          // 0 chương · %, 1 chỉ %, 2 ẩn
     var homeStyle = 0           // see HomeView.STYLES
     var showHeader = true       // the book's title above the page
@@ -245,6 +246,7 @@ object Store {
         if (!BiCanh.started) BiCanh.migrate()
         if (!DaoLo.started) DaoLo.migrate()
         if (!LinhGioi.started) LinhGioi.migrate()
+        if (!DoKiep.started) DoKiep.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -286,6 +288,8 @@ object Store {
             linhThach = it.optLong("lt"); linhThachEarned = it.optLong("ltEarned"); ltWords = it.optLong("ltWords")
             beQuanTarget = it.optInt("bqTarget"); beQuanSeconds = it.optLong("bqSeconds")
             beQuanDone = it.optInt("bqDone"); beQuanMinutes = it.optLong("bqMinutes")
+            // 2.6: an old save gets the đẳng its bế quan have earned (up to Tứ đẳng).
+            tinhThat = if (it.has("tinhThat")) it.optInt("tinhThat", 1) else 1 + listOf(1, 5, 10).count { n -> beQuanDone >= n }
             mergeCount = it.optInt("merge")
         }
         o.optJSONObject("omega2")?.let {
@@ -319,6 +323,7 @@ object Store {
         o.optJSONObject("biCanh2")?.let { BiCanh.read(it) }
         o.optJSONObject("daoLo")?.let { DaoLo.read(it) }
         o.optJSONObject("linhGioi")?.let { LinhGioi.read(it) }
+        o.optJSONObject("doKiep")?.let { DoKiep.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -331,6 +336,7 @@ object Store {
             justify = it.optBoolean("justify", justify); swapTaps = it.optBoolean("swapTaps", swapTaps)
             uiScale = it.optDouble("uiScale", uiScale); birthDay = it.optInt("birthDay"); birthMonth = it.optInt("birthMonth")
             textWeight = it.optInt("textWeight", textWeight); footerMode = it.optInt("footerMode", footerMode)
+            chanTu = it.optBoolean("chanTu")
             if (it.has("weightPct")) {
                 weightRef = it.optInt("weightRef", weightRef); weightPct = it.optInt("weightPct", weightPct)
             } else {
@@ -392,7 +398,7 @@ object Store {
                 .put("bonusMinutes", JSONObject().apply { bonusMinutes.forEach { (d, m) -> put(d.toString(), m) } })
                 .put("sealed", JSONArray().apply { sealedDays.forEach { put(it) } }))
             put("tienTe", JSONObject().put("lt", linhThach).put("ltEarned", linhThachEarned).put("ltWords", ltWords)
-                .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes).put("merge", mergeCount))
+                .put("bqTarget", beQuanTarget).put("bqSeconds", beQuanSeconds).put("bqDone", beQuanDone).put("bqMinutes", beQuanMinutes).put("tinhThat", tinhThat).put("merge", mergeCount))
             put("tuLuyen", TuLuyen.toJson())
             put("daoPhap", DaoPhap.toJson())
             put("kyNgo", JSONObject().put("target", kyNgoTarget).put("metBy", JSONObject().apply { kyNgoMet.forEachIndexed { i, n -> if (n > 0) put(KyNgo.EVENTS[i].name, n) } })
@@ -402,12 +408,13 @@ object Store {
             put("biCanh2", BiCanh.toJson())
             put("daoLo", DaoLo.toJson())
             put("linhGioi", LinhGioi.toJson())
+            put("doKiep", DoKiep.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
                 .put("fontFamily", fontFamily).put("justify", justify).put("swapTaps", swapTaps)
                 .put("uiScale", uiScale).put("birthDay", birthDay).put("birthMonth", birthMonth)
-                .put("textWeight", textWeight).put("footerMode", footerMode).put("weightRef", weightRef).put("weightPct", weightPct)
+                .put("textWeight", textWeight).put("footerMode", footerMode).put("weightRef", weightRef).put("weightPct", weightPct).put("chanTu", chanTu)
                 .put("homeStyle", homeStyle).put("showHeader", showHeader).put("showNotices", showNotices)
                 .put("hyphens", hyphens).put("indent", indent).put("showProverb", showProverb)
                 .put("dailyGoal", dailyGoal).put("librarySort", librarySort).put("idleMinutes", idleMinutes)
@@ -449,7 +456,7 @@ object Store {
         phaLoPassed = 0; phaLoFailed = 0; pillsUsed = 0; talismansUsed = 0; breakPillUsed = false; trialBonus = 0
         bonusTuVi = 0; trialSpare = 0; seekWords = 0; giftLuck = 0; biCanhBonusWeek = -1; biCanhBonusDays = 0
         bonusMinutes.clear(); sealedDays.clear()
-        linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0; mergeCount = 0
+        linhThach = 0; linhThachEarned = 0; ltWords = 0; beQuanTarget = 0; beQuanSeconds = 0; beQuanDone = 0; beQuanMinutes = 0; mergeCount = 0; tinhThat = 1
         TuLuyen.reset()
         DaoPhap.reset()
         DongPhu.reset()
@@ -457,6 +464,7 @@ object Store {
         BiCanh.reset()
         DaoLo.reset()
         LinhGioi.reset()
+        DoKiep.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -469,6 +477,7 @@ object Store {
         if (!BiCanh.started) BiCanh.migrate()
         if (!DaoLo.started) DaoLo.migrate()
         if (!LinhGioi.started) LinhGioi.migrate()
+        if (!DoKiep.started) DoKiep.migrate()
         dirty = true
         save()
         return true
@@ -633,7 +642,7 @@ object Store {
             fireWords = (fireWords - words).coerceAtLeast(0)
             burn *= 2
         }
-        if (beQuanTarget > 0) burn = burn * 3 / 2
+        if (beQuanTarget > 0) burn = burn * beQuanBurn() / 10
         ltWords += if (DaoPhap.effect(PhapMon.E_LINH_THACH)) words * 6 / 5 else words
         while (ltWords >= 10_000) {
             ltWords -= 10_000
@@ -749,9 +758,28 @@ object Store {
 
     // --- Bế quan --------------------------------------------------------------------------------------
 
-    val BE_QUAN_CHOICES = intArrayOf(30, 60, 90, 120)
-    fun beQuanReward(minutes: Int): Long = when (minutes) {
-        30 -> 15; 60 -> 35; 90 -> 60; else -> 90
+    /**
+     * 2.6: the tĩnh thất has six đẳng; each lets the cultivator hold a longer bế quan, with more
+     * linh thạch and a hotter forge. Raised with linh thạch.
+     */
+    val TINH_THAT = arrayOf("Thạch Thất", "Mộc Thất", "Ngọc Thất", "Linh Thất", "Tử Phủ", "Thiên Cung")
+    val TT_DANG = arrayOf("Nhất đẳng", "Nhị đẳng", "Tam đẳng", "Tứ đẳng", "Ngũ đẳng", "Lục đẳng")
+    val TT_MINUTES = intArrayOf(30, 45, 60, 90, 120, 180)
+    val TT_REWARD = longArrayOf(15, 25, 40, 65, 100, 170)
+    val TT_PRICE = longArrayOf(0, 150, 400, 900, 1_800, 3_500)
+    var tinhThat = 1            // đẳng of the tĩnh thất (1 … 6)
+    val BE_QUAN_CHOICES: IntArray get() = TT_MINUTES.copyOf(tinhThat.coerceIn(1, 6))
+    fun beQuanReward(minutes: Int): Long = TT_MINUTES.indexOf(minutes).let { if (it >= 0) TT_REWARD[it] else minutes / 2L }
+    /** The forge burns faster in a finer tĩnh thất: ×1,5 in Nhất đẳng, +0,1 each đẳng. */
+    fun beQuanBurn() = 15 + TT_MINUTES.indexOf(beQuanTarget).coerceAtLeast(0)
+
+    fun upgradeTinhThat(): Boolean {
+        if (tinhThat >= 6 || linhThach < TT_PRICE[tinhThat]) return false
+        linhThach -= TT_PRICE[tinhThat]
+        tinhThat++
+        note("Tĩnh thất lên ${TT_DANG[tinhThat - 1]} · ${TINH_THAT[tinhThat - 1]}: bế quan ${TT_MINUTES[tinhThat - 1]} phút")
+        touch()
+        return true
     }
 
     fun startBeQuan(minutes: Int) {
@@ -1411,6 +1439,7 @@ object Store {
         BiCanh.check()
         DaoLo.settle()
         LinhGioi.check()
+        DoKiep.check()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level

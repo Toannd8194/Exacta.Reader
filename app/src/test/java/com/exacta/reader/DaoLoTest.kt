@@ -50,6 +50,7 @@ class DaoLoTest {
         BiCanh.reset()
         DaoLo.reset()
         com.exacta.reader.data.LinhGioi.reset()
+        com.exacta.reader.data.DoKiep.reset()
         DaoLo.started = true
         DaoLo.rng = roll(99)
     }

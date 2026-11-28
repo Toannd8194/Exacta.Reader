@@ -46,6 +46,8 @@ object DongPhu {
     var lastTick = -1L
     val breakPill = IntArray(10)                 // the bonus a phá cảnh pill gives to its gate
     var theBonus = 0
+    var thanBonus = 0                            // thần thức from Khai Thức and Dưỡng Thần Đan
+    var canCoGain = 0                            // căn cơ from Bồi Nguyên Đan, 15 at most
     var lastResult = ""
     var rng: Random = Random.Default
 
@@ -54,7 +56,7 @@ object DongPhu {
     fun reset() {
         started = false; giai = 1; plots.forEach { it.herb = -1; it.day = -1 }; seeds.fill(0); herbs.clear(); known.clear()
         brew = -1; brewChance = 0; brewDay = -1; brewHerbs.clear(); pills.clear(); made = 0; failed = 0; burst = 0
-        danDoc = 0; lastTick = -1; breakPill.fill(0); theBonus = 0; lastResult = ""
+        danDoc = 0; lastTick = -1; breakPill.fill(0); theBonus = 0; thanBonus = 0; canCoGain = 0; lastResult = ""
     }
 
     // --- Linh mạch -----------------------------------------------------------------------------------
@@ -105,6 +107,17 @@ object DongPhu {
         Store.fortune(com.exacta.reader.game.KyNgo.T_HARVEST)
         p.herb = -1
         p.day = -1
+        Store.touch()
+        return true
+    }
+
+    /** An đan phương bought in the đan phòng itself. */
+    fun buyRecipe(r: Int): Boolean {
+        val price = DanDao.recipePrice(r)
+        if (r in known || r !in RECIPES.indices || Store.linhThach < price) return false
+        Store.linhThach -= price
+        known.add(r)
+        Store.note("Mua đan phương ${RECIPES[r].name}")
         Store.touch()
         return true
     }
@@ -225,7 +238,15 @@ object DongPhu {
 
     /** Whether a pill can do anything now. */
     fun usable(r: Int): Boolean = when (r) {
-        DanDao.TU_KHI, DanDao.NGUNG_NGUYEN -> Store.realmCap >= 0
+        DanDao.TU_KHI, DanDao.NGUNG_NGUYEN, DanDao.HOA_LINH, DanDao.HUYEN_NGUYEN, DanDao.THAI_THANH -> Store.realmCap >= 0
+        DanDao.BO_KHI -> TuLuyen.resting() || TuLuyen.injured() || DoKiep.resting()
+        DanDao.TINH_TAM -> TuLuyen.tamMa > 0
+        DanDao.DONG_BI, DanDao.NGOC_TUY, DanDao.KHAI_THUC, DanDao.DUONG_THAN, DanDao.NGO_DAO -> true
+        DanDao.THANH_DOC -> danDoc > 0
+        DanDao.DIEN_THO -> DoKiep.span() != Int.MAX_VALUE
+        DanDao.BOI_NGUYEN -> canCoGain < 15
+        DanDao.SONG_ANH -> DaoLo.songWays() && !DaoLo.songAnh && DaoLo.songPill == 0
+        DanDao.DO_KIEP -> Store.realmCap == 7 && DoKiep.passed < 9 && breakPill[8] == 0
         DanDao.HOI_KHI -> TuLuyen.resting()
         DanDao.TUC_MACH -> TuLuyen.injured()
         DanDao.THANH_TAM -> TuLuyen.tamMa > 0
@@ -243,7 +264,7 @@ object DongPhu {
         val weak = danDoc > DOC_HIGH
         fun v(x: Int) = x * (100 + 20 * pham) / 100 / (if (weak) 2 else 1)
         val text = when (r) {
-            DanDao.TU_KHI, DanDao.NGUNG_NGUYEN -> {
+            DanDao.TU_KHI, DanDao.NGUNG_NGUYEN, DanDao.HOA_LINH, DanDao.HUYEN_NGUYEN, DanDao.THAI_THANH -> {
                 val n = v(rec.value).toLong()
                 gainLinhLuc(n)
                 "Linh lực +${Realm.van(n)} vạn chữ" + if (TuLuyen.atCeiling()) " (ép thành áp chế)" else ""
@@ -255,7 +276,15 @@ object DongPhu {
                 TuLuyen.tauHoaDay = -1; TuLuyen.tamMaKiep = false; TuLuyen.calm(v(rec.value))
                 "Hồn định: hết tẩu hỏa nhập ma, tâm ma −${v(rec.value)}"
             }
-            DanDao.DOAN_COT, DanDao.KIM_THAN -> { theBonus += v(rec.value); "Thể phách +${v(rec.value)}" }
+            DanDao.DOAN_COT, DanDao.KIM_THAN, DanDao.DONG_BI, DanDao.NGOC_TUY -> { theBonus += v(rec.value); "Thể phách +${v(rec.value)}" }
+            DanDao.BO_KHI -> { TuLuyen.restUntil = -1; TuLuyen.injuryUntil = -1; DoKiep.restUntil = -1; "Khí huyết hồi phục, kinh mạch lành" }
+            DanDao.TINH_TAM -> { TuLuyen.calm(v(rec.value)); "Tâm ma −${v(rec.value)}" }
+            DanDao.KHAI_THUC, DanDao.DUONG_THAN -> { thanBonus += v(rec.value); "Thần thức +${v(rec.value)}" }
+            DanDao.THANH_DOC -> { danDoc = (danDoc - v(rec.value)).coerceAtLeast(0); "Đan độc −${v(rec.value)}" }
+            DanDao.DIEN_THO -> { DoKiep.lifeStart += v(rec.value); "Thọ nguyên +${v(rec.value)} năm" }
+            DanDao.BOI_NGUYEN -> { val n = minOf(v(rec.value).coerceAtLeast(1), 15 - canCoGain); canCoGain += n; "Căn cơ +$n mãi mãi" }
+            DanDao.NGO_DAO -> { DaoPhap.gainNgo(v(rec.value).coerceAtLeast(1), rec.name); "Ngộ tính +${v(rec.value).coerceAtLeast(1)}" }
+            DanDao.SONG_ANH -> { DaoLo.songPill = v(rec.value); "Lần thử Song Anh kế tiếp +${DaoLo.songPill}%" }
             DanDao.GIAI_DOC -> { danDoc = (danDoc - v(rec.value)).coerceAtLeast(0); "Đan độc −${v(rec.value)}" }
             DanDao.TAY_LINH -> {
                 if (!DaoPhap.wash(free = true)) return null
@@ -312,7 +341,7 @@ object DongPhu {
 
     // --- What is found --------------------------------------------------------------------------------
 
-    private val SEED_WEIGHTS = intArrayOf(30, 20, 15, 12, 10, 7, 4, 2)
+    private val SEED_WEIGHTS = intArrayOf(30, 20, 15, 12, 10, 7, 4, 2, 6, 4, 3, 1)
 
     fun dropSeed(r: Random = Random.Default): String {
         var roll = r.nextInt(SEED_WEIGHTS.sum())
@@ -367,6 +396,7 @@ object DongPhu {
         put("pills", JSONObject().apply { pills.forEach { (k, v) -> put(k.toString(), v) } })
         put("made", made); put("failed", failed); put("burst", burst); put("doc", danDoc); put("tick", lastTick)
         put("breakPill", JSONArray().apply { breakPill.forEach { put(it) } }); put("the", theBonus); put("last", lastResult)
+        put("than", thanBonus); put("canCo", canCoGain)
     }
 
     fun read(o: JSONObject) {
@@ -384,7 +414,7 @@ object DongPhu {
         made = o.optInt("made"); failed = o.optInt("failed"); burst = o.optInt("burst"); danDoc = o.optInt("doc")
         lastTick = o.optLong("tick", -1)
         o.optJSONArray("breakPill")?.let { a -> for (i in 0 until minOf(a.length(), breakPill.size)) breakPill[i] = a.getInt(i) }
-        theBonus = o.optInt("the"); lastResult = o.optString("last")
+        theBonus = o.optInt("the"); lastResult = o.optString("last"); thanBonus = o.optInt("than"); canCoGain = o.optInt("canCo")
     }
 
 }

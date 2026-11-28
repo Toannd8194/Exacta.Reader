@@ -119,6 +119,7 @@ object DaoLo {
     var songFails = 0
     var songRest = -1L
     var crits = 0
+    var songPill = 0          // Song Anh Đan taken for the next try
     var dan = -1             // the Kim Đan formed (DANS), from Kim Đan on
     var than = -1            // the Hóa Thần (THANS), from Hóa Thần on
     var earned = 0L          // linh lực the way's own reading gave
@@ -450,11 +451,12 @@ object DaoLo {
     fun canSong() = !songAnh && songNeeds().all { it.met } && !songResting()
 
     /** The hardest gate of Nhân giới: 20%, a quarter of căn cơ, the tâm cảnh, +10% each failure. */
-    fun songChance() = (20 + TuLuyen.canCo() / 4 + 5 * TuLuyen.tamCanhTier() + 10 * songFails).coerceIn(5, 80)
+    fun songChance() = (20 + TuLuyen.canCo() / 4 + 5 * TuLuyen.tamCanhTier() + 10 * songFails + songPill).coerceIn(5, 90)
 
     fun trySong(): Boolean? {
         if (!canSong()) return null
         val ok = rng.nextInt(100) < songChance()
+        songPill = 0
         if (ok) {
             songAnh = true
             songDay = today()
@@ -476,7 +478,7 @@ object DaoLo {
 
     fun toJson(): JSONObject = JSONObject().put("way", way).put("way2", way2).put("wayDay", wayDay).put("way2Day", way2Day)
         .put("song", songAnh).put("songDay", songDay).put("songFails", songFails).put("songRest", songRest)
-        .put("crits", crits).put("earned", earned).put("last", lastResult).put("dan", dan).put("than", than)
+        .put("crits", crits).put("earned", earned).put("last", lastResult).put("dan", dan).put("than", than).put("songPill", songPill)
 
     fun read(o: JSONObject) {
         reset()
@@ -484,6 +486,6 @@ object DaoLo {
         way = o.optInt("way", -1); way2 = o.optInt("way2", -1); wayDay = o.optLong("wayDay", -1); way2Day = o.optLong("way2Day", -1)
         songAnh = o.optBoolean("song"); songDay = o.optLong("songDay", -1); songFails = o.optInt("songFails"); songRest = o.optLong("songRest", -1)
         crits = o.optInt("crits"); earned = o.optLong("earned"); lastResult = o.optString("last")
-        dan = o.optInt("dan", -1); than = o.optInt("than", -1)
+        dan = o.optInt("dan", -1); than = o.optInt("than", -1); songPill = o.optInt("songPill")
     }
 }

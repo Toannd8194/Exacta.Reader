@@ -359,7 +359,7 @@ class ScreensTest {
         tabs(LinhGioiActivity::class.java, "linhgioi")
         val l = com.exacta.reader.data.LinhGioi
         val cap = Store.realmCap
-        Store.realmCap = 6
+        Store.realmCap = 7
         l.reset(); l.started = true
         l.stage[l.HOA] = 3; l.stage[l.KIM] = 3; l.active = l.THUY; l.activeDay = Store.today() - 10; l.stage[l.THUY] = 1
         Store.beasts.take(2).forEach { l.carried.add(it.seed) }
@@ -404,6 +404,11 @@ class ScreensTest {
         idle()
         shoot(root(a), "dongphu_2_brew")
         DongPhu.cancelBrew()
+        a.selectTab(1)
+        a.picking = 0
+        a.refresh()
+        idle()
+        shoot(root(a), "dongphu_1_sow")
     }
 
     @Test fun congPhap() {

@@ -509,13 +509,14 @@ DAN_PHAM = strings(DANDAO, 'PHAM')
 DOC_PCT = numbers(DANDAO, 'DOC_PCT')
 DAN_GROUPS = strings(DANDAO, 'GROUPS')
 RECIPES = re.findall(r'Recipe\("([^"]+)", (G_\w+), listOf\(([^)]*)\), (\d+), (\d), (\d+), "([^"]+)"', DANDAO)
-GROUP_CONST = ['G_TU_LUYEN', 'G_PHA_CANH', 'G_CHUA_THUONG', 'G_TAM_CANH', 'G_LUYEN_THE', 'G_GIAI_DOC', 'G_HIEM']
-assert len(RECIPES) == 15 and len(HERBS) == 8
+GROUP_CONST = ['G_TU_LUYEN', 'G_PHA_CANH', 'G_CHUA_THUONG', 'G_TAM_CANH', 'G_LUYEN_THE', 'G_GIAI_DOC', 'G_HIEM', 'G_LUYEN_THAN', 'G_THO', 'G_CAN_CO']
+RECIPES = re.findall(r'Recipe\("([^"]+)", (G_\w+), listOf\(([^)]*)\), (\d+), (\d), (\d+), "([^"]+)"', DANDAO)
+assert len(RECIPES) == 32 and len(HERBS) == 12, (len(RECIPES), len(HERBS))
 
 
 def herb_list(spec):
     out = []
-    for kind, years in re.findall(r'(\d) to ([\d_]+)', spec):
+    for kind, years in re.findall(r'(\d+) to ([\d_]+)', spec):
         out.append(f'{HERBS[int(kind)]} {num(int(years.replace("_", "")))} năm')
     return ', '.join(out)
 
@@ -526,7 +527,7 @@ def part2c():
         for n, g, h, m, c, d, t in RECIPES], 'lib')
     mach = ' · '.join(f'{e(GIAI[g])} {num(MACH_PRICES[g])}' for g in range(1, 9))
     caps = ' · '.join(f'{e(DAN_CAP[i])} {DAN_CAP_AT[i]}' for i in range(9))
-    seeds = ' · '.join(f'{e(HERBS[i])} {SEED_PRICES[i]}' for i in range(8))
+    seeds = ' · '.join(f'{e(HERBS[i])} {SEED_PRICES[i]}' for i in range(len(HERBS)))
     return chapter('IV', 'Động phủ và đan đạo', 'Từ bản 2.2, người tu có động phủ: linh mạch nuôi tu vi, dược viên trồng linh thảo, đan phòng luyện đan bằng những buổi đọc liền.') + f'''
 {h2('Linh mạch', True)}
 <p>Động phủ nằm trên linh mạch từ Nhất giai tới Cửu giai. Mỗi giai trên Nhất giai: linh lực +2%, đột phá +1%, dược linh thêm 1 năm
@@ -626,6 +627,12 @@ LAWS25 = [(m[0], m[2], m[3], *m[4:]) for m in re.findall(
     r'Law\("([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)",\s*listOf\("([^"]+)", "([^"]+)", "([^"]+)"\)\)', LINHGIOI)]
 assert len(LAWS25) == 8, len(LAWS25)
 
+DOKIEP = read('data', 'DoKiep.kt')
+KIEP26 = re.findall(r'Tang\("([^"]+)", (\w+), (\d+), "([^"]+)"\)', DOKIEP)
+KIEP_BY = {'LOI': 'pháp bảo, bản mệnh, nhục thân, Tử Lôi pháp tắc', 'PHAP_TAC': 'pháp tắc, đạo vực, thần thức',
+           'TAM_MA': 'tâm cảnh, tâm pháp', 'CUU_CUU': 'tất cả, nửa sức; tâm lôi chỉ tâm cảnh'}
+assert len(KIEP26) == 9, len(KIEP26)
+
 DANS24 = [
     ('Canh Kim Đan', 'Ngũ hành', 'linh căn Kim, công pháp Kim', 'linh lực +5%, kết anh +6%'),
     ('Ất Mộc Đan', 'Ngũ hành', 'linh căn Mộc, công pháp Mộc', 'căn cơ +8, kết anh +3%'),
@@ -668,7 +675,8 @@ def part2e():
     dans = table(['Kim Đan', 'Nhóm', 'Kết khi', 'Được'], [[f'<b>{e(d[0])}</b>', e(d[1]), e(d[2]), e(d[3])] for d in DANS24], 'lib')
     thans = table(['Hóa Thần', 'Từ', 'Lợi hại, Hợp Thể, Độ Kiếp'], [[f'<b>{e(t[0])}</b>', e(t[1]), e(t[2])] for t in THANS24], 'lib')
     laws = table(['Pháp tắc', 'Mở khi', 'Được', 'Ba thử thách'], [[f'<b>{e(l[0])}</b>', e(l[1]), e(l[2]), e(' → '.join(l[3:]))] for l in LAWS25], 'lib')
-    return chapter('VI', 'Đạo lộ và Lục Giới', 'Từ bản 2.4, mỗi người tu đi một trong năm con đường; bản 2.5 mở Linh giới. Con đường ấy, cùng cả đời tu, quyết định giới nào tiếp dẫn khi phi thăng.') + f'''
+    kiep = table(['Tầng', 'Kiếp', 'Luật', 'Nền', 'Đỡ bằng'], [[str(i + 1), f'<b>{e(n)}</b>', e(r), f'{b}%', e(KIEP_BY[k])] for i, (n, k, b, r) in enumerate(KIEP26)], 'lib')
+    return chapter('VI', 'Đạo lộ và Lục Giới', 'Từ bản 2.4, mỗi người tu đi một trong năm con đường; bản 2.5 mở Linh giới, bản 2.6 dựng Độ Kiếp chín tầng. Con đường ấy, cùng cả đời tu, quyết định giới nào tiếp dẫn khi phi thăng.') + f'''
 {h2('Năm đạo lộ', True)}
 <p>Lên Trúc Cơ thì chọn đạo lộ, một lần cho cả đời tu, trước khi ngưng đan (cửa Kim Đan đòi điều này). Người đã qua Kim Đan từ bản cũ
 chọn được bất cứ lúc nào. Màn Đạo lộ đánh dấu đường «hợp nhất» với cách đọc của bạn.</p>
@@ -705,6 +713,23 @@ món. Bản mệnh lớn một tầng mỗi 20 giờ đọc, tới tầng 9, m�
 <b>Hợp Thể</b> cần một pháp tắc và thân thần hợp nhất: thể phách 300, thần thức 24 (ngũ hành tạp linh căn 150 và 12). <b>Đại Thừa</b>
 cần ba pháp tắc và một <b>đạo vực</b> tự đặt tên: ba pháp tắc trong vực tính gấp đôi, linh lực thêm 10%. Lôi pháp tắc bớt một ngày
 mọi thiên kiếp từ Hợp Thể; Thời gian bớt một ngày hồi khí.</p>
+
+{h2('Độ Kiếp chín tầng, ngũ suy, thọ nguyên', True)}
+<p>Từ bản 2.6, cửa Độ Kiếp (Đại Thừa vào Phi Thăng) là <b>chín tầng kiếp</b>, độ lần lượt ở Linh giới › Độ Kiếp. Mỗi tầng: đọc
+đúng luật cho tới khi đủ, rồi kiếp giáng (một lần gieo tỉ lệ). Hỏng (lỡ ngày, nhảy chương, đổi sách, hay không đỡ nổi) thì tầng
+đã qua vẫn giữ: tâm ma +10, kinh mạch tổn thương 5 ngày, nghỉ 2 ngày, lần sau +10%.</p>
+{kiep}
+<p>Chữ đọc từ lúc qua tầng trước là <b>kiếp lực</b>: 1% mỗi 4 vạn, tối đa 20%. Độ Kiếp Đan cộng 8% cho tầng kế. Mỗi tầng qua cho
+100 LT × số tầng và một <b>kiếp ấn</b> ghi nhờ gì mà đỡ: pháp bảo, nhục thân, pháp tắc, thần thức, tâm cảnh, kiên trì. Mỗi ấn
+cộng 3 cảm ứng cho giới hợp (pháp bảo, pháp tắc về Cửu Tiêu; nhục thân về Hồng Hoang; thần thức về Thư Hải; tâm cảnh về Bát Nhã;
+kiên trì về Huyết Nguyệt). Qua tầng chín là vào Phi Thăng, 400 LT.</p>
+<p><b>Thiên nhân ngũ suy</b>: vào Phi Thăng, căn cơ và tâm cảnh −15. Trong 30 ngày phải đạt cả năm: căn cơ 60, tâm cảnh Thanh Minh,
+thần thức Thất trọng, thể phách Kim Thân, 20 trong 30 ngày đọc 30 phút. Không kịp thì ngũ suy lặp lại tháng sau. Qua rồi cửa Lục
+Giới Môn mới mở.</p>
+<p><b>Thọ nguyên</b>: mỗi ngày là một năm. Hạn: Luyện Khí 120, Trúc Cơ 250, Kim Đan 500, Nguyên Anh 1.000, Hóa Thần 2.000, Luyện Hư
+3.000, Hợp Thể 5.000, Đại Thừa 8.000, Phi Thăng 12.000; Tiên nhân vô tận. Một phần mười cuối hạn: đột phá liều mạng +10%. Diên Thọ
+Đan +50 năm. Ở <b>chế độ Chân Tu</b> (Cài đặt › Chế độ tu) cạn hạn là tọa hóa: chuyển thế, tu lại từ Luyện Khí, nhanh gấp rưỡi tới
+cảnh giới kiếp trước; pháp bảo, đạo hiệu, Niên kỷ, chữ đã đọc vẫn giữ. Mỗi lần chuyển thế cộng 10 cảm ứng Vong Xuyên Bỉ Ngạn.</p>
 
 {h2('Lục Giới cảm ứng', True)}
 <p>Không ai chọn được giới để phi thăng. Mỗi giới chấm điểm cả đời tu; giới cao điểm nhất tiếp dẫn. Cửa Lục Giới Môn đòi cảm ứng
@@ -748,7 +773,7 @@ cho tới khi đọc xong sách. Mỗi cuốn đặt mỗi phẩm một chặng.
 <p>Ba thứ làm lò cháy nhanh hơn, và chúng <b>nhân với nhau</b>:</p>
 {table(['Nguồn', 'Hệ số', 'Bao lâu'], [
     ['Thiên Hỏa Phù', '×2', '2 vạn chữ (4 vạn với bộ Võ Lâm Ám Khí)'],
-    ['Bế quan', '×1,5', 'tới khi bế quan viên mãn'],
+    ['Bế quan', '×1,5 – ×2,0 theo đẳng tĩnh thất', 'tới khi bế quan viên mãn'],
     ['Bộ Tứ Hải Long Cung', '×2', 'mồng một, ngày rằm, ba ngày Tết'],
 ])}
 <p>Cả ba cùng lúc: mỗi chữ cháy như <b>6 chữ</b> ở mọi ô. Ô trọn quyển không theo hệ số, vì nó tính bằng % của sách.</p>
@@ -827,7 +852,7 @@ Tụ Bảo Phù gieo ba lần.</p>
 {h2('Linh thạch')}
 {table(['Nguồn', 'Linh thạch'], [
     ['Mỗi vạn chữ đọc', '5 (×2 ngày rằm, mồng một; ×3 Tết)'],
-    ['Bế quan viên mãn 30 / 60 / 90 / 120 phút', '15 / 35 / 60 / 90 (cũng nhân ngày lễ)'],
+    ['Bế quan viên mãn 30 / 45 / 60 / 90 / 120 / 180 phút', '15 / 25 / 40 / 65 / 100 / 170 (cũng nhân ngày lễ)'],
     ['Qua bí cảnh tuần', '20'],
     ['Đột phá đại cảnh giới', '50 × số thứ tự cảnh giới'],
     ['Vượt kiếp phá lô Thiên / Âm Dương / Hỗn Độn', '60 / 90 / 120'],
@@ -837,8 +862,9 @@ Tụ Bảo Phù gieo ba lần.</p>
 ])}
 
 {h2('Bế quan')}
-<p>Chọn 30, 60, 90 hoặc 120 phút. Trong lúc bế quan, mọi phút đọc được cộng dần; đủ thì bế quan viên mãn, nhận linh thạch.
-Suốt buổi: <b>lò cháy ×1,5, kỳ ngộ ×2</b>. Hủy giữa chừng chỉ mất phần thưởng. 20 lần viên mãn (hoặc tổng 100 giờ đọc) cho
+<p>Từ bản 2.6, tĩnh thất có sáu đẳng: Thạch Thất (30 phút), Mộc Thất (45), Ngọc Thất (60), Linh Thất (90), Tử Phủ (120), Thiên
+Cung (180). Mỗi đẳng giữ được một độ dài bế quan; nâng đẳng bằng linh thạch (150, 400, 900, 1.800, 3.500). Trong lúc bế quan, mọi
+phút đọc được cộng dần; đủ thì viên mãn, nhận linh thạch. Suốt buổi: <b>lò cháy ×1,5 ở Nhất đẳng, thêm ×0,1 mỗi đẳng, kỳ ngộ ×2</b>. Hủy giữa chừng chỉ mất phần thưởng. 20 lần viên mãn (hoặc tổng 100 giờ đọc) cho
 đạo hiệu «Bế Quan Khổ Tu».</p>
 
 {h2('Bí cảnh tuần')}
@@ -1052,7 +1078,7 @@ def appendix():
         ['Đột phá', 'nền 40% … 15% + căn cơ/2 + tâm cảnh + áp chế − tâm ma/2'],
         ['Thiên kiếp', '4×35′ … 7×60′ (xem Quyển II)'],
         ['Bí cảnh', '5 ngày × 30′ trong tuần → khoáng thạch ≥ Huyền + 20 LT'],
-        ['Bế quan', '30/60/90/120′ → 15/35/60/90 LT; lò ×1,5; kỳ ngộ ×2'],
+        ['Bế quan', 'sáu đẳng 30 – 180′ → 15 – 170 LT; lò ×1,5 – ×2,0; kỳ ngộ ×2'],
         ['Hợp luyện', '3 món dư → 1 khoáng thạch phẩm trên'],
         ['Chuỗi ngày', 'từ 1 phút mỗi ngày'],
     ]

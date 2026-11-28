@@ -46,6 +46,7 @@ class DongPhuTest {
         com.exacta.reader.data.BiCanh.reset()
         com.exacta.reader.data.DaoLo.reset()
         com.exacta.reader.data.LinhGioi.reset()
+        com.exacta.reader.data.DoKiep.reset()
         DongPhu.migrate()
         DongPhu.rng = roll(0)
     }

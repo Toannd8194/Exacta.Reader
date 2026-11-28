@@ -46,6 +46,7 @@ class TuLuyenTest {
         com.exacta.reader.data.BiCanh.reset()
         com.exacta.reader.data.DaoLo.reset()
         com.exacta.reader.data.LinhGioi.reset()
+        com.exacta.reader.data.DoKiep.reset()
         TuLuyen.started = true
         TuLuyen.lastTick = today - 1
         TuLuyen.rng = roll(0)

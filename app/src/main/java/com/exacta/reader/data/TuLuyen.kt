@@ -106,7 +106,7 @@ object TuLuyen {
     /** Căn cơ: 2 a day read 30 minutes (30 days), 10 a book read through (90 days, 4 at most), the Trúc Cơ's root. */
     fun canCo(): Int {
         val t = today()
-        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() + DaoLo.canCoBonus() + LinhGioi.canCoBonus() - DongPhu.canCoPenalty() -
+        val v = 2 * daysMet(t - 29, t, 30) + 10 * minOf(4, finishedSince(t - 89)) + baseCanCo() + DaoPhap.canCoBonus() + DaoLo.canCoBonus() + LinhGioi.canCoBonus() - DongPhu.canCoPenalty() + DongPhu.canCoGain - DoKiep.suyPenalty() -
             (if (recent(tauHoaDay)) 10 else 0) - (jumps30() - 5).coerceIn(0, 20)
         return v.coerceIn(0, 100)
     }
@@ -121,7 +121,7 @@ object TuLuyen {
         val t = today()
         val v = minOf(Store.streak(), 30) + 3 * minOf(10, long30()) + (30 - 2 * jumps30()).coerceAtLeast(0) +
             (if (finishedSince(t - 29) > 0) 10 else 0) - 10 * failDays.count { t - it < 30 } -
-            (if (recent(tauHoaDay)) 20 else 0) - minOf(15, 3 * abandoned()) + DaoPhap.tamCanhBonus()
+            (if (recent(tauHoaDay)) 20 else 0) - minOf(15, 3 * abandoned()) + DaoPhap.tamCanhBonus() - DoKiep.suyPenalty()
         return v.coerceIn(0, 100)
     }
 
@@ -130,7 +130,7 @@ object TuLuyen {
     fun authors(): Int = Store.books.values.filter { it.finishDay >= 0 }.map { it.author.trim().lowercase() }.filter { it.isNotEmpty() }.toSet().size
 
     /** Thần thức: 5 an author read through, 1 a book. */
-    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + (if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0)) * DaoLo.thanPercent() / 100 * LinhGioi.thanPercent() / 100
+    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + (if (DaoPhap.effect(PhapMon.E_THAN_THUC)) 5 else 0) + DongPhu.thanBonus) * DaoLo.thanPercent() / 100 * LinhGioi.thanPercent() / 100
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
@@ -241,6 +241,9 @@ object TuLuyen {
         if (Store.realmCap >= 4 && DaoLo.THANS[DaoLo.thanNow()].gioi == i) list.add(DaoLo.THANS[DaoLo.thanNow()].name to 10)
         // H. Nghiệp lực, from Phi Thăng.
         DaoLo.karmaPart(i).takeIf { it != 0 }?.let { list.add("Nghiệp lực ${DaoLo.karma()}" to it) }
+        // I. Kiếp ấn, and the lives lived before (Vong Xuyên remembers them).
+        DoKiep.gioiPart(i).takeIf { it > 0 }?.let { list.add("Kiếp ấn" to it) }
+        if (i == 4 && DoKiep.rebirths > 0) list.add("Chuyển thế ${DoKiep.rebirths} lần" to minOf(30, 10 * DoKiep.rebirths))
         // F. Tông môn.
         if (GIOI_SECT[i] >= 0 && TongMon.family() == GIOI_SECT[i]) list.add(TongMon.SECTS[TongMon.sect].name to 10)
         return list
@@ -373,7 +376,8 @@ object TuLuyen {
 
     // --- The gates ----------------------------------------------------------------------------------
 
-    fun hasTrial(g: Int) = g == 2 || g == 3 || g >= 5
+    /** 2.6: Độ Kiếp (gate 8) is nine tầng of its own, not one thiên kiếp. */
+    fun hasTrial(g: Int) = g == 2 || g == 3 || (g >= 5 && g != 8)
 
     /** Books for ngộ đạo: 20 vạn words or more, read through within 30 days, since Nguyên Anh. */
     fun ngoDao(): List<Book> = Store.books.values.filter {
@@ -414,6 +418,8 @@ object TuLuyen {
             }
         }
         list.addAll(LinhGioi.needs(g))
+        if (g == 8) list.add(Need("${DoKiep.NEED}: ${DoKiep.passed}/9, độ ở Linh giới › Độ Kiếp", DoKiep.passed >= 9))
+        if (g == 9) list.add(Need(if (DoKiep.suyPassed) "Đã qua thiên nhân ngũ suy" else "Qua thiên nhân ngũ suy (Linh giới › Độ Kiếp)", DoKiep.suyPassed))
         if (Store.realmCap >= 1) list.add(Need("Đã vào đại viên mãn (căn cơ từ 60 khi tới)", subCap >= 3))
         if (g == 9) list.add(Need("Lục Giới cảm ứng rõ: ${GIOI[destined()]} hơn giới kế tiếp từ $GIOI_LEAD điểm (đang ${gioiLead()})", gioiClear()))
         if (g >= 2) {
@@ -461,6 +467,7 @@ object TuLuyen {
         if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
         list.addAll(DaoLo.breakParts(g))
         list.addAll(LinhGioi.breakParts(g))
+        DoKiep.lifeGamble()?.let { list.add(it) }
         if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])
         if (DongPhu.danDoc >= 4) list.add("Đan độc ${DongPhu.danDoc}, chia bốn" to -(DongPhu.danDoc / 4))
         if (g == 9) list.add("Cảm ứng ${GIOI[destined()]}, chia mười" to minOf(10, gioiScore(destined()) / 10))
@@ -621,6 +628,32 @@ object TuLuyen {
         return ok
     }
 
+    /** 2.6: the ninth tầng of Độ Kiếp passed is the breakthrough into Phi Thăng. */
+    fun enterPhiThang() {
+        val t = today()
+        Store.realmCap = 8
+        capDays[8] = t
+        subCap = 0; apChe = 0; fails = 0; pill = false; trialDone = -1; attacks = 0; trialBook = ""
+        breaks++
+        Store.trialPassed++
+        Store.gainLinhThach(400)
+        lastResult = "Độ Kiếp viên mãn, vào Phi Thăng ngày ${dayText(t)}"
+        Store.note("$lastResult · 400 linh thạch")
+        Store.fortune(com.exacta.reader.game.KyNgo.T_BREAK, 8)
+        advance()
+        Store.checkTitles()
+    }
+
+    /** Chân Tu, tọa hóa: the cultivation starts over from Luyện Khí; words read stay read. */
+    fun reborn() {
+        adj -= Store.tuVi()
+        Store.realmCap = 0; Store.realmSeen = 0; Store.trialStart = -1
+        subCap = 0; apChe = 0; fails = 0; pill = false; trialDone = -1; attacks = 0; trialBook = ""
+        coPham = -1; danPham = -1; gioi = -1; capDays.fill(-1); minorRest = -1; minorFails = 0; restUntil = -1; injuryUntil = -1
+        stageSeen = -1; ceilingSeen = -1; stuckSeen = -1; minorSeen = -1
+        advance()
+    }
+
     fun failKind(rate: Int = chance()) = when {
         tamMa >= DaoPhap.tauHoaAt() -> TAU_HOA
         rate >= 50 -> HUT_KHI
@@ -681,6 +714,7 @@ object TuLuyen {
             dayLong[d] = (dayLong[d] ?: 0) + 1
             dayVeryLong[d] = (dayVeryLong[d] ?: 0) + 1
         }
+        DoKiep.onSeconds(book.path)
         if (lightningTrial()) {
             if (trialBook.isEmpty()) trialBook = book.path
             else if (trialBook != book.path) {
@@ -696,6 +730,7 @@ object TuLuyen {
         val n = (dayJumps[d] ?: 0) + 1
         dayJumps[d] = n
         if (n > 3 && !DaoPhap.quietJump()) stir(2)
+        DoKiep.onJump()
         attack("nhảy chương")
         Store.touch()
     }

@@ -351,7 +351,7 @@ Mỗi bước là một bản phát hành chơi được, có test chụp màn h
 | 2.3 | Tông môn, nhiệm vụ tuần, đối thủ; bí cảnh bản đồ, biến cố, trọng thương | Tông môn, Bí cảnh |
 | 2.4 | Đạo lộ; các kiểu kết đan, kết anh, hóa thần; luyện thể, luyện thần; kiêm tu, Song Anh | Đạo lộ |
 | 2.5 | Phi thăng; Linh giới, pháp tắc, Hợp Thể, Đại Thừa, đạo vực; 36 tông môn (đã làm) | Linh giới |
-| 2.6 | Độ Kiếp chín tầng, Phi Thăng kỳ, thiên nhân ngũ suy; chế độ Chân Tu | Độ Kiếp |
+| 2.6 | Độ Kiếp chín tầng, Phi Thăng kỳ, thiên nhân ngũ suy; chế độ Chân Tu (đã làm) | Độ Kiếp |
 | 2.7 | Lục Giới Môn: lời gọi, chọn giới, mang theo, màn kết phần một, tiền đình | Lục Giới |
 | 3.x | Mỗi giới một phần riêng (Tiên, Ma, Phật, Yêu, Minh, Thần), để ngỏ | theo giới |
 

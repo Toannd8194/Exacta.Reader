@@ -14,8 +14,8 @@ android {
         applicationId = "com.exacta.reader"
         minSdk = 24
         targetSdk = 34
-        versionCode = 250
-        versionName = "2.5"
+        versionCode = 260
+        versionName = "2.6"
     }
 
     // The app's own key, kept with the project (keystore/): every later APK must carry the same

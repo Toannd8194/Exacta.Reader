@@ -132,6 +132,8 @@ class BienNienActivity : TabActivity() {
                 "Năm đạo lộ; mười hai Kim Đan, Nguyên Anh kế thừa đan; sáu Hóa Thần đè lên Hợp Thể, Độ Kiếp; luyện thể, luyện thần, kiêm tu, Song Anh; Lục Giới do đời tu và nghiệp lực quyết định."),
             Era("2.5", "Phá Toái Hư Không",
                 "Phi thăng Linh giới: tiết điểm, trảm trần duyên, phi thăng kiếp; bản mệnh, di bảo; tám pháp tắc, đạo vực; 36 tông môn; độ đậm theo %; cửa chưa tới thì khóa."),
+            Era("2.6", "Cửu Cửu Quy Nhất",
+                "Độ Kiếp chín tầng, kiếp lực, kiếp ấn; thiên nhân ngũ suy; thọ nguyên, chế độ Chân Tu; tĩnh thất sáu đẳng; 32 đan phương; gieo hạt bằng thẻ."),
         )
     }
 }
