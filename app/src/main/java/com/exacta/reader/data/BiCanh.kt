@@ -108,7 +108,10 @@ object BiCanh {
 
     // --- Biến cố ----------------------------------------------------------------------------------------
 
+    /** A thuật of the kind carried (it shields by being there). */
     private fun has(kind: Int) = DaoPhap.thuatOn.any { DaoPhap.on(it) && PhapMon.THUAT_PHAP[it].kind == kind }
+    /** 3.3: a thuật of the kind carried and past its hồi chiêu, to be cast. */
+    private fun ready(kind: Int) = DaoPhap.hasReady(kind)
     /** From Kim Đan only what is worn serves in a fight. */
     private fun strongest() = TrangBi.bestTier()
     private fun pills() = (0 until Treasure.ITEMS).filter { Treasure.isPill(it) && Store.items[it] > 0 }
@@ -116,21 +119,26 @@ object BiCanh {
     fun chances(): Map<String, Int> = mapOf(
         "fight" to (40 + 10 * (strongest() + 1) + 3 * TuLuyen.theTier() + 4 * TeLuyen.bestGrade() + TranPhap.biCanhPart()).coerceIn(10, 90),
         "force" to (30 + TuLuyen.canCo() / 2 + TranPhap.biCanhPart()).coerceIn(10, 90),
-        "master" to (45 + 8 * (strongest() + 1) + (if (has(PhapMon.K_CONG_KICH)) 10 else 0) + 3 * Store.realmCap.coerceAtLeast(0) + 4 * TeLuyen.bestGrade()).coerceIn(10, 95),
+        "master" to (45 + 8 * (strongest() + 1) + (if (has(PhapMon.K_CONG_KICH)) 10 else 0) + 3 * Store.realmCap.coerceAtLeast(0) + 4 * TeLuyen.bestGrade() +
+            (if (DaoPhap.hop(PhapMon.LOI)) 15 else 0)).coerceIn(10, 95),
     )
+
+    /** Quyết chiến after a khống chế: the master is held down. */
+    private fun heldChance() = (chances().getValue("master") + 15 + 5 * DaoPhap.bestMastery(PhapMon.K_KHONG_CHE)).coerceAtMost(98)
 
     fun choices(type: Int = current()): List<Choice> {
         val ch = chances()
         val best = TrangBi.best()
         return when (type) {
             YEU_THU -> listOf(
-                Choice("Dùng thuật công kích", "cần mang một thuật công kích", has(PhapMon.K_CONG_KICH)),
-                Choice("Độn đi", "cần mang một độn thuật", has(PhapMon.K_DON)),
+                Choice("Thi triển công kích", "cần thuật công kích hết hồi chiêu", ready(PhapMon.K_CONG_KICH)),
+                Choice("Độn đi", "cần độn thuật hết hồi chiêu", ready(PhapMon.K_DON)),
                 Choice("Liều đánh · ${ch["fight"]}%", "pháp bảo mạnh và thể phách giúp thắng; thua thì bị thương", true),
+                Choice("Thi triển khống chế", "trói yêu thú, thưởng chắc chắn", ready(PhapMon.K_KHONG_CHE)),
             )
             CAM_CHE -> listOf(
                 Choice("Phá bằng pháp bảo", "cần pháp bảo từ Địa phẩm" + (best?.let { " (đang có ${Treasure.TIER_NAMES[it.tier]})" } ?: ""), strongest() >= 2),
-                Choice("Nhìn thấu trận văn", "cần Thiên Nhãn Thuật hoặc thần thức Tứ trọng", DaoPhap.on(PhapMon.T_THIEN_NHAN) || TuLuyen.trong() >= 3),
+                Choice("Nhìn thấu trận văn", "cần Thiên Nhãn Thuật hết hồi chiêu hoặc thần thức Tứ trọng", DaoPhap.ready(PhapMon.T_THIEN_NHAN) || TuLuyen.trong() >= 3),
                 Choice("Cưỡng phá · ${ch["force"]}%", "căn cơ càng vững càng dễ; hỏng thì bị thương", true),
                 Choice("Bỏ qua", "không được gì, không mất gì", true),
             )
@@ -152,9 +160,11 @@ object BiCanh {
                 Choice("Lặng lẽ đi qua", "tâm ma +5", true),
             )
             CHU -> listOf(
-                Choice("Quyết chiến · ${ch["master"]}%", "thắng thì thêm một khoáng thạch cao phẩm; thua thì bị thương", true),
-                Choice("Độn thuật lấy bảo rồi rút", "cần mang một độn thuật", has(PhapMon.K_DON)),
+                if (DaoPhap.ready(PhapMon.T_LOI_PHAT)) Choice("Quyết chiến · Lôi Phạt Thiên Uy", "thần thông giáng lôi: chắc thắng", true)
+                else Choice("Quyết chiến · ${ch["master"]}%", "thắng thì thêm một khoáng thạch cao phẩm; thua thì bị thương", true),
+                Choice("Độn thuật lấy bảo rồi rút", "cần độn thuật hết hồi chiêu", ready(PhapMon.K_DON)),
                 Choice("Cúi đầu rút lui", "vẫn qua bí cảnh, không thêm gì", true),
+                Choice("Khống chế rồi quyết chiến · ${heldChance()}%", "cần thuật khống chế hết hồi chiêu", ready(PhapMon.K_KHONG_CHE)),
             )
             else -> emptyList()
         }
@@ -164,6 +174,10 @@ object BiCanh {
 
     private fun wound(why: String): String {
         wounds++
+        if (DaoPhap.castHeal()) {
+            wounds--
+            return "$why · Hồi Xuân Thuật chữa lành ngay"
+        }
         if (wounds >= WOUNDS_MAX) {
             fled = true
             woundWeek = Store.weekStart(today()) + 7
@@ -183,16 +197,30 @@ object BiCanh {
         val text = when (type) {
             YEU_THU -> when (i) {
                 0 -> {
-                    val lt = DaoPhap.onBiCanh()
-                    Store.gainLinhThach(lt)
-                    "Thuật pháp diệt yêu thú, $lt linh thạch: " + Store.reward(1)
+                    val (id, hit, lt) = DaoPhap.castAttack { roll(it) } ?: return null
+                    val name = PhapMon.THUAT_PHAP[id].name
+                    if (hit) {
+                        Store.gainLinhThach(lt)
+                        "$name diệt yêu thú, $lt linh thạch: " + Store.reward(1)
+                    } else wound("$name trượt, yêu thú phản công")
                 }
-                1 -> { Store.gainLinhThach(10); "Độn đi an toàn, nhặt được 10 linh thạch" }
+                1 -> {
+                    DaoPhap.castEscape()
+                    Store.gainLinhThach(10); "Độn đi an toàn, nhặt được 10 linh thạch"
+                }
+                3 -> {
+                    val (id, _) = DaoPhap.castControl() ?: return null
+                    "${PhapMon.THUAT_PHAP[id].name} trói yêu thú: " + Store.reward(1) +
+                        (if (DaoPhap.hop(PhapMon.BANG)) ", Băng Phong Thiên Lý: " + Store.reward(1) else "")
+                }
                 else -> if (roll(ch.getValue("fight"))) "Thắng yêu thú: " + Store.reward(1) else wound("Yêu thú cắn trúng")
             }
             CAM_CHE -> when (i) {
                 0 -> "Pháp bảo phá cấm chế: " + Store.reward(2)
-                1 -> "Nhìn thấu trận văn: " + Store.reward(1)
+                1 -> {
+                    if (TuLuyen.trong() < 3) DaoPhap.castEye()
+                    "Nhìn thấu trận văn: " + Store.reward(1)
+                }
                 2 -> if (roll(ch.getValue("force"))) "Cưỡng phá được: " + Store.reward(1) else wound("Cấm chế phản phệ")
                 else -> "Bỏ qua cấm chế"
             }
@@ -234,17 +262,30 @@ object BiCanh {
                     "Lặng lẽ đi qua, lòng không yên: tâm ma +5"
                 }
             }
-            else -> when (i) {
-                0 -> if (roll(ch.getValue("master"))) {
+            else -> {
+                fun win(how: String): String {
                     masters++
                     Store.fortune(com.exacta.reader.game.KyNgo.T_MASTER)
                     val t = (Treasure.rollTier() + 1).coerceIn(2, Treasure.TIERS - 1)
                     Store.bag[t]++
                     Store.fillForge()
-                    "Đánh bại chủ nhân bí cảnh: khoáng thạch ${Treasure.TIER_NAMES[t]}"
-                } else wound("Chủ nhân bí cảnh quá mạnh")
-                1 -> "Độn thuật lấy bảo rồi rút: " + Store.reward(1)
-                else -> "Cúi đầu rút lui"
+                    return "$how: khoáng thạch ${Treasure.TIER_NAMES[t]}"
+                }
+                when (i) {
+                    0 -> if (DaoPhap.castThunder()) win("Lôi Phạt Thiên Uy giáng xuống, đánh bại chủ nhân bí cảnh")
+                        else if (roll(ch.getValue("master"))) win("Đánh bại chủ nhân bí cảnh") else wound("Chủ nhân bí cảnh quá mạnh")
+                    1 -> {
+                        DaoPhap.castEscape()
+                        "Độn thuật lấy bảo rồi rút: " + Store.reward(1)
+                    }
+                    3 -> {
+                        val p = heldChance()
+                        val (id, _) = DaoPhap.castControl() ?: return null
+                        val name = PhapMon.THUAT_PHAP[id].name
+                        if (roll(p)) win("$name trấn áp, rồi đánh bại chủ nhân bí cảnh") else wound("$name không giữ nổi chủ nhân bí cảnh")
+                    }
+                    else -> "Cúi đầu rút lui"
+                }
             }
         }
         results.add("${TYPES[type]}: $text")

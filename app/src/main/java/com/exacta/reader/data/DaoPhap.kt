@@ -34,7 +34,7 @@ object DaoPhap {
     const val ROOT_SHARE = 15
 
     class Cong(var words: Long = 0, var opened: Int = 3)
-    class Thuat(var learned: Boolean = false, var uses: Int = 0)
+    class Thuat(var learned: Boolean = false, var uses: Int = 0, var sits: Int = 0, var cool: Int = 0)
 
     var started = false
     val roots = ArrayList<Int>()         // hành of the linh căn, strongest first; empty until awakened
@@ -68,7 +68,8 @@ object DaoPhap {
     var xungCost = 0                     // the ngộ tính it holds, given back if it fails
     val inherited = HashSet<Int>()       // công pháp that already took the words of their line
     var wayWords = 0L                    // words read in the way of the công pháp running
-    var lastXung = ""                       // 1: the awakening's gifts, 2: the tâm pháp of Trúc Cơ
+    var lastXung = ""
+    var thuatDay = -1L                   // 3.3: the last day of reading that shortened the hồi chiêu                       // 1: the awakening's gifts, 2: the tâm pháp of Trúc Cơ
 
     private fun today() = Store.today()
 
@@ -77,7 +78,7 @@ object DaoPhap {
         ngo = 0; ngoEarned = 0; cong.clear(); active = -1; capNoted = -1; tam.clear(); tamOn.clear(); bangTamMonth = -1
         tamFrac.clear(); tamDay = -1; tamSittings = 0
         thuat.clear(); thuatOn.clear(); shields = 0; liemTucDay = -1; offerWeek = -1; offers.clear(); scrolls = 0; gifted = 0
-        phu = -1; xung = 0; xungCost = 0; inherited.clear(); wayWords = 0; lastXung = ""
+        phu = -1; xung = 0; xungCost = 0; inherited.clear(); wayWords = 0; lastXung = ""; thuatDay = -1
     }
 
     // --- Linh căn ------------------------------------------------------------------------------------
@@ -159,7 +160,7 @@ object DaoPhap {
             val t = PhapMon.FIRST_THUAT[chu]
             if (gainThuat(t)) {
                 thuat[t]?.learned = true
-                if (thuatOn.size < thuatSlots()) thuatOn.add(t)
+                if (t !in thuatOn && thuatOn.size < thuatSlots()) thuatOn.add(t)
             }
         }
         Store.touch()
@@ -217,8 +218,8 @@ object DaoPhap {
      * The level of a kind of đặc hiệu: one for each open đặc hiệu of the công pháp running, two for
      * its tuyệt học, one for the first đặc hiệu of the phụ tu.
      */
-    /** The level of an effect: the công pháp's and the tâm pháp's together. */
-    fun lv(e: Int): Int = if (PhapMon.isSwitch(e)) minOf(1, congLv(e) + tamLv(e)) else congLv(e) + tamLv(e)
+    /** The level of an effect: the công pháp's, the tâm pháp's and the bản mệnh thần thông's together. */
+    fun lv(e: Int): Int = (congLv(e) + tamLv(e) + banMenhLv(e)).let { if (PhapMon.isSwitch(e)) minOf(1, it) else it }
 
     /** The level the công pháp running (and the phụ tu) give an effect. */
     fun congLv(e: Int): Int {
@@ -646,8 +647,9 @@ object DaoPhap {
 
     fun tauHoaAt() = if (tamWorks(PhapMon.TP_DINH_HON)) 85 else 70
 
-    // --- Thuật pháp ----------------------------------------------------------------------------------
+    // --- Thuật pháp (3.3) ----------------------------------------------------------------------------
 
+    /** Ô mang thuật: two at Luyện Khí, one more each great realm, six at most. */
     fun thuatSlots() = 2 + Store.realmCap.coerceIn(0, 4)
 
     fun gainThuat(id: Int): Boolean {
@@ -679,7 +681,7 @@ object DaoPhap {
         if (!canLearn(id)) return false
         ngo -= learnCost(id)
         thuat[id]?.learned = true
-        if (thuatOn.size < thuatSlots()) thuatOn.add(id)
+        if (id !in thuatOn && thuatOn.size < thuatSlots()) thuatOn.add(id)
         Store.note("Học được ${THUAT_PHAP[id].name}")
         Store.touch()
         return true
@@ -699,39 +701,127 @@ object DaoPhap {
     }
 
     fun on(id: Int) = id in thuatOn && thuat[id]?.learned == true
-    fun mastery(id: Int) = PhapMon.mastery(thuat[id]?.uses ?: 0)
+    fun points(id: Int) = thuat[id]?.let { PhapMon.USE_POINTS * it.uses + it.sits } ?: 0
+    fun mastery(id: Int) = PhapMon.mastery(points(id))
+    fun cool(id: Int) = thuat[id]?.cool ?: 0
+    /** Carried, and not waiting out its hồi chiêu. */
+    fun ready(id: Int) = on(id) && cool(id) <= 0
 
-    private fun used(id: Int) {
+    /** Hồi chiêu in days of reading: shorter with thuần thục, and with Phong Hành Vạn Lý. */
+    fun cd(id: Int): Int {
+        val base = THUAT_PHAP[id].cd
+        if (base <= 0) return 0
+        return (base - PhapMon.cdLess(mastery(id)) - (if (hop(PhapMon.PHONG)) 1 else 0)).coerceAtLeast(1)
+    }
+
+    /** A use: thuần thục, and the hồi chiêu begins when `cast`. */
+    private fun used(id: Int, cast: Boolean = true) {
         val t = thuat[id] ?: return
-        val before = PhapMon.mastery(t.uses)
+        val before = mastery(id)
         t.uses++
-        val after = PhapMon.mastery(t.uses)
+        if (cast && THUAT_PHAP[id].cd > 0) t.cool = cd(id)
+        val after = mastery(id)
         if (after > before) Store.note("${THUAT_PHAP[id].name} ${PhapMon.MASTERY[after].lowercase()}")
         Store.touch()
     }
 
-    private fun onKind(kind: Int) = thuatOn.filter { on(it) && THUAT_PHAP[it].kind == kind }
+    /**
+     * The sitting has gone from `before` to `session` seconds. The first ten minutes of a day make it
+     * a day of reading: every hồi chiêu shortens by one. Each sitting of 30 minutes trains the thuật
+     * carried.
+     */
+    fun onThuatSeconds(before: Long, session: Long) {
+        val t = today()
+        if (before < 10 * 60 && session >= 10 * 60 && thuatDay != t) {
+            thuatDay = t
+            for (s in thuat.values) if (s.cool > 0) s.cool--
+            Store.touch()
+        }
+        if (before < 30 * 60 && session >= 30 * 60) {
+            for (id in thuatOn) {
+                val s = thuat[id] ?: continue
+                if (!s.learned) continue
+                val m0 = mastery(id)
+                s.sits++
+                val m1 = mastery(id)
+                if (m1 > m0) Store.note("${THUAT_PHAP[id].name} ${PhapMon.MASTERY[m1].lowercase()}")
+            }
+            if (thuatOn.isNotEmpty()) Store.touch()
+        }
+    }
 
-    /** The weekly bí cảnh is cleared: the công kích thuật pháp bring back linh thạch. */
+    // Hợp kích and bản mệnh thần thông.
+
+    fun hopActive(): List<PhapMon.HopKich> = PhapMon.HOP_KICH.filter { h -> thuatOn.count { on(it) && THUAT_PHAP[it].attr == h.attr } >= 2 }
+    fun hop(attr: Int) = hopActive().any { it.attr == attr }
+
+    /** The bản mệnh thần thông of the Kim Đan formed. */
+    fun banMenh(): PhapMon.BanMenh? = if (Store.realmCap >= 2 && DaoLo.dan in PhapMon.BAN_MENH.indices) PhapMon.BAN_MENH[DaoLo.dan] else null
+    fun banMenhLv(e: Int) = banMenh()?.takeIf { it.effect == e }?.level ?: 0
+
+    private fun readyKind(kind: Int) = thuatOn.filter { ready(it) && THUAT_PHAP[it].kind == kind }
+    private fun onKind(kind: Int) = thuatOn.filter { on(it) && THUAT_PHAP[it].kind == kind }
+    /** The best of a kind ready to cast: the most practised. */
+    private fun best(kind: Int) = readyKind(kind).maxByOrNull { points(it) }
+    fun hasReady(kind: Int) = readyKind(kind).isNotEmpty()
+    fun bestMastery(kind: Int) = best(kind)?.let { mastery(it) } ?: 0
+
+    /** The weekly bí cảnh is cleared: each công kích carried brings back linh thạch (no hồi chiêu). */
     fun onBiCanh(): Long {
         var lt = 0L
         for (id in onKind(PhapMon.K_CONG_KICH)) {
             lt += 10L * (mastery(id) + 1)
-            used(id)
+            used(id, cast = false)
         }
         return lt
     }
 
-    /** Days missed that a kiếp under way forgives, by the phòng ngự thuật pháp. */
-    fun trialSpare(): Int = onKind(PhapMon.K_PHONG_NGU).map { if (mastery(it) >= 3) 2 else 1 }.sum()
+    /** Thi triển a công kích in the bí cảnh: (the thuật, whether it lands, the linh thạch), or null. */
+    fun castAttack(roll: (Int) -> Boolean): Triple<Int, Boolean, Long>? {
+        val id = best(PhapMon.K_CONG_KICH) ?: return null
+        val m = mastery(id)
+        val hit = hop(PhapMon.KIM) || roll(PhapMon.hitChance(m))
+        used(id)
+        val lt = if (hit) 10L * (m + 1) * (if (hop(PhapMon.HOA)) 2 else 1) else 0L
+        return Triple(id, hit, lt)
+    }
+
+    /** Thi triển a khống chế: the thuật and its thuần thục, or null. */
+    fun castControl(): Pair<Int, Int>? {
+        val id = best(PhapMon.K_KHONG_CHE) ?: return null
+        val m = mastery(id)
+        used(id)
+        return id to m
+    }
+
+    /** A độn thuật carried, cast to slip away in the bí cảnh. */
+    fun castEscape(): Int? {
+        val id = best(PhapMon.K_DON) ?: return null
+        used(id)
+        return id
+    }
+
+    private fun castOne(id: Int): Boolean {
+        if (!ready(id)) return false
+        used(id)
+        return true
+    }
+
+    fun castThunder() = castOne(PhapMon.T_LOI_PHAT)
+    fun castHeal() = castOne(PhapMon.T_HOI_XUAN)
+    fun castCalm() = castOne(PhapMon.T_THANH_TAM_CHU)
+    fun castEye() = castOne(PhapMon.T_THIEN_NHAN)
+
+    /** Days missed that a kiếp under way forgives, by the phòng ngự thuật pháp (and Vạn Mộc Hồi Xuân). */
+    fun trialSpare(): Int = readyKind(PhapMon.K_PHONG_NGU).map { if (mastery(it) >= 3) 2 else 1 }.sum() + (if (hop(PhapMon.MOC)) 1 else 0)
 
     fun onTrialStart() {
-        shields = (if (on(PhapMon.T_THIEN_NHAN)) (if (mastery(PhapMon.T_THIEN_NHAN) >= 3) 2 else 1) else 0) +
-            (if (on(PhapMon.T_THAN_KIEM)) 1 else 0)
+        shields = (if (ready(PhapMon.T_THIEN_NHAN)) (if (mastery(PhapMon.T_THIEN_NHAN) >= 3) 2 else 1) else 0) +
+            (if (ready(PhapMon.T_THAN_KIEM)) 1 else 0) + (if (hop(PhapMon.THUY)) 1 else 0)
     }
 
     fun onTrialEnd() {
-        onKind(PhapMon.K_PHONG_NGU).forEach { used(it) }
+        readyKind(PhapMon.K_PHONG_NGU).forEach { used(it) }
         shields = 0
     }
 
@@ -739,9 +829,11 @@ object DaoPhap {
     fun block(): Boolean {
         if (shields <= 0) return false
         shields--
-        val id = if (on(PhapMon.T_THIEN_NHAN)) PhapMon.T_THIEN_NHAN else PhapMon.T_THAN_KIEM
-        used(id)
-        Store.note("${THUAT_PHAP[id].name} chặn được tâm ma")
+        val id = listOf(PhapMon.T_THIEN_NHAN, PhapMon.T_THAN_KIEM).firstOrNull { on(it) }
+        if (id != null) {
+            used(id)
+            Store.note("${THUAT_PHAP[id].name} chặn được tâm ma")
+        } else Store.note("Thủy Kính Lưu Quang chặn được tâm ma")
         return true
     }
 
@@ -750,14 +842,14 @@ object DaoPhap {
         if (!on(PhapMon.T_LIEM_TUC)) return false
         if (liemTucDay != today()) {
             liemTucDay = today()
-            used(PhapMon.T_LIEM_TUC)
+            used(PhapMon.T_LIEM_TUC, cast = false)
         }
         return true
     }
 
     fun phapTuong(): Int = if (on(PhapMon.T_PHAP_TUONG)) 5 + mastery(PhapMon.T_PHAP_TUONG) else 0
     fun onRoll() {
-        if (on(PhapMon.T_PHAP_TUONG)) used(PhapMon.T_PHAP_TUONG)
+        if (on(PhapMon.T_PHAP_TUONG)) used(PhapMon.T_PHAP_TUONG, cast = false)
     }
 
     /** What a failed breakthrough costs once the độn thuật and the công pháp have done their part. */
@@ -765,29 +857,49 @@ object DaoPhap {
 
     fun soften(kind: Int): Fall {
         val f = Fall(kind, 50, 5, (if (effect(PhapMon.E_HOI_KHI)) 1 else 2) + (if (flaw(PhapMon.F_HOI_KHI)) 1 else 0), 10)
-        if (f.kind == TuLuyen.TAU_HOA && on(PhapMon.T_HUYET_DON)) {
+        if (f.kind == TuLuyen.TAU_HOA && ready(PhapMon.T_HUYET_DON)) {
             f.kind = TuLuyen.KINH_MACH
             f.injuryDays = if (mastery(PhapMon.T_HUYET_DON) >= 2) 5 else 8
             used(PhapMon.T_HUYET_DON)
             f.saved.add("Huyết Độn thoát tẩu hỏa")
         }
-        if (f.kind != TuLuyen.TAU_HOA && on(PhapMon.T_THO_DON)) {
+        if (f.kind != TuLuyen.TAU_HOA && ready(PhapMon.T_THO_DON)) {
             f.lossDiv = 100
             f.injuryDays = minOf(f.injuryDays, if (mastery(PhapMon.T_THO_DON) >= 2) 2 else 3)
             used(PhapMon.T_THO_DON)
             f.saved.add("Thổ Độn")
         }
-        if (on(PhapMon.T_PHONG_DON)) {
+        if (f.kind != TuLuyen.TAU_HOA && f.lossDiv < 100 && ready(PhapMon.T_THUY_DON)) {
+            f.lossDiv = 100
+            used(PhapMon.T_THUY_DON)
+            f.saved.add("Thủy Độn")
+        }
+        if (f.kind != TuLuyen.TAU_HOA && f.injuryDays > 2 && ready(PhapMon.T_MOC_DON)) {
+            f.injuryDays = 2
+            used(PhapMon.T_MOC_DON)
+            f.saved.add("Mộc Độn")
+        }
+        if (hop(PhapMon.THO) && f.lossDiv < 100) {
+            f.lossDiv = 100
+            f.saved.add("Hậu Thổ Hộ Thân")
+        }
+        if (ready(PhapMon.T_PHONG_DON)) {
             f.restDays = minOf(f.restDays, if (mastery(PhapMon.T_PHONG_DON) >= 2) 0 else 1)
             used(PhapMon.T_PHONG_DON)
             f.saved.add("Phong Độn")
         }
-        if (on(PhapMon.T_THUAN_DI)) {
+        if (ready(PhapMon.T_THUAN_DI)) {
             f.restDays = 0
             used(PhapMon.T_THUAN_DI)
             f.saved.add("Thuấn Di")
         }
-        if (on(PhapMon.T_THAN_KIEM)) f.tamMa = 5
+        if (ready(PhapMon.T_BANG_VAN_LY)) {
+            f.tamMa = 0
+            used(PhapMon.T_BANG_VAN_LY)
+            f.saved.add("Băng Phong Vạn Lý")
+        } else if (on(PhapMon.T_THAN_KIEM)) {
+            f.tamMa = 5
+        }
         return f
     }
 
@@ -929,12 +1041,12 @@ object DaoPhap {
         put("tam", JSONObject().apply { tam.forEach { (id, n) -> put(id.toString(), n) } })
         put("tamOn", JSONArray().apply { tamOn.forEach { put(it) } }); put("bangTam", bangTamMonth)
         put("tamFrac", JSONObject().apply { tamFrac.forEach { (id, n) -> put(id.toString(), n) } }); put("tamDay", tamDay); put("tamSittings", tamSittings)
-        put("thuat", JSONObject().apply { thuat.forEach { (id, t) -> put(id.toString(), JSONArray().put(t.learned).put(t.uses)) } })
+        put("thuat", JSONObject().apply { thuat.forEach { (id, t) -> put(id.toString(), JSONArray().put(t.learned).put(t.uses).put(t.sits).put(t.cool)) } })
         put("thuatOn", JSONArray().apply { thuatOn.forEach { put(it) } }); put("shields", shields); put("liemTuc", liemTucDay)
         put("offerWeek", offerWeek)
         put("offers", JSONArray().apply { offers.forEach { put(JSONArray().put(it.first).put(it.second)) } })
         put("scrolls", scrolls); put("gifted", gifted)
-        put("phu", phu); put("xung", xung); put("xungCost", xungCost); put("wayWords", wayWords); put("lastXung", lastXung)
+        put("phu", phu); put("xung", xung); put("xungCost", xungCost); put("wayWords", wayWords); put("lastXung", lastXung); put("thuatDay", thuatDay)
         put("inherited", JSONArray().apply { inherited.forEach { put(it) } })
     }
 
@@ -964,15 +1076,15 @@ object DaoPhap {
                 val id = k.toInt()
                 if (id !in THUAT_PHAP.indices) continue
                 val a = m.getJSONArray(k)
-                thuat[id] = Thuat(a.optBoolean(0), a.optInt(1))
+                thuat[id] = Thuat(a.optBoolean(0), a.optInt(1), a.optInt(2), a.optInt(3))
             }
         }
-        o.optJSONArray("thuatOn")?.let { a -> for (i in 0 until a.length()) a.getInt(i).takeIf { it in thuat }?.let { thuatOn.add(it) } }
+        o.optJSONArray("thuatOn")?.let { a -> for (i in 0 until a.length()) a.getInt(i).takeIf { it in thuat && it !in thuatOn }?.let { thuatOn.add(it) } }
         shields = o.optInt("shields"); liemTucDay = o.optLong("liemTuc", -1); offerWeek = o.optLong("offerWeek", -1)
         o.optJSONArray("offers")?.let { a -> for (i in 0 until a.length()) a.getJSONArray(i).let { offers.add(it.getInt(0) to it.getInt(1)) } }
         scrolls = o.optInt("scrolls"); gifted = o.optInt("gifted")
         phu = o.optInt("phu", -1).takeIf { it in cong } ?: -1
-        xung = o.optInt("xung"); xungCost = o.optInt("xungCost"); wayWords = o.optLong("wayWords"); lastXung = o.optString("lastXung")
+        xung = o.optInt("xung"); xungCost = o.optInt("xungCost"); wayWords = o.optLong("wayWords"); lastXung = o.optString("lastXung"); thuatDay = o.optLong("thuatDay", -1)
         o.optJSONArray("inherited")?.let { a -> for (i in 0 until a.length()) inherited.add(a.getInt(i)) }
     }
 }

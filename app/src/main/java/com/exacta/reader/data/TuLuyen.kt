@@ -368,6 +368,11 @@ object TuLuyen {
     /** Tâm ma rises by `n`, less with Thanh Tâm Quyết and a công pháp that calms. */
     fun stir(n: Int) {
         tamMa = (tamMa + (n * DaoPhap.stirPercent() * DaoLo.stirPercent() / 100 * LinhGioi.stirPercent() / 100 * TranPhap.stirPercent() / 100 + 50) / 100).coerceAtMost(100)
+        // 3.3 Thanh Tâm Chú: past 60 it is chanted by itself.
+        if (tamMa > 60 && DaoPhap.castCalm()) {
+            tamMa -= 15
+            Store.note("Thanh Tâm Chú tự niệm: tâm ma −15")
+        }
     }
 
     /** Áp chế: 5% a tenth of the realm, 20% at most. */
@@ -719,6 +724,7 @@ object TuLuyen {
             DaoLo.onLongSitting()
         }
         DaoPhap.onTamSeconds(book, before, session)
+        DaoPhap.onThuatSeconds(before, session)
         if (before < VONG_NGA_SITTING && session >= VONG_NGA_SITTING && DaoPhap.tamWorks(PhapMon.TP_VONG_NGA)) {
             // Vong Ngã Chân Quyết: a sitting of 90 minutes counts twice for thể phách and tâm cảnh.
             dayLong[d] = (dayLong[d] ?: 0) + 1

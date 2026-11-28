@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.2.1.apk`](dist/Van-Quyen-Tien-Do-3.2.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.3.apk`](dist/Van-Quyen-Tien-Do-3.3.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,33 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.3 · Thần Thông Quảng Đại
+
+- **36 thuật pháp, sáu loại**: công kích 9, phòng ngự 7, độn thuật 5, phụ trợ 4, thần thông 5, và loại mới **khống chế** 6
+  (Khốn Long Tác, Đằng La Triền, Băng Phong Thuật, Định Thân Thuật, Lôi Võng Thuật, Mê Hồn Chú). 15 thuật cũ giữ nguyên.
+- **Thi triển**: thuật được dùng khi biến cố tới.
+  - Bí cảnh: thi triển công kích (trúng hay trượt theo thuần thục), khống chế trói yêu thú lấy thưởng chắc chắn, trấn áp chủ
+    bí cảnh rồi quyết chiến, độn thuật thoát thân.
+  - Kiếp: phòng ngự đỡ ngày lỡ, Thiên Nhãn và Thần Thức Hóa Kiếm chặn tâm ma.
+  - Đột phá hỏng: độn thuật bớt hậu quả.
+  - Thuật mới tự ra tay: Thanh Tâm Chú (tâm ma vượt 60 thì −15), Hồi Xuân Thuật (bị thương trong bí cảnh thì chữa ngay), Lôi
+    Phạt Thiên Uy (quyết chiến chắc thắng), Băng Phong Vạn Lý (đột phá hỏng tâm ma không tăng).
+- **Hồi chiêu tính bằng ngày đọc**, không phải ngày lịch: mỗi ngày đọc từ 10 phút bớt một ngày. Công kích 1 ngày, phụ trợ và
+  khống chế 2, phòng ngự và độn 3, thần thông 5 – 7. Thuật luôn có tác dụng (Liễm Tức, Pháp Tướng) không có hồi chiêu.
+- **Thuần thục** năm bậc theo điểm: mỗi lần dùng 3 điểm, mỗi buổi đọc 30 phút lúc đang mang 1 điểm (Tiểu Thành 9, Đại Thành 24,
+  Viên Mãn 45, Hóa Cảnh 75; save cũ giữ nguyên bậc). Mỗi bậc thuật trúng dễ hơn 10%, hai bậc hồi chiêu bớt một ngày.
+- **Hợp kích**: mang hai thuật cùng hành thì mở một hiệu ứng thứ ba. Kim chắc trúng, Mộc kiếp lỡ thêm một ngày, Thủy chặn thêm
+  một lần tâm ma, Hỏa gấp đôi linh thạch, Thổ đột phá hỏng không hụt linh lực, Lôi quyết chiến +15%, Băng khống chế thêm một
+  phần thưởng, Phong mọi thuật hồi chiêu nhanh một ngày.
+- **Bản mệnh thần thông**: mỗi loại trong 12 Kim Đan mở một thần thông riêng, có tác dụng như đặc hiệu công pháp (ví dụ Canh Kim
+  Kiếm Khí: đột phá +10%; Đại Nhật Chiếu Thế: linh thạch từ chữ +40%; Thanh Phong Ngự Không: bí cảnh tuần bớt một ngày).
+- **Ô mang thuật**: hai ở Luyện Khí, thêm một mỗi đại cảnh giới, tối đa sáu.
+- Tab Thuật pháp: trang đầu là các thuật đang mang (thuần thục, hồi chiêu), hợp kích và bản mệnh; các trang sau là thuật đã có,
+  chạm «Xem» để học, mang hay cất.
+- Sửa lỗi có từ 2.1: thuật đầu tiên nhận khi linh căn thức tỉnh bị mang hai lần (phòng ngự có thể bị tính đôi); save cũ được
+  dọn khi mở.
+- versionCode 330.
 
 ## Bản 3.2.1 · Bát Quái Khai Trận
 
@@ -407,6 +434,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, lối vận công, xung quan, chuyển tu, phụ tu |
   | 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, bốn phái, năm cảnh, vận chuyển theo lối đọc, xung khắc, ba ô |
   | 3.2.1 | Bát Quái Khai Trận | Khoáng thạch pixel 32 ô có màu, tĩnh thất tới 90 phút và tiềm tu 120, 18 trận pháp |
+  | 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, khống chế, thi triển, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

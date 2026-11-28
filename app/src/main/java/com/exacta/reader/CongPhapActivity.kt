@@ -517,58 +517,126 @@ class CongPhapActivity : TabActivity() {
 
     // --- Thuật pháp ----------------------------------------------------------------------------------
 
+    /** What a thuật does at its thuần thục now. */
     private fun thuatText(id: Int): String {
         val m = DaoPhap.mastery(id)
-        return when (id) {
-            PhapMon.T_HOA_DAN, PhapMon.T_NGU_KIEM, PhapMon.T_CHUONG_LOI, PhapMon.T_HAN_BANG -> "Qua bí cảnh tuần: thêm ${10 * (m + 1)} linh thạch"
-            PhapMon.T_KIM_CANG, PhapMon.T_THUY_MAC, PhapMon.T_MOC_GIAP -> "Kiếp đang độ (ngưng đan, lôi kiếp, thiên kiếp): lỡ ${if (m >= 3) 2 else 1} ngày vẫn không sao"
-            PhapMon.T_THO_DON -> "Đột phá hỏng: hụt khí chỉ mất 1%, kinh mạch chỉ ${if (m >= 2) 2 else 3} ngày"
-            PhapMon.T_PHONG_DON -> "Đột phá hỏng: hồi khí chỉ ${if (m >= 2) 0 else 1} ngày"
-            PhapMon.T_HUYET_DON -> "Đột phá hỏng: tẩu hỏa nhập ma thành kinh mạch tổn thương ${if (m >= 2) 5 else 8} ngày"
-            PhapMon.T_THIEN_NHAN -> "Lôi kiếp: chặn ${if (m >= 3) 2 else 1} lần tâm ma tấn công"
-            PhapMon.T_PHAP_TUONG -> "Tỉ lệ đột phá +${5 + m}%"
-            else -> PhapMon.THUAT_PHAP[id].text
+        val t = PhapMon.THUAT_PHAP[id]
+        return when {
+            id == PhapMon.T_THO_DON -> "Đột phá hỏng: hụt khí chỉ mất 1%, kinh mạch chỉ ${if (m >= 2) 2 else 3} ngày"
+            id == PhapMon.T_PHONG_DON -> "Đột phá hỏng: hồi khí chỉ ${if (m >= 2) 0 else 1} ngày"
+            id == PhapMon.T_HUYET_DON -> "Đột phá hỏng: tẩu hỏa nhập ma thành kinh mạch tổn thương ${if (m >= 2) 5 else 8} ngày"
+            id == PhapMon.T_THIEN_NHAN -> "Lôi kiếp: chặn ${if (m >= 3) 2 else 1} lần tâm ma; bí cảnh: nhìn thấu trận văn"
+            id == PhapMon.T_PHAP_TUONG -> "Tỉ lệ đột phá +${5 + m}%"
+            t.kind == PhapMon.K_CONG_KICH -> "Bí cảnh: diệt yêu thú, trúng ${if (DaoPhap.hop(PhapMon.KIM)) 100 else PhapMon.hitChance(m)}%, ${10 * (m + 1) * (if (DaoPhap.hop(PhapMon.HOA)) 2 else 1)} linh thạch"
+            t.kind == PhapMon.K_KHONG_CHE -> "Bí cảnh: trói yêu thú lấy thưởng; trấn áp chủ bí cảnh +${15 + 5 * m}%"
+            t.kind == PhapMon.K_PHONG_NGU -> "Kiếp đang độ: lỡ ${if (m >= 3) 2 else 1} ngày vẫn không sao"
+            else -> t.text
         }
     }
 
+    /** Ready, waiting, or always at work. */
+    private fun thuatState(id: Int): String {
+        val st = DaoPhap.thuat[id] ?: return ""
+        if (!st.learned) return "chưa học"
+        val cd = DaoPhap.cd(id)
+        return when {
+            cd == 0 -> "luôn có tác dụng"
+            st.cool > 0 -> "hồi chiêu còn ${st.cool} ngày đọc"
+            else -> "sẵn sàng · hồi chiêu $cd ngày đọc"
+        }
+    }
+
+    private fun thuatOwned() = DaoPhap.thuat.keys.sortedWith(compareBy<Int>({ !DaoPhap.on(it) }, { DaoPhap.thuat[it]?.learned != true }, { PhapMon.THUAT_PHAP[it].kind }, { it }))
+
     private fun thuatPhap(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
+        val list = thuatOwned()
+        val per = tamPer(k, a)
+        val pages = 1 + (list.size + per - 1) / per
+        if (page == 0) thuatSlotsPage(c, k, a, hits) else thuatList(c, k, a, list, page - 1, per, hits)
+        return pages
+    }
+
+    private fun thuatSlotsPage(c: Canvas, k: Ink, a: RectF, hits: Hits) {
         val u = k.u
         val small = k.small
+        val sl = k.lineH(small)
         val slots = DaoPhap.thuatSlots()
         var y = k.section(c, a.left, a.top, a.width(), "THUẬT PHÁP · MANG ${DaoPhap.thuatOn.size}/$slots Ô")
-        y = para(c, k, "Thuật pháp đang mang tự ra tay khi biến cố tới; mỗi lần dùng thêm thuần thục: Sơ Học, Tiểu Thành (3), Đại Thành (8), Viên Mãn (15), Hóa Cảnh (25). " +
-            "Hợp linh căn thì học không tốn ngộ tính. Thêm một ô mỗi đại cảnh giới.", a.left, y, a.width(), small, 3) + 12 * u
-        val list = DaoPhap.thuat.keys.sortedWith(compareBy<Int>({ !DaoPhap.on(it) }, { DaoPhap.thuat[it]?.learned != true }, { it }))
-        if (list.isEmpty()) {
-            para(c, k, "Chưa có thuật pháp. Linh căn thức tỉnh được truyền một thuật hợp chủ hành; ngọc giản rơi từ kỳ ngộ, bí cảnh tuần, Tàng Kinh Các.", a.left, y, a.width(), small, 3)
-            return 1
-        }
+        y = para(c, k, "Thuật đang mang được thi triển khi biến cố tới (bí cảnh, kiếp, đột phá hỏng), rồi chờ hồi chiêu tính bằng ngày đọc. " +
+            "Thuần thục lên theo lần dùng và buổi đọc 30 phút lúc đang mang. Thêm một ô mỗi đại cảnh giới.", a.left, y, a.width(), small, 3) + 12 * u
         val h = rowH(k)
-        val per = ((a.bottom - y) / (h + 10 * u)).toInt().coerceAtLeast(1)
-        for (id in list.drop(page * per).take(per)) {
+        val carried = DaoPhap.thuatOn.filter { DaoPhap.on(it) }
+        // Leave room for hợp kích and bản mệnh below.
+        val room = ((a.bottom - y - 6 * sl - 40 * u) / (h + 10 * u)).toInt().coerceAtLeast(1)
+        if (carried.isEmpty()) {
+            y = para(c, k, "Chưa mang thuật nào. Linh căn thức tỉnh được truyền một thuật hợp chủ hành; ngọc giản rơi từ kỳ ngộ, bí cảnh tuần, Tàng Kinh Các.", a.left, y, a.width(), small, 3) + 12 * u
+        }
+        for (id in carried.take(room)) {
             val t = PhapMon.THUAT_PHAP[id]
-            val st = DaoPhap.thuat[id] ?: continue
-            val on = DaoPhap.on(id)
-            val cost = DaoPhap.learnCost(id)
-            val line1 = "${PhapMon.attrName(t.attr)} · ${PhapMon.KINDS[t.kind]} · " +
-                if (st.learned) "${PhapMon.MASTERY[DaoPhap.mastery(id)]} (${st.uses} lần dùng)" else "chưa học"
-            val (btn, ok) = when {
-                !st.learned && !DaoPhap.canLearnRealm(id) -> "Nguyên Anh mới học" to false
-                !st.learned -> (if (cost == 0) "Học" else "Học · $cost ngộ") to DaoPhap.canLearn(id)
-                on -> "Cất" to true
-                DaoPhap.thuatOn.size < slots -> "Mang" to true
-                else -> "Hết ô" to false
-            }
-            row(c, k, RectF(a.left, y, a.right, y + h), t.name, if (on) "đang mang" else "", line1, thuatText(id), btn, ok, on, hits) {
-                when {
-                    !st.learned -> DaoPhap.learn(id)
-                    on -> DaoPhap.unequip(id)
-                    else -> DaoPhap.equip(id)
-                }
-            }
+            row(c, k, RectF(a.left, y, a.right, y + h), t.name, PhapMon.MASTERY[DaoPhap.mastery(id)],
+                "${PhapMon.attrName(t.attr)} · ${PhapMon.KINDS[t.kind]} · ${thuatState(id)}", thuatText(id), "Xem", true, true, hits) { thuatDialog(id) }
             y += h + 10 * u
         }
-        return (list.size + per - 1) / per
+        if (carried.size > room) {
+            y = para(c, k, "Và ${carried.size - room} thuật nữa ở trang sau.", a.left, y, a.width(), small, 1) + 8 * u
+        }
+        y += 4 * u
+        y = k.section(c, a.left, y, a.width(), "HỢP KÍCH · BẢN MỆNH THẦN THÔNG")
+        val notes = ArrayList<String>()
+        val hops = DaoPhap.hopActive()
+        if (hops.isEmpty()) notes.add("Mang hai thuật cùng hành thì mở hợp kích: Kim chắc trúng, Hỏa gấp đôi linh thạch, Thủy chặn thêm tâm ma, Phong hồi chiêu nhanh…")
+        else hops.forEach { notes.add("${it.name} (${PhapMon.attrName(it.attr)}): ${it.text}") }
+        val bm = DaoPhap.banMenh()
+        notes.add(if (bm != null) "Bản mệnh ${bm.name}: ${PhapMon.effectText(bm.effect, bm.level)}"
+            else "Bản mệnh thần thông mở khi kết Kim Đan: mỗi loại Kim Đan một thần thông riêng.")
+        for (n in notes) {
+            if (y + sl > a.bottom) break
+            k.diamond(c, a.left + 6 * u, y + sl * 0.5f, 4 * u)
+            y = para(c, k, n, a.left + 20 * u, y, a.width() - 20 * u, small, 2) + 6 * u
+        }
+    }
+
+    private fun thuatList(c: Canvas, k: Ink, a: RectF, list: List<Int>, page: Int, per: Int, hits: Hits) {
+        val u = k.u
+        var y = k.section(c, a.left, a.top, a.width(), "THUẬT PHÁP ĐÃ CÓ · ${list.size}/${PhapMon.THUAT_PHAP.size}")
+        val h = rowH(k)
+        for (id in list.drop(page * per).take(per)) {
+            val t = PhapMon.THUAT_PHAP[id]
+            val on = DaoPhap.on(id)
+            row(c, k, RectF(a.left, y, a.right, y + h), t.name, if (on) "đang mang" else PhapMon.KINDS[t.kind],
+                "${PhapMon.attrName(t.attr)} · ${if (DaoPhap.thuat[id]?.learned == true) PhapMon.MASTERY[DaoPhap.mastery(id)] + " · " else ""}${thuatState(id)}",
+                thuatText(id), "Xem", true, on, hits) { thuatDialog(id) }
+            y += h + 10 * u
+        }
+    }
+
+    /** A thuật in full: learn it, carry it, put it away. */
+    private fun thuatDialog(id: Int) {
+        val t = PhapMon.THUAT_PHAP[id]
+        val st = DaoPhap.thuat[id] ?: return
+        val on = DaoPhap.on(id)
+        val m = DaoPhap.mastery(id)
+        val next = if (m < 4) " · ${PhapMon.MASTERY[m + 1]} ở ${PhapMon.MASTERY_AT[m + 1]} điểm" else ""
+        val hop = PhapMon.HOP_KICH.firstOrNull { it.attr == t.attr }
+        val msg = buildString {
+            append("${PhapMon.attrName(t.attr)} · ${PhapMon.KINDS[t.kind]}")
+            if (st.learned) append(" · ${PhapMon.MASTERY[m]} (${DaoPhap.points(id)} điểm$next)")
+            append("\n\n${thuatText(id)}.")
+            append("\n\n${thuatState(id).replaceFirstChar { it.uppercase() }}.")
+            append("\n\nThuần thục: mỗi lần dùng 3 điểm, mỗi buổi đọc 30 phút lúc đang mang 1 điểm. Mỗi bậc thuật trúng dễ hơn, hai bậc hồi chiêu bớt một ngày.")
+            if (hop != null) append("\n\nHợp kích ${hop.name}: mang thêm một thuật ${PhapMon.attrName(t.attr)} nữa thì ${hop.text}.")
+            if (!st.learned) {
+                val cost = DaoPhap.learnCost(id)
+                append("\n\n" + if (!DaoPhap.canLearnRealm(id)) "Thần thông: từ Nguyên Anh mới học được." else if (cost == 0) "Hợp linh căn: học không tốn ngộ tính." else "Học tốn $cost ngộ tính (đang có ${DaoPhap.ngo}).")
+            } else if (!on && DaoPhap.thuatOn.size >= DaoPhap.thuatSlots()) append("\n\nHết ô: cất một thuật trước.")
+        }
+        val b = AlertDialog.Builder(this).setTitle(t.name).setMessage(msg)
+        when {
+            !st.learned -> if (DaoPhap.canLearn(id)) b.setPositiveButton("Học") { _, _ -> if (DaoPhap.learn(id)) toast("Học được ${t.name}"); refresh() }
+            on -> b.setPositiveButton("Cất") { _, _ -> DaoPhap.unequip(id); refresh() }
+            DaoPhap.thuatOn.size < DaoPhap.thuatSlots() -> b.setPositiveButton("Mang") { _, _ -> DaoPhap.equip(id); refresh() }
+        }
+        b.setNegativeButton("Đóng", null).show()
     }
 
     // --- Tàng Kinh Các -------------------------------------------------------------------------------

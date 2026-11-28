@@ -92,6 +92,9 @@ pháp dùng chung loại đặc hiệu của công pháp và cộng dồn; Ma đ
 - **Bản mệnh thần thông**: mỗi loại trong 12 Kim Đan mở một thần thông riêng, nối với hệ Kim Đan của bản 2.4.
 - **Ô mang thuật**: 2 ở Luyện Khí, thêm một mỗi đại cảnh giới, tối đa 6.
 
+*Bản 3.3 làm khác*: thuần thục tính điểm (lần dùng 3, buổi đọc 1) để save cũ giữ bậc; hợp kích theo hành chung cho mọi cặp
+(tám hợp kích), không theo từng cặp thuật; bản mệnh thần thông là một đặc hiệu cấp 1 – 2 cộng dồn với công pháp, không chiếm ô.
+
 ## D. Tàng Kinh Các: chín tầng lầu
 
 - **Tầng lầu**:
@@ -130,7 +133,7 @@ Làm loạt này **trước** năm giới còn lại của phần hai: công ph�
 |---|---|---|
 | 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, khuyết điểm, lối vận công, xung quan, chuyển tu, phụ tu (**đã làm**) |
 | 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, 4 trường phái, 5 cảnh, vận chuyển theo lối đọc, xung khắc, 3 ô (**đã làm**) |
-| 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, thi triển trong bí cảnh và kiếp, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông |
+| 3.3 | Thần Thông Quảng Đại | 36 thuật pháp, thi triển trong bí cảnh và kiếp, hồi chiêu theo ngày đọc, hợp kích, bản mệnh thần thông (**đã làm**) |
 | 3.4 | Tàng Kinh Cửu Lâu | Chín tầng lầu, kinh các tông môn theo chức, tham ngộ bằng chữ đọc, tàn quyển, đồ phổ, tự sáng công pháp |
 | 3.5 – 3.9 | | Năm giới còn lại của phần hai, như bản thiết kế phần hai |
 | 4.0 | | Quy Nhất |

@@ -472,6 +472,14 @@ class ScreensTest {
         val a = Robolectric.buildActivity(BiCanhActivity::class.java).setup().get()
         idle()
         shoot(root(a), "bicanh_fork")
+        // 3.3: the master of the bí cảnh, met with a khống chế carried.
+        DaoPhap.gainThuat(PhapMon.T_KHON_LONG); DaoPhap.thuat[PhapMon.T_KHON_LONG]!!.learned = true
+        DaoPhap.thuatOn.clear(); DaoPhap.thuatOn.add(PhapMon.T_KHON_LONG)
+        com.exacta.reader.data.BiCanh.nodes.add(com.exacta.reader.data.BiCanh.CHU)
+        com.exacta.reader.data.BiCanh.resolved = com.exacta.reader.data.BiCanh.nodes.size - 1
+        a.refresh()
+        idle()
+        shoot(root(a), "bicanh_master")
         com.exacta.reader.data.TongMon.reset()
         com.exacta.reader.data.TongMon.started = true
         val t = Robolectric.buildActivity(TongMonActivity::class.java).setup().get()
@@ -520,6 +528,24 @@ class ScreensTest {
         a.refresh()
         idle()
         shoot(root(a), "congphap_2_p2")
+        // 3.3: thuật carried, one cooling, Phong hợp kích, a bản mệnh thần thông.
+        listOf(PhapMon.T_KHON_LONG, PhapMon.T_LIET_PHONG, PhapMon.T_PHONG_DON, PhapMon.T_LOI_PHAT).forEach {
+            DaoPhap.gainThuat(it); DaoPhap.thuat[it]!!.learned = true; DaoPhap.equip(it)
+        }
+        DaoPhap.thuat[PhapMon.T_KHON_LONG]!!.cool = 2
+        DaoPhap.thuat[PhapMon.T_LIET_PHONG]!!.uses = 9
+        val danBefore = com.exacta.reader.data.DaoLo.dan
+        com.exacta.reader.data.DaoLo.dan = 5
+        a.selectTab(3)
+        a.page = 0
+        a.refresh()
+        idle()
+        shoot(root(a), "congphap_3_thuat")
+        a.page = 1
+        a.refresh()
+        idle()
+        shoot(root(a), "congphap_3_thuat_p2")
+        com.exacta.reader.data.DaoLo.dan = danBefore
         Store.realmCap = 2
         // Before the awakening.
         DaoPhap.migrate()

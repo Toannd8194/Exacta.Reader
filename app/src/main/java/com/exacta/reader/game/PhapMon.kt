@@ -392,14 +392,26 @@ object PhapMon {
         return (pa == PHAI_MA && (pb == PHAI_PHAT || pb == PHAI_NHO)) || (pb == PHAI_MA && (pa == PHAI_PHAT || pa == PHAI_NHO))
     }
 
-    // --- Thuật pháp --------------------------------------------------------------------------------
+    // --- Thuật pháp (3.3 Thần Thông Quảng Đại) ----------------------------------------------------
 
     const val K_CONG_KICH = 0
     const val K_PHONG_NGU = 1
     const val K_DON = 2
     const val K_PHU_TRO = 3
     const val K_THAN_THONG = 4
-    val KINDS = arrayOf("Công kích", "Phòng ngự", "Độn thuật", "Phụ trợ", "Thần thông")
+    const val K_KHONG_CHE = 5
+    val KINDS = arrayOf("Công kích", "Phòng ngự", "Độn thuật", "Phụ trợ", "Thần thông", "Khống chế")
+    /** What each kind does when it is cast, in a line. */
+    val KIND_TEXT = arrayOf(
+        "Bí cảnh: diệt yêu thú, đem về linh thạch; quyết chiến chủ bí cảnh dễ hơn",
+        "Kiếp đang độ: lỡ một ngày vẫn không sao (Viên Mãn hai ngày); bí cảnh: che chở khi gặp nguy",
+        "Đột phá hỏng: bớt hậu quả; bí cảnh: thoát thân, lấy bảo rồi rút",
+        "Tự ra tay khi biến cố tới",
+        "Thần thông: mạnh, hồi chiêu lâu; từ Nguyên Anh",
+        "Bí cảnh: trói yêu thú lấy thưởng chắc chắn; trấn áp chủ bí cảnh rồi quyết chiến",
+    )
+    /** Hồi chiêu, in days of reading, by kind (a thuật may set its own). */
+    val KIND_CD = intArrayOf(1, 3, 3, 2, 6, 2)
 
     const val T_HOA_DAN = 0
     const val T_NGU_KIEM = 1
@@ -416,35 +428,116 @@ object PhapMon {
     const val T_PHAP_TUONG = 12
     const val T_THAN_KIEM = 13
     const val T_THUAN_DI = 14
+    const val T_THANH_MOC_CHAM = 15
+    const val T_HUYEN_THUY_TIEN = 16
+    const val T_PHI_SA = 17
+    const val T_LIET_PHONG = 18
+    const val T_KIM_QUANG = 19
+    const val T_KHON_LONG = 20
+    const val T_DANG_LA = 21
+    const val T_BANG_PHONG = 22
+    const val T_DINH_THAN = 23
+    const val T_LOI_VONG = 24
+    const val T_ME_HON = 25
+    const val T_HOA_THUAN = 26
+    const val T_THO_TUONG = 27
+    const val T_BANG_GIAP = 28
+    const val T_LOI_TRAO = 29
+    const val T_THUY_DON = 30
+    const val T_MOC_DON = 31
+    const val T_THANH_TAM_CHU = 32
+    const val T_HOI_XUAN = 33
+    const val T_LOI_PHAT = 34
+    const val T_BANG_VAN_LY = 35
 
-    class ThuatPhap(val name: String, val attr: Int, val kind: Int, val text: String)
+    /** A thuật: its hành, its kind, what it does, its hồi chiêu (0: always at work, never cast). */
+    class ThuatPhap(val name: String, val attr: Int, val kind: Int, val text: String, cd: Int = -1) {
+        val cd = if (cd >= 0) cd else KIND_CD[kind]
+    }
 
+    /** Ids 0 – 14 are the thuật pháp of 2.1, kept for old saves; 15 – 35 are new in 3.3. */
     val THUAT_PHAP = listOf(
-        ThuatPhap("Hỏa Đạn Thuật", HOA, K_CONG_KICH, "Qua bí cảnh tuần: thêm linh thạch"),
-        ThuatPhap("Ngự Kiếm Thuật", KIM, K_CONG_KICH, "Qua bí cảnh tuần: thêm linh thạch"),
-        ThuatPhap("Chưởng Tâm Lôi", LOI, K_CONG_KICH, "Qua bí cảnh tuần: thêm linh thạch"),
-        ThuatPhap("Hàn Băng Tiễn", BANG, K_CONG_KICH, "Qua bí cảnh tuần: thêm linh thạch"),
+        ThuatPhap("Hỏa Đạn Thuật", HOA, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
+        ThuatPhap("Ngự Kiếm Thuật", KIM, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
+        ThuatPhap("Chưởng Tâm Lôi", LOI, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
+        ThuatPhap("Hàn Băng Tiễn", BANG, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
         ThuatPhap("Kim Cang Tráo", KIM, K_PHONG_NGU, "Kiếp đang độ: lỡ một ngày vẫn không sao"),
         ThuatPhap("Thủy Mạc Thuật", THUY, K_PHONG_NGU, "Kiếp đang độ: lỡ một ngày vẫn không sao"),
         ThuatPhap("Mộc Giáp Thuật", MOC, K_PHONG_NGU, "Kiếp đang độ: lỡ một ngày vẫn không sao"),
         ThuatPhap("Thổ Độn", THO, K_DON, "Đột phá hỏng: hụt khí chỉ mất 1%, kinh mạch chỉ 3 ngày"),
         ThuatPhap("Phong Độn", PHONG, K_DON, "Đột phá hỏng: hồi khí chỉ 1 ngày"),
         ThuatPhap("Huyết Độn", HOA, K_DON, "Đột phá hỏng: tẩu hỏa nhập ma thành kinh mạch tổn thương"),
-        ThuatPhap("Thiên Nhãn Thuật", THUY, K_PHU_TRO, "Tâm ma kiếp: chặn một lần tâm ma tấn công"),
-        ThuatPhap("Liễm Tức Thuật", MOC, K_PHU_TRO, "Nhảy chương quá 3 lần một ngày không sinh tâm ma"),
-        ThuatPhap("Pháp Tướng Thiên Địa", THO, K_THAN_THONG, "Tỉ lệ đột phá +5%, thêm 1% mỗi bậc thuần thục"),
-        ThuatPhap("Thần Thức Hóa Kiếm", KIM, K_THAN_THONG, "Chặn một lần tâm ma tấn công; đột phá hỏng tâm ma chỉ +5"),
+        ThuatPhap("Thiên Nhãn Thuật", THUY, K_PHU_TRO, "Tâm ma kiếp: chặn một lần tâm ma tấn công; bí cảnh: nhìn thấu trận văn"),
+        ThuatPhap("Liễm Tức Thuật", MOC, K_PHU_TRO, "Nhảy chương quá 3 lần một ngày không sinh tâm ma", 0),
+        ThuatPhap("Pháp Tướng Thiên Địa", THO, K_THAN_THONG, "Tỉ lệ đột phá +5%, thêm 1% mỗi bậc thuần thục", 0),
+        ThuatPhap("Thần Thức Hóa Kiếm", KIM, K_THAN_THONG, "Tâm ma kiếp: chặn một lần tâm ma tấn công; đột phá hỏng tâm ma chỉ +5"),
         ThuatPhap("Thuấn Di", PHONG, K_THAN_THONG, "Đột phá hỏng không phải hồi khí"),
+        ThuatPhap("Thanh Mộc Châm", MOC, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
+        ThuatPhap("Huyền Thủy Tiễn", THUY, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
+        ThuatPhap("Phi Sa Tẩu Thạch", THO, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
+        ThuatPhap("Liệt Phong Nhận", PHONG, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch"),
+        ThuatPhap("Kim Quang Kiếm Khí", KIM, K_CONG_KICH, "Bí cảnh: diệt yêu thú, đem về linh thạch", 2),
+        ThuatPhap("Khốn Long Tác", KIM, K_KHONG_CHE, "Bí cảnh: trói yêu thú, trấn áp chủ bí cảnh"),
+        ThuatPhap("Đằng La Triền", MOC, K_KHONG_CHE, "Bí cảnh: trói yêu thú, trấn áp chủ bí cảnh"),
+        ThuatPhap("Băng Phong Thuật", BANG, K_KHONG_CHE, "Bí cảnh: trói yêu thú, trấn áp chủ bí cảnh"),
+        ThuatPhap("Định Thân Thuật", THO, K_KHONG_CHE, "Bí cảnh: trói yêu thú, trấn áp chủ bí cảnh"),
+        ThuatPhap("Lôi Võng Thuật", LOI, K_KHONG_CHE, "Bí cảnh: trói yêu thú, trấn áp chủ bí cảnh"),
+        ThuatPhap("Mê Hồn Chú", THUY, K_KHONG_CHE, "Bí cảnh: trói yêu thú, trấn áp chủ bí cảnh", 3),
+        ThuatPhap("Hỏa Thuẫn Thuật", HOA, K_PHONG_NGU, "Kiếp đang độ: lỡ một ngày vẫn không sao"),
+        ThuatPhap("Thổ Tường Thuật", THO, K_PHONG_NGU, "Kiếp đang độ: lỡ một ngày vẫn không sao"),
+        ThuatPhap("Băng Giáp Thuật", BANG, K_PHONG_NGU, "Kiếp đang độ: lỡ một ngày vẫn không sao"),
+        ThuatPhap("Lôi Quang Tráo", LOI, K_PHONG_NGU, "Kiếp đang độ: lỡ một ngày vẫn không sao"),
+        ThuatPhap("Thủy Độn", THUY, K_DON, "Đột phá hỏng: hụt khí chỉ mất 1%"),
+        ThuatPhap("Mộc Độn", MOC, K_DON, "Đột phá hỏng: kinh mạch chỉ tổn thương 2 ngày"),
+        ThuatPhap("Thanh Tâm Chú", THUY, K_PHU_TRO, "Tâm ma vượt 60: tự niệm, tâm ma −15", 3),
+        ThuatPhap("Hồi Xuân Thuật", MOC, K_PHU_TRO, "Bí cảnh: bị thương thì chữa lành ngay một vết", 3),
+        ThuatPhap("Lôi Phạt Thiên Uy", LOI, K_THAN_THONG, "Bí cảnh: quyết chiến chủ bí cảnh chắc thắng", 7),
+        ThuatPhap("Băng Phong Vạn Lý", BANG, K_THAN_THONG, "Đột phá hỏng: tâm ma không tăng", 5),
     )
     /** The first thuật pháp a hành learns. */
     val FIRST_THUAT = intArrayOf(T_NGU_KIEM, T_MOC_GIAP, T_THUY_MAC, T_HOA_DAN, T_THO_DON)
     /** A công pháp of Hoàng phẩm for each hành. */
     val FIRST_CONG = intArrayOf(1, 2, 3, 4, 5)
-    fun thuatPrice(i: Int) = if (THUAT_PHAP[i].kind == K_THAN_THONG) 400L else 80L
+    fun thuatPrice(i: Int) = when (THUAT_PHAP[i].kind) { K_THAN_THONG -> 400L; K_KHONG_CHE -> 120L; else -> 80L }
 
+    /** Thuần thục: three points a use, one for each sitting of 30 minutes read while the thuật is carried. */
     val MASTERY = arrayOf("Sơ Học", "Tiểu Thành", "Đại Thành", "Viên Mãn", "Hóa Cảnh")
-    val MASTERY_AT = intArrayOf(0, 3, 8, 15, 25)
-    fun mastery(uses: Int) = MASTERY_AT.indexOfLast { uses >= it }
+    val MASTERY_AT = intArrayOf(0, 9, 24, 45, 75)
+    const val USE_POINTS = 3
+    fun mastery(points: Int) = MASTERY_AT.indexOfLast { points >= it }
+    /** What a bậc gives: a công kích or khống chế lands this often (%), and the hồi chiêu shortens. */
+    fun hitChance(m: Int) = 60 + 10 * m
+    fun cdLess(m: Int) = m / 2
+
+    /** Hợp kích: two thuật of one hành carried together open a third effect. */
+    class HopKich(val attr: Int, val name: String, val text: String)
+    val HOP_KICH = listOf(
+        HopKich(KIM, "Kim Qua Thiết Mã", "thuật công kích chắc trúng"),
+        HopKich(MOC, "Vạn Mộc Hồi Xuân", "kiếp đang độ: lỡ thêm một ngày vẫn không sao"),
+        HopKich(THUY, "Thủy Kính Lưu Quang", "tâm ma kiếp: chặn thêm một lần"),
+        HopKich(HOA, "Hỏa Vực", "thuật công kích đem về gấp đôi linh thạch"),
+        HopKich(THO, "Hậu Thổ Hộ Thân", "đột phá hỏng không hụt linh lực"),
+        HopKich(LOI, "Lôi Đình Vạn Quân", "quyết chiến chủ bí cảnh +15%"),
+        HopKich(BANG, "Băng Phong Thiên Lý", "thuật khống chế được thêm một phần thưởng"),
+        HopKich(PHONG, "Phong Hành Vạn Lý", "mọi thuật hồi chiêu nhanh một ngày"),
+    )
+
+    /** Bản mệnh thần thông: each of the twelve Kim Đan opens its own, an effect of the công pháp kinds. */
+    class BanMenh(val name: String, val effect: Int, val level: Int)
+    val BAN_MENH = listOf(
+        BanMenh("Canh Kim Kiếm Khí", E_DOT_PHA, 2),
+        BanMenh("Ất Mộc Trường Sinh", E_CAN_CO, 2),
+        BanMenh("Nhâm Thủy Tịnh Tâm", E_TINH_TAM, 1),
+        BanMenh("Bính Hỏa Phần Thiên", E_LO_LUYEN, 2),
+        BanMenh("Mậu Thổ Trấn Nhạc", E_KIEP_NGAY, 1),
+        BanMenh("Tử Lôi Thiên Phạt", E_DO_KIEP, 2),
+        BanMenh("Huyền Băng Phong Ấn", E_TAM_CANH, 2),
+        BanMenh("Thanh Phong Ngự Không", E_BI_CANH, 1),
+        BanMenh("Đại Nhật Chiếu Thế", E_LINH_THACH, 2),
+        BanMenh("Thái Âm Hoán Nguyệt", E_THAN_THUC, 2),
+        BanMenh("Khô Mộc Phùng Xuân", E_HOI_KHI, 1),
+        BanMenh("Tịch Diệt Chỉ", E_NUT_THAT, 2),
+    )
 
     // --- Ngọc giản -------------------------------------------------------------------------------
 

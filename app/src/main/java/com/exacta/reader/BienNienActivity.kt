@@ -152,6 +152,8 @@ class BienNienActivity : TabActivity() {
                 "18 tâm pháp trong bốn phái; năm cảnh từ Nhập môn tới Hóa cảnh; vận chuyển theo lối đọc riêng; Ma đạo xung khắc Phật, Nho; ba ô tâm pháp; khoáng thạch và linh thạch vẽ lại."),
             Era("3.2.1", "Bát Quái Khai Trận",
                 "Khoáng thạch vẽ lại thành pixel 32 ô có màu: đá góc cạnh, tinh thiết bám đất, hồng ngọc ẩn trong đá, thiên thạch lửa, Âm Dương có khí tức, Hỗn Độn nửa thật nửa ảo; bế quan tới 90 phút, tiềm tu 120; 18 trận pháp."),
+            Era("3.3", "Thần Thông Quảng Đại",
+                "36 thuật pháp sáu loại, thêm khống chế; thi triển trong bí cảnh, kiếp, đột phá hỏng; hồi chiêu tính bằng ngày đọc; thuần thục theo lần dùng và buổi đọc; tám hợp kích; mười hai bản mệnh thần thông."),
         )
     }
 }
