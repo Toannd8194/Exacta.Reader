@@ -53,6 +53,7 @@ class TongMonTest {
         com.exacta.reader.data.LinhGioi.reset()
         com.exacta.reader.data.DoKiep.reset()
         com.exacta.reader.data.TienDinh.reset()
+        com.exacta.reader.data.TeLuyen.reset(); com.exacta.reader.data.TranPhap.reset()
         BiCanh.started = true
         BiCanh.rng = roll(0)
     }

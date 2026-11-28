@@ -55,6 +55,7 @@ class DoKiepTest {
         LinhGioi.reset()
         DoKiep.reset()
         com.exacta.reader.data.TienDinh.reset()
+        com.exacta.reader.data.TeLuyen.reset(); com.exacta.reader.data.TranPhap.reset()
         DoKiep.started = true
         DoKiep.lifeStart = today
         DoKiep.rng = roll(0)

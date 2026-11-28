@@ -363,7 +363,7 @@ object TuLuyen {
 
     /** Tâm ma rises by `n`, less with Thanh Tâm Quyết and a công pháp that calms. */
     fun stir(n: Int) {
-        tamMa = (tamMa + (n * DaoPhap.stirPercent() * DaoLo.stirPercent() / 100 * LinhGioi.stirPercent() / 100 + 50) / 100).coerceAtMost(100)
+        tamMa = (tamMa + (n * DaoPhap.stirPercent() * DaoLo.stirPercent() / 100 * LinhGioi.stirPercent() / 100 * TranPhap.stirPercent() / 100 + 50) / 100).coerceAtMost(100)
     }
 
     /** Áp chế: 5% a tenth of the realm, 20% at most. */
@@ -467,6 +467,7 @@ object TuLuyen {
         if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
         list.addAll(DaoLo.breakParts(g))
         list.addAll(LinhGioi.breakParts(g))
+        if (TeLuyen.breakPart() > 0) list.add("${TeLuyen.GRADES[TeLuyen.bestGrade()]} cấm chế tầng ${TeLuyen.bestLevel()}" to TeLuyen.breakPart())
         DoKiep.lifeGamble()?.let { list.add(it) }
         if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])
         if (DongPhu.danDoc >= 4) list.add("Đan độc ${DongPhu.danDoc}, chia bốn" to -(DongPhu.danDoc / 4))

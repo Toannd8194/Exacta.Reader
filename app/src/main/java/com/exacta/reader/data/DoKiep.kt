@@ -159,6 +159,8 @@ object DoKiep {
             val body = DaoLo.breakParts(8).filter { it.second != 0 && !it.first.startsWith("Đạo lộ hợp") && !it.first.startsWith("Song Anh") }
             for (p in body) list.add(Triple(p.first, p.second / half, if (p.first.startsWith("Thể phách")) 1 else 0))
             if (LinhGioi.learned(LinhGioi.LOI)) list.add(Triple("Tử Lôi pháp tắc", 5, 2))
+            if (TeLuyen.bestGrade() > 0) list.add(Triple("${TeLuyen.GRADES[TeLuyen.bestGrade()]} cấm chế tầng ${TeLuyen.bestLevel()}", 2 * TeLuyen.bestGrade() / half, 0))
+            if (TranPhap.kiepPart() > 0) list.add(Triple("Hộ Sơn Trận đỡ lôi", TranPhap.kiepPart() / half, 0))
         }
         if (kind == PHAP_TAC || kind == CUU_CUU) {
             if (LinhGioi.learnedCount() > 0) list.add(Triple("Pháp tắc lĩnh ngộ ${LinhGioi.learnedCount()}", 6 * LinhGioi.learnedCount() / half, 2))

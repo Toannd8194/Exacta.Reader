@@ -521,7 +521,13 @@ def herb_list(spec):
     return ', '.join(out)
 
 
+TELUYEN = read('data', 'TeLuyen.kt')
+TRANS27 = re.findall(r'Tran\("([^"]+)", "([^"]+)", (\d+), (\d)\)', TELUYEN)
+assert len(TRANS27) == 7, len(TRANS27)
+
+
 def part2c():
+    trans = table(['Trận', 'Hiệu quả', 'Giá', 'Linh mạch'], [[f'<b>{e(n)}</b>', e(g), f'{p} LT', e(GIAI[int(gi) - 1])] for n, g, p, gi in TRANS27], 'lib')
     recipes = table(['Đan', 'Loại', 'Linh thảo', 'Hỏa hầu', 'Cần', 'Độc', 'Công dụng'], [
         [f'<b>{e(n)}</b>', e(DAN_GROUPS[GROUP_CONST.index(g)]), e(herb_list(h)), f'{m}′', e(DAN_CAP[int(c) - 1]), d, e(t)]
         for n, g, h, m, c, d, t in RECIPES], 'lib')
@@ -546,6 +552,11 @@ một hạt cùng loại. Hạt mua ở Dược viên (LT): {seeds}; còn hái �
 <p>Tỉ lệ thành = 60% + 8% mỗi bậc luyện đan sư trên mức đan cần + 3% mỗi 100 năm thảo dư (tối đa 15%), trong khoảng 20 – 98%.
 Thành thì phẩm đan theo độ dư: dư từ 20 trung phẩm, 40 thượng phẩm, 60 cực phẩm. Luyện đan sư Tứ phẩm ra 2 viên một lò, Thất phẩm
 3 viên. Cấp luyện đan sư theo số lò thành: {caps}.</p>
+
+{h2('Trận pháp', True)}
+<p>Từ bản 2.7.1. Dựng trận bằng linh thạch ở Động phủ › Trận pháp; trận chỉ có hiệu lực khi bày vào <b>trận nhãn</b>: một trận nhãn,
+thêm một ở Tứ giai và một ở Thất giai linh mạch. Thu trận ra rồi bày trận khác lúc nào cũng được.</p>
+{trans}
 
 {h2('Đan độc', True)}
 <p>Mỗi viên đan để lại độc: hạ phẩm trọn phần, trung {DOC_PCT[1]}%, thượng {DOC_PCT[2]}%, cực phẩm {DOC_PCT[3]}%. Đan mua ở Phường thị
@@ -822,6 +833,14 @@ def part4():
 <table class="clans"><thead><tr><th>Phẩm</th><th>Tộc</th><th>Ví dụ</th></tr></thead><tbody>{clans}</tbody></table>
 <p>Mỗi phẩm có 12 loại. Pháp bảo ra lò thuộc một loại <b>ngẫu nhiên</b> trong 12 loại của phẩm đó, mang thêm một chữ «chi»
 đứng đầu tên (Hỗn, Nguyên, Long, Phượng…) cho có cá tính: «Long Đơn đao», «Minh Hồ lô».</p>
+
+{h2('Tế luyện cấm chế', True)}
+<p>Từ bản 2.7.1. Ở Pháp bảo › Tế luyện, đặt một pháp bảo lên lửa: mỗi chữ đọc luyện cấm chế cho món ấy (không bớt tu vi). Tầng n
+cần 2.000 + 1.000 × n chữ; trọn 36 tầng khoảng 74 vạn chữ. Tầng 1 – 9 là <b>pháp khí</b>, 10 – 18 <b>pháp bảo</b>, 19 – 27 <b>linh
+bảo</b>, 28 – 36 <b>thông thiên linh bảo</b>. Qua mốc tầng 9, 18, 27 phải phá cấm chế: một khoáng thạch (từ phẩm của món, tối đa Thiên
+phẩm) và 50 / 150 / 400 LT; thông thiên linh bảo chỉ luyện được ở Linh giới. Đổi món đang luyện thì giữ tầng đã luyện, mất phần chữ dở.
+Món luyện sâu nhất cho: linh lực +1% mỗi 4 tầng, đột phá +1% mỗi phẩm, bí cảnh liều đánh và điện chủ +4% mỗi phẩm, lôi kiếp Độ Kiếp
++2% mỗi phẩm.</p>
 
 {h2('Bộ pháp bảo')}
 <p>18 bộ, mỗi bộ bốn loại; mỗi loại thuộc đúng một bộ. Có đủ bốn loại thì bộ <b>kích hoạt mãi mãi</b> (kể cả khi sau này

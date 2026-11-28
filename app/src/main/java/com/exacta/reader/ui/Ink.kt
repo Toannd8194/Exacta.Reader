@@ -415,7 +415,9 @@ class Ink(private val context: Context, width: Int) {
             c.drawRoundRect(inset(r, 0.8f * u), rad, rad, stroke(1.6f))
         }
         val p = paint(SMALL + 1f, bold = selected, color = if (selected) Color.WHITE else Color.BLACK)
-        centered(c, label, r.left + 8 * u, r.width() - 16 * u, r.centerY() - lineH(p) / 2, p)
+        // Six tabs in a row: the label shrinks further before it is ever cut.
+        val q = shrink(label, r.width() - 10 * u, p, 0.7f)
+        centered(c, label, r.left + 5 * u, r.width() - 10 * u, r.centerY() - lineH(p) / 2, q)
     }
 
     /** The app's logo (res/drawable-nodpi/logo.png). */

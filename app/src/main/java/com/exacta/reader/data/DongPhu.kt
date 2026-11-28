@@ -78,7 +78,7 @@ object DongPhu {
     // --- Dược viên ------------------------------------------------------------------------------------
 
     fun open() = DanDao.plots(giai)
-    fun yearsADay() = DanDao.YEARS_A_DAY + giai - 1 + if (TongMon.perk(TongMon.BACH_THAO)) 5 else 0
+    fun yearsADay() = DanDao.YEARS_A_DAY + giai - 1 + (if (TongMon.perk(TongMon.BACH_THAO)) 5 else 0) + TranPhap.years()
 
     fun years(i: Int): Int {
         val p = plots[i]
@@ -156,7 +156,7 @@ object DongPhu {
     fun chance(r: Int): Int {
         val rec = RECIPES[r]
         val age = picks(r)?.sumOf { i -> (herbs[i].second - rec.herbs.first { it.first == herbs[i].first }.second) / 100 * 3 } ?: 0
-        return (60 + 8 * (cap() - rec.cap) + minOf(15, age) + (if (TongMon.perk(TongMon.BACH_THAO)) 10 else 0) + DaoLo.brewBonus()).coerceIn(20, 98)
+        return (60 + 8 * (cap() - rec.cap) + minOf(15, age) + (if (TongMon.perk(TongMon.BACH_THAO)) 10 else 0) + DaoLo.brewBonus() + TranPhap.brew()).coerceIn(20, 98)
     }
 
     fun startBrew(r: Int): Boolean {

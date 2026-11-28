@@ -113,9 +113,9 @@ object BiCanh {
     private fun pills() = (0 until Treasure.ITEMS).filter { Treasure.isPill(it) && Store.items[it] > 0 }
 
     fun chances(): Map<String, Int> = mapOf(
-        "fight" to (40 + 10 * (strongest() + 1) + 3 * TuLuyen.theTier()).coerceIn(10, 90),
-        "force" to (30 + TuLuyen.canCo() / 2).coerceIn(10, 90),
-        "master" to (45 + 8 * (strongest() + 1) + (if (has(PhapMon.K_CONG_KICH)) 10 else 0) + 3 * Store.realmCap.coerceAtLeast(0)).coerceIn(10, 95),
+        "fight" to (40 + 10 * (strongest() + 1) + 3 * TuLuyen.theTier() + 4 * TeLuyen.bestGrade() + TranPhap.biCanhPart()).coerceIn(10, 90),
+        "force" to (30 + TuLuyen.canCo() / 2 + TranPhap.biCanhPart()).coerceIn(10, 90),
+        "master" to (45 + 8 * (strongest() + 1) + (if (has(PhapMon.K_CONG_KICH)) 10 else 0) + 3 * Store.realmCap.coerceAtLeast(0) + 4 * TeLuyen.bestGrade()).coerceIn(10, 95),
     )
 
     fun choices(type: Int = current()): List<Choice> {

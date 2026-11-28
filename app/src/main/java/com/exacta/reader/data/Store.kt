@@ -248,6 +248,8 @@ object Store {
         if (!LinhGioi.started) LinhGioi.migrate()
         if (!DoKiep.started) DoKiep.migrate()
         if (!TienDinh.started) TienDinh.migrate()
+        if (!TeLuyen.started) TeLuyen.migrate()
+        if (!TranPhap.started) TranPhap.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -326,6 +328,8 @@ object Store {
         o.optJSONObject("linhGioi")?.let { LinhGioi.read(it) }
         o.optJSONObject("doKiep")?.let { DoKiep.read(it) }
         o.optJSONObject("tienDinh")?.let { TienDinh.read(it) }
+        o.optJSONObject("teLuyen")?.let { TeLuyen.read(it) }
+        o.optJSONObject("tranPhap")?.let { TranPhap.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -412,6 +416,8 @@ object Store {
             put("linhGioi", LinhGioi.toJson())
             put("doKiep", DoKiep.toJson())
             put("tienDinh", TienDinh.toJson())
+            put("teLuyen", TeLuyen.toJson())
+            put("tranPhap", TranPhap.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -469,6 +475,8 @@ object Store {
         LinhGioi.reset()
         DoKiep.reset()
         TienDinh.reset()
+        TeLuyen.reset()
+        TranPhap.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -483,6 +491,8 @@ object Store {
         if (!LinhGioi.started) LinhGioi.migrate()
         if (!DoKiep.started) DoKiep.migrate()
         if (!TienDinh.started) TienDinh.migrate()
+        if (!TeLuyen.started) TeLuyen.migrate()
+        if (!TranPhap.started) TranPhap.migrate()
         dirty = true
         save()
         return true
@@ -640,6 +650,7 @@ object Store {
         if (totalWords / 10_000 > vanBefore) fortune(KyNgo.T_VAN)
         TuLuyen.convert(tuViRaw() - before, state)
         DaoPhap.onWords(words)
+        TeLuyen.onWords(words)
         // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
         var burn = if (setActive(6) && feastDay()) words * 2 else words
         if (DaoPhap.effect(PhapMon.E_LO_LUYEN)) burn = burn * 6 / 5
@@ -648,6 +659,7 @@ object Store {
             burn *= 2
         }
         if (beQuanTarget > 0) burn = burn * beQuanBurn() / 10
+        burn = burn * TranPhap.burnPercent() / 100
         ltWords += if (DaoPhap.effect(PhapMon.E_LINH_THACH)) words * 6 / 5 else words
         while (ltWords >= 10_000) {
             ltWords -= 10_000
@@ -1415,7 +1427,7 @@ object Store {
         val today = today()
         if (trialStart < 0) return 0 to false
         var run = 0
-        var forgiven = (if (setActive(4)) 1 else 0) + trialSpare + DaoPhap.trialSpare()
+        var forgiven = (if (setActive(4)) 1 else 0) + trialSpare + DaoPhap.trialSpare() + TranPhap.spare()
         for (d in trialStart..today) {
             if (trialMet(d)) run++
             else if (d != trialStart && d != today) {
@@ -1445,6 +1457,7 @@ object Store {
         DaoLo.settle()
         LinhGioi.check()
         DoKiep.check()
+        TeLuyen.cleanLost()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level

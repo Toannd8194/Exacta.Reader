@@ -51,6 +51,7 @@ class LinhGioiTest {
         LinhGioi.reset()
         com.exacta.reader.data.DoKiep.reset()
         com.exacta.reader.data.TienDinh.reset()
+        com.exacta.reader.data.TeLuyen.reset(); com.exacta.reader.data.TranPhap.reset()
         LinhGioi.started = true
     }
 

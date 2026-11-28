@@ -23,7 +23,7 @@ import com.exacta.reader.ui.TabActivity
 class DongPhuActivity : TabActivity() {
     override fun title() = "Động Phủ"
     override fun right() = "${Store.linhThach} linh thạch"
-    override fun tabs() = listOf("Linh mạch", "Dược viên", "Đan phòng", "Đan dược", "Tĩnh thất")
+    override fun tabs() = listOf("Linh mạch", "Dược viên", "Đan phòng", "Đan dược", "Tĩnh thất", "Trận pháp")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Store.checkRealm()
@@ -35,7 +35,50 @@ class DongPhuActivity : TabActivity() {
         1 -> duocVien(c, k, area, hits)
         2 -> danPhong(c, k, area, page, hits)
         3 -> danDuoc(c, k, area, page, hits)
-        else -> tinhThat(c, k, area, hits)
+        4 -> tinhThat(c, k, area, hits)
+        else -> tranPhap(c, k, area, hits)
+    }
+
+    // --- Trận pháp ------------------------------------------------------------------------------------
+
+    private fun tranPhap(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val tp = com.exacta.reader.data.TranPhap
+        var y = k.section(c, a.left, a.top, a.width(), "TRẬN PHÁP · TRẬN NHÃN ${tp.set.size}/${tp.eyes()}")
+        y = para(c, k, "Dựng trận bằng linh thạch, đặt vào trận nhãn mới có hiệu lực. Linh mạch mở thêm trận nhãn ở Tứ giai và Thất giai. Chạm trận đã dựng để bày hay thu.",
+            a.left, y, a.width(), small, 3) + 10 * u
+        val h = ((a.bottom - y - 6 * 8 * u) / 7).coerceAtMost(2 * 12 * u + k.lineH(k.ui10Bold) + 2 * u + k.lineH(small))
+        for ((i, tr) in tp.TRANS.withIndex()) {
+            val r = RectF(a.left, y, a.right, y + h)
+            val built = i in tp.built
+            val on = tp.on(i)
+            val open = DongPhu.giai >= tr.giai
+            if (built || open) k.card(c, r, selected = on) else c.drawRoundRect(k.inset(r, u), 12 * u, 12 * u, k.faint)
+            val tag = when {
+                on -> "đang bày"
+                built -> "đã dựng · chạm để bày"
+                !open -> "cần linh mạch ${DanDao.GIAI[tr.giai - 1]}"
+                else -> "dựng · ${tr.price} LT"
+            }
+            k.right(c, tag, r.right - 14 * u, r.top + 12 * u + (k.lineH(k.ui10Bold) - k.lineH(sb)) / 2, sb)
+            k.line(c, tr.name, r.left + 14 * u, r.top + 12 * u, r.width() - 28 * u - sb.measureText(tag) - 10 * u, k.ui10Bold)
+            k.line(c, tr.good.replaceFirstChar { it.uppercase() }, r.left + 14 * u, r.top + 12 * u + k.lineH(k.ui10Bold) + 2 * u, r.width() - 28 * u, small)
+            hits.add(r) {
+                when {
+                    built -> if (!tp.toggle(i)) toast("Trận nhãn đã đầy: thu một trận ra trước")
+                    tp.canBuild(i) -> AlertDialog.Builder(this).setTitle("Dựng ${tr.name}?")
+                        .setMessage("${tr.good.replaceFirstChar { it.uppercase() }}.\n\nGiá ${tr.price} linh thạch (đang có ${Store.linhThach}).")
+                        .setPositiveButton("Dựng trận") { _, _ -> tp.build(i); refresh() }.setNegativeButton("Thôi", null).show()
+                    !open -> toast("Cần linh mạch ${DanDao.GIAI[tr.giai - 1]}")
+                    else -> toast("Cần ${tr.price} linh thạch")
+                }
+                refresh()
+            }
+            y = r.bottom + 8 * u
+        }
+        return 1
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()

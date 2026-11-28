@@ -19,7 +19,7 @@ import java.time.LocalDate
 class PhapBaoActivity : TabActivity() {
     override fun title() = "Pháp Bảo"
     override fun right() = "${Store.linhThach} linh thạch"
-    override fun tabs() = listOf("Lò luyện", "Túi đồ", "Phường thị", "Bảo khố", "Bộ pháp bảo")
+    override fun tabs() = listOf("Lò luyện", "Túi đồ", "Chợ", "Bảo khố", "Bộ", "Tế luyện")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +34,80 @@ class PhapBaoActivity : TabActivity() {
         1 -> bag(c, k, area, page, hits)
         2 -> market(c, k, area, hits)
         3 -> treasury(c, k, area, page, hits)
-        else -> sets(c, k, area, page, hits)
+        4 -> sets(c, k, area, page, hits)
+        else -> refine(c, k, area, page, hits)
+    }
+
+    // --- Tế luyện cấm chế -------------------------------------------------------------------------------
+
+    private fun refine(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val t = com.exacta.reader.data.TeLuyen
+        t.cleanLost()
+        var y = k.section(c, a.left, a.top, a.width(), "TẾ LUYỆN CẤM CHẾ · 36 TẦNG")
+        val pad = 18 * u
+        val b = Store.beasts.firstOrNull { it.seed == t.active }
+        if (b != null) {
+            val lv = t.level(b.seed)
+            val gate = t.gate(lv) && t.words >= t.need(lv)
+            val lines = if (gate) k.wrap(if (lv == 27 && Store.realmCap < 5) "Thông thiên linh bảo chỉ luyện được bằng linh khí Linh giới."
+                else "Phá cấm chế lên ${t.GRADES[t.grade(lv + 1)].lowercase()}: một khoáng thạch từ ${Treasure.TIER_NAMES[t.gateOreTier(b.seed)]} và ${t.gatePrice(lv)} linh thạch.", a.width() - 2 * pad - 80 * u, small, 3) else emptyList()
+            val card = RectF(a.left, y, a.right, y + 2 * pad + maxOf(72 * u, k.lineH(k.ui12Bold) + 4 * u + sl + 26 * u + lines.size * sl) + (if (gate) 60 * u else 0f))
+            k.card(c, card, selected = true)
+            k.badge(c, b.species, card.left + pad, card.top + pad, 72 * u)
+            val tx = card.left + 2 * pad + 72 * u
+            val tw = card.right - pad - tx
+            k.line(c, b.name, tx, card.top + pad, tw, k.ui12Bold)
+            var ty = card.top + pad + k.lineH(k.ui12Bold) + 4 * u
+            k.line(c, "${t.gradeName(b.seed)} · cấm chế tầng $lv/36 · chữ ${t.words}/${t.need(lv)}", tx, ty, tw, sb)
+            ty += sl + 6 * u
+            k.meter(c, tx, ty, tw, t.words.toFloat() / t.need(lv), 12 * u)
+            ty += 20 * u
+            for (l in lines) { k.text(c, l, tx, ty, small); ty += sl }
+            if (gate) {
+                val gb = RectF(tx, card.bottom - pad - 48 * u, card.right - pad, card.bottom - pad)
+                k.button(c, gb, "Phá cấm chế", k.ui10Bold, enabled = t.gateReady())
+                if (t.gateReady()) hits.add(gb) { t.breakGate(); refresh() }
+            }
+            y = card.bottom + 14 * u
+        } else {
+            y = para(c, k, "Đặt một pháp bảo lên lửa tế luyện: mỗi chữ đọc luyện một ít cấm chế. Tầng n cần 2.000 + 1.000 × n chữ. 1 – 9 là pháp khí, 10 – 18 pháp bảo, " +
+                "19 – 27 linh bảo, 28 – 36 thông thiên linh bảo (chỉ ở Linh giới). Món luyện sâu nhất cho linh lực +1% mỗi 4 tầng, đột phá +1% mỗi phẩm, và đỡ kiếp.", a.left, y, a.width(), small, 5) + 12 * u
+        }
+        val list = Store.beasts.sortedWith(compareByDescending<Beast> { t.level(it.seed) }.thenByDescending { it.tier }.thenByDescending { it.bornDay })
+        val rowH = 64 * u
+        val per = ((a.bottom - y) / rowH).toInt().coerceAtLeast(1)
+        for (x in list.drop(page * per).take(per)) {
+            val r = RectF(a.left, y, a.right, y + rowH - 6 * u)
+            val lv = t.level(x.seed)
+            if (x.seed == t.active) k.card(c, r, selected = true) else c.drawRect(r.left, r.bottom, r.right, r.bottom + u, k.gray)
+            val ic = r.height() - 10 * u
+            k.badge(c, x.species, r.left + 6 * u, r.top + 5 * u, ic)
+            val tx = r.left + ic + 18 * u
+            val tag = if (x.seed == t.active) "đang luyện" else if (lv > 0) "tầng $lv" else ""
+            val tw = r.right - 12 * u - tx - sb.measureText("đang luyện") - 12 * u
+            k.line(c, x.name, tx, r.top + 6 * u, tw, k.ui10Bold)
+            k.line(c, "${Treasure.TIER_NAMES[x.tier]} · ${t.gradeName(x.seed).lowercase()}", tx, r.top + 6 * u + k.lineH(k.ui10Bold), tw, small)
+            if (tag.isNotEmpty()) k.right(c, tag, r.right - 12 * u, r.centerY() - sl / 2, sb)
+            hits.add(r) { refineDialog(x) }
+            y += rowH
+        }
+        return ((list.size + per - 1) / per).coerceAtLeast(1)
+    }
+
+    private fun refineDialog(b: Beast) {
+        val t = com.exacta.reader.data.TeLuyen
+        val lv = t.level(b.seed)
+        val d = AlertDialog.Builder(this).setTitle(b.name)
+            .setMessage("${Treasure.TIER_NAMES[b.tier]} · ${t.gradeName(b.seed).lowercase()} · cấm chế tầng $lv/36.\n\n" +
+                if (t.active == b.seed) "Đang trên lửa tế luyện." else if (lv >= 36) "Đã viên mãn." else
+                    "Đặt lên lửa tế luyện? " + (if (t.active >= 0) "Món đang luyện sẽ dừng, giữ tầng đã luyện nhưng mất phần chữ dở." else ""))
+        if (t.active == b.seed) d.setPositiveButton("Dừng tế luyện") { _, _ -> t.stop(); refresh() }
+        else if (t.canRefine(b.seed)) d.setPositiveButton("Tế luyện") { _, _ -> t.refine(b.seed); refresh() }
+        d.setNegativeButton("Đóng", null).show()
     }
 
     private fun forge(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
@@ -562,5 +635,14 @@ class PhapBaoActivity : TabActivity() {
             )
             .setPositiveButton("Đóng", null)
             .show()
+    }
+
+    private fun para(c: Canvas, k: Ink, s: String, x: Float, y: Float, w: Float, p: android.graphics.Paint, max: Int = 4): Float {
+        var yy = y
+        for (l in k.wrap(s, w, p, max)) {
+            k.text(c, l, x, yy, p)
+            yy += k.lineH(p)
+        }
+        return yy
     }
 }

@@ -166,7 +166,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val termH = termLines.size * sl
         val trialH = 2 * sl + 6 * u
         val biH = 2 * sl + 6 * u
-        val saying = k.wrap(Texts.PROVERBS[proverb], w, small, 2)
+        val saying = k.wrap(Texts.PROVERBS[proverb], w, small, 3)
         val sayingH = 12 * u + saying.size * sl
         val blocks = mutableListOf(sl, realmH, barH, statsH, termH, trialH, biH)
         val inner = r.height() - 2 * pad
