@@ -164,6 +164,8 @@ class BienNienActivity : TabActivity() {
                 "Bát Nhã Liên Đài mở cửa: công đức thay tu vi, xá lợi giữ chuỗi và đỡ kiếp, độ hóa đồng đạo lạc trong sách bỏ dở; Thiền Viện có Kinh lâu, Xá lợi tháp, Liên trì; Vô niệm kiếp và Đại kiếp Liên Hoa."),
             Era("4.0", "Hỗn Nguyên Nhất Khí",
                 "Hồng Hoang, Vong Xuyên, Thư Hải mở cửa: khí huyết và huyết mạch, hồn lực và sổ sinh tử, văn khí và thần quốc; sứ giả năm giới, hỗn nguyên khí, Quy Nhất."),
+            Era("4.1", "Lô Hỏa Thuần Thanh",
+                "Pháp bảo luyện qua sáu giai đoạn, từ phôi liệu tới thành hình; khai lô theo phẩm: nhiệm vụ đọc, điều kiện hoặc tụ linh, kiếp phá lô; Home cân lại ô pháp bảo."),
         )
     }
 }

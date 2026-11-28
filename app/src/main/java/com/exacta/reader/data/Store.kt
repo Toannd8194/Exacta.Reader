@@ -88,9 +88,15 @@ data class Beast(
  * A slot of the forge: an ore that words read (any book) forge, or a book (`book` = its path) that
  * forges a treasure of its length's grade when read to the end.
  */
-data class Ore(val tier: Int, var words: Long = 0, val book: String = "", val goal: Int = GOAL_ORE, var kiep: Long = -1, var spared: Int = 0, var bonus: Int = 0) {
+data class Ore(
+    val tier: Int, var words: Long = 0, val book: String = "", val goal: Int = GOAL_ORE, var kiep: Long = -1, var spared: Int = 0, var bonus: Int = 0,
+    // 4.1: formed, the furnace waits to be opened ([KhaiLo]): the phase, the day the task began, the condition, tụ linh.
+    var khai: Int = 0, var khaiStart: Long = -1, var cond: Int = -1, var tuLinh: Int = 0,
+) {
     /** In a kiếp phá lô: the day it began (-1 none). */
     val inKiep get() = kiep >= 0
+    /** Formed and no longer burning: opening the furnace, or in its kiếp. */
+    val busy get() = inKiep || khai > 0
     val isBook get() = book.isNotEmpty()
     val isStage get() = goal == GOAL_STAGE
     val isFinish get() = goal == GOAL_FINISH
@@ -291,7 +297,8 @@ object Store {
             for (i in 0 until a.length()) a.getJSONArray(i).let {
                 val book = it.optString(2, "")
                 val goal = it.optInt(3, if (book.isEmpty()) Ore.GOAL_ORE else Ore.GOAL_FINISH)
-                forge.add(Ore(it.getInt(0), it.getLong(1), book, goal, it.optLong(4, -1), it.optInt(5, 0), it.optInt(6, 0)))
+                forge.add(Ore(it.getInt(0), it.getLong(1), book, goal, it.optLong(4, -1), it.optInt(5, 0), it.optInt(6, 0),
+                    it.optInt(7, 0), it.optLong(8, -1), it.optInt(9, -1), it.optInt(10, 0)))
             }
         }
         o.optJSONArray("beasts")?.let { a ->
@@ -411,7 +418,8 @@ object Store {
             })
             put("totalWords", totalWords); put("totalSeconds", totalSeconds); put("gifts", giftsAwarded)
             put("bag", JSONArray().apply { bag.forEach { put(it) } })
-            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words).put(it.book).put(it.goal).put(it.kiep).put(it.spared).put(it.bonus)) } })
+            put("forge", JSONArray().apply { forge.forEach { put(JSONArray().put(it.tier).put(it.words).put(it.book).put(it.goal).put(it.kiep).put(it.spared).put(it.bonus)
+                .put(it.khai).put(it.khaiStart).put(it.cond).put(it.tuLinh)) } })
             put("beasts", JSONArray().apply {
                 beasts.forEach {
                     put(JSONObject().put("seed", it.seed).put("tier", it.tier).put("born", it.bornDay).put("book", it.book)
@@ -720,7 +728,7 @@ object Store {
         }
         val done = ArrayList<Ore>()
         for (ore in forge) {
-            if (ore.inKiep) continue
+            if (ore.busy) continue
             when {
                 ore.isStage && ore.book == book.path -> {
                     ore.words += burn
@@ -758,23 +766,52 @@ object Store {
     }
 
     /**
-     * A slot reaches its words (or its book's end): Hoàng to Địa phẩm come out at once; Thiên phẩm and
-     * above first pass a kiếp phá lô.
+     * A slot reaches its words (or its book's end): the treasure has taken form. 4.1: a Hoàng phẩm comes
+     * out at once; the others wait for the furnace to be opened ([KhaiLo]): a task of reading, and from
+     * Thiên phẩm a condition (or tụ linh), then the kiếp phá lô.
      */
-    private fun complete(slot: Ore, title: String) {
-        if (slot.tier >= 3 && !slot.inKiep) {
-            slot.kiep = today()
-            slot.spared = 0
-            slot.words = slot.need
-            note("Kiếp phá lô: ${Treasure.TIER_NAMES[slot.tier]} sắp xuất thế · ${kiepDays(slot.tier)} ngày × ${kiepMinutes(slot.tier)} phút")
+    internal fun complete(slot: Ore, title: String) {
+        if (slot.busy) return
+        if (slot.tier <= 0) {
+            release(slot, title, "")
             return
         }
-        release(slot, title, "")
+        slot.khai = KhaiLo.TASK
+        slot.khaiStart = today()
+        slot.spared = 0
+        if (slot.tier >= 3) slot.cond = KhaiLo.pickCond(slot.tier)
+        note("Thành hình: ${Treasure.CLANS[slot.tier]} ${Treasure.TIER_NAMES[slot.tier]} · nhiệm vụ khai lô ${KhaiLo.taskText(slot.tier)}")
+    }
+
+    /** Each day: the furnaces waiting to be opened move on when their task, then their condition, is met. */
+    private fun checkKhai() {
+        for (slot in forge.toList()) {
+            when (slot.khai) {
+                KhaiLo.TASK -> if (KhaiLo.taskMet(slot) >= KhaiLo.TASK_DAYS[slot.tier]) {
+                    if (slot.tier < 3) {
+                        note("Khai lô: ${Treasure.TIER_NAMES[slot.tier]} xong nhiệm vụ")
+                        release(slot, if (slot.isBook) books[slot.book]?.title ?: "" else "Lò luyện", "")
+                    } else {
+                        slot.khai = KhaiLo.COND
+                        note("Xong nhiệm vụ khai lô ${Treasure.TIER_NAMES[slot.tier]}: còn điều kiện «${KhaiLo.condText(slot)}»")
+                    }
+                    touch()
+                }
+                KhaiLo.COND -> if (KhaiLo.condMet(slot)) {
+                    slot.khai = KhaiLo.KIEP
+                    slot.kiep = today()
+                    slot.spared = 0
+                    note("Kiếp phá lô: ${Treasure.TIER_NAMES[slot.tier]} sắp xuất thế · ${kiepDays(slot.tier)} ngày × ${kiepMinutes(slot.tier)} phút")
+                    touch()
+                }
+            }
+        }
     }
 
     private fun release(slot: Ore, title: String, spirit: String) {
         hatch(slot.tier, title, spirit)
         slot.kiep = -1
+        slot.khai = 0; slot.khaiStart = -1; slot.cond = -1; slot.tuLinh = 0
         if (slot.isStage) {
             slot.words = (slot.words - slot.need).coerceAtLeast(0)
         } else {
@@ -873,6 +910,7 @@ object Store {
         beQuanDone++
         fortune(KyNgo.T_BEQUAN)
         beQuanMinutes += m
+        KhaiLo.onBeQuan(m)
         beQuanTarget = 0
         beQuanSeconds = 0
         val lt = beQuanReward(m) * feastMultiplier() * (if (DaoPhap.tamWorks(PhapMon.TP_TINH_TOA)) 13 else 10) / 10
@@ -894,7 +932,8 @@ object Store {
     }
 
     /** Each day: a trial passes, or a day missed between breaks it (Hộ Lô Phù and the set may spare it). */
-    private fun checkKiep() {
+    internal fun checkKiep() {
+        checkKhai()
         val today = today()
         for (slot in forge.toList()) {
             if (!slot.inKiep) continue
@@ -930,6 +969,7 @@ object Store {
                         slot.spared = 0
                     } else {
                         slot.kiep = -1
+                        slot.khai = 0; slot.khaiStart = -1; slot.cond = -1; slot.tuLinh = 0
                         slot.words = slot.need * 7 / 10
                     }
                     touch()
@@ -949,7 +989,7 @@ object Store {
 
     /** Tụ Linh Đan into a slot of Thiên phẩm or above: 15% of its way (30% with Linh Đăng Chiếu Lộ). */
     fun useTuLinhDan(slot: Ore): Boolean {
-        if (items[Treasure.TU_LINH_DAN] <= 0 || slot.tier < 3 || slot.inKiep || slot.isFinish) return false
+        if (items[Treasure.TU_LINH_DAN] <= 0 || slot.tier < 3 || slot.busy || slot.isFinish) return false
         items[Treasure.TU_LINH_DAN]--
         pillsUsed++
         DongPhu.poison(DongPhu.SHOP_PILL_DOC)
@@ -1143,7 +1183,7 @@ object Store {
 
     /** An item by its weight; the ones that cannot serve now are left out. */
     private fun rollItem(): Int {
-        val highSlot = forge.any { it.tier >= 3 && !it.inKiep && !it.isFinish }
+        val highSlot = forge.any { it.tier >= 3 && (!it.busy && !it.isFinish || it.khai == KhaiLo.COND) }
         val ok = (0 until Treasure.ITEMS).filter { i ->
             when (i) {
                 Treasure.TU_LINH_DAN -> highSlot
@@ -1177,7 +1217,7 @@ object Store {
 
     /** Slots a pill can go into: Bồi Nguyên (any forging), Cửu Chuyển (below Thiên phẩm), Tụ Linh (Thiên and up). */
     fun slotsFor(i: Int): List<Ore> = forge.filter { o ->
-        !o.inKiep && !o.isFinish && when (i) {
+        !o.busy && !o.isFinish && when (i) {
             Treasure.TU_LINH_DAN -> o.tier >= 3
             Treasure.CUU_CHUYEN_DAN -> o.tier < 3
             Treasure.BOI_NGUYEN_DAN -> true

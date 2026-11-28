@@ -5,6 +5,7 @@ import android.graphics.RectF
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import com.exacta.reader.data.Beast
+import com.exacta.reader.data.KhaiLo
 import com.exacta.reader.data.Store
 import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.Treasure
@@ -186,37 +187,37 @@ class PhapBaoActivity : TabActivity() {
             val pic = minOf(r.width() - 2 * pad, r.height() - 2 * pad - textH - 8 * u)
             val py = r.top + pad
             var ty = py + pic + 8 * u
-            when {
-                ore == null -> {
-                    k.art(c, "art_crystal", r.centerX() - pic / 2, py, pic, 90)
-                    k.centered(c, "Pháp bảo chờ luyện", r.left + 4 * u, r.width() - 8 * u, ty, sb); ty += sl
-                    k.centered(c, "chạm để khai lô", r.left, r.width(), ty, small)
+            val lx = r.left + 4 * u
+            val lw = r.width() - 8 * u
+            if (ore == null) {
+                k.art(c, "art_crystal", r.centerX() - pic / 2, py, pic, 90)
+                k.centeredFit(c, "Lò còn trống", lx, lw, ty, sb); ty += sl
+                k.centeredFit(c, "chạm để nhóm lò", lx, lw, ty, small)
+            } else {
+                // 4.1: the treasure itself at its stage, whatever was put in (a book, an ore).
+                k.stage(c, KhaiLo.stage(ore), r.centerX() - pic / 2, py, pic)
+                val today = Store.today()
+                val lines = when {
+                    ore.inKiep -> listOf("Phá lô · ${Treasure.TIER_NAMES[ore.tier].removeSuffix(" phẩm")}",
+                        "ngày ${Store.kiepMet(ore)}/${Store.kiepDays(ore.tier)} · ${Store.kiepMinutes(ore.tier)} phút/ngày", "hôm nay ${Store.minutes(today)} phút")
+                    ore.khai == KhaiLo.TASK -> listOf("Nhiệm vụ khai lô",
+                        "ngày ${KhaiLo.taskMet(ore)}/${KhaiLo.TASK_DAYS[ore.tier]} · ${KhaiLo.TASK_MIN[ore.tier]} phút/ngày", "hôm nay ${Store.minutes(today)} phút")
+                    ore.khai == KhaiLo.COND && ore.tuLinh == 1 -> listOf("Tụ linh", "bế quan ${KhaiLo.tlMinutes(ore.tier)} phút", "chờ bế quan viên mãn")
+                    ore.khai == KhaiLo.COND -> listOf("Điều kiện khai lô", KhaiLo.condText(ore), if (KhaiLo.canTuLinh(ore)) "chạm để tụ linh" else "chạm xem tụ linh")
+                    ore.isBook -> {
+                        val b = Store.books[ore.book]
+                        listOf(b?.title ?: "Sách", (if (ore.isStage) "Chặng " else "Cả cuốn · ") + Treasure.TIER_NAMES[ore.tier],
+                            "${KhaiLo.stageName(ore)} · ${ore.percent}%")
+                    }
+                    else -> listOf(Treasure.TIER_NAMES[ore.tier], "${KhaiLo.stageName(ore)} · ${ore.percent}%",
+                        "còn ${((ore.need - ore.words).coerceAtLeast(0) + 999) / 1000} nghìn từ")
                 }
-                ore.inKiep -> {
-                    // Kiếp phá lô: the treasure waits behind a trial of days.
-                    k.icon(c, "thienkiep", r.centerX() - pic * 0.35f, py, pic * 0.7f)
-                    k.centered(c, "Phá lô · ${Treasure.TIER_NAMES[ore.tier].removeSuffix(" phẩm")}", r.left + 4 * u, r.width() - 8 * u, ty, sb); ty += sl
-                    k.centered(c, "ngày ${Store.kiepMet(ore)}/${Store.kiepDays(ore.tier)} · ${Store.kiepMinutes(ore.tier)} phút/ngày", r.left + 4 * u, r.width() - 8 * u, ty, small); ty += sl
-                    k.centered(c, "hôm nay ${Store.minutes(Store.today())} phút", r.left, r.width(), ty, small)
-                }
-                ore.isBook -> {
-                    val b = Store.books[ore.book]
-                    val cw = pic * 0.66f
-                    k.cover(c, b?.cover ?: "", b?.title ?: "Sách", RectF(r.centerX() - cw / 2, py, r.centerX() + cw / 2, py + pic))
-                    k.centered(c, b?.title ?: "Sách", r.left + pad, r.width() - 2 * pad, ty, sb); ty += sl
-                    val goal = if (ore.isStage) "Chặng ${Treasure.TIER_NAMES[ore.tier]}" else "Cả cuốn → ${Treasure.TIER_NAMES[ore.tier]}"
-                    k.centered(c, goal, r.left + 4 * u, r.width() - 8 * u, ty, small); ty += sl
-                    val left = if (ore.isStage) "còn ${((ore.need - ore.words).coerceAtLeast(0) + 999) / 1000} nghìn từ" else "đã đọc ${ore.percent}%"
-                    k.centered(c, left, r.left, r.width(), ty, small)
-                }
-                else -> {
-                    k.ore(c, ore.tier, ore.percent, r.centerX() - pic / 2, py, pic, bar = true)
-                    k.centered(c, Treasure.TIER_NAMES[ore.tier], r.left, r.width(), ty, sb); ty += sl
-                    k.centered(c, "${Treasure.stageName(ore.percent)} · ${ore.percent}%", r.left, r.width(), ty, small); ty += sl
-                    k.centered(c, "còn ${((ore.need - ore.words).coerceAtLeast(0) + 999) / 1000} nghìn từ", r.left, r.width(), ty, small)
+                for ((j, l) in lines.withIndex()) {
+                    k.centeredFit(c, l, lx, lw, ty, if (j == 0) sb else small)
+                    ty += sl
                 }
             }
-            if (ore != null && ore.isBook && !ore.inKiep) {
+            if (ore != null && !ore.busy) {
                 // The stage's progress along the bottom edge.
                 val bx = r.left + 14 * u
                 val bw = r.width() - 28 * u
@@ -231,10 +232,12 @@ class PhapBaoActivity : TabActivity() {
         y = k.section(c, a.left, y, a.width(), "CÁCH LUYỆN")
         val nextGift = (Store.giftsAwarded + 1) * Treasure.GIFT_WORDS - Store.totalWords
         val notes = listOf(
-            "Chặng: đọc đủ số chữ của phẩm trong cuốn đó là ra một pháp bảo, rồi luyện tiếp",
-            "Mỗi cuốn tối đa ${Store.SLOTS_PER_BOOK} ô, mỗi ô một phẩm; hoặc chọn luyện cả cuốn",
-            "Thiên phẩm trở lên phải qua kiếp phá lô: đọc đủ phút trong vài ngày liền",
-            "Khoáng thạch cháy bằng chữ đọc ở bất kỳ cuốn nào",
+            "Mỗi 20% chữ lên một giai đoạn; đủ chữ là thành hình",
+            "Hoàng phẩm thành hình là xuất thế ngay",
+            "Huyền, Địa phẩm: đọc đủ nhiệm vụ khai lô",
+            "Thiên phẩm trở lên: nhiệm vụ, điều kiện, kiếp phá lô",
+            "Chưa đủ điều kiện thì tụ linh bằng bế quan",
+            "Mỗi cuốn tối đa ${Store.SLOTS_PER_BOOK} ô, mỗi ô một phẩm",
             "Quà mỗi 10 vạn từ: còn ${(nextGift.coerceAtLeast(0) + 999) / 1000} nghìn từ",
         )
         for (n in notes) {
@@ -418,7 +421,11 @@ class PhapBaoActivity : TabActivity() {
 
     private fun slotLabel(o: com.exacta.reader.data.Ore): String {
         val what = if (o.isBook) "«${Store.books[o.book]?.title ?: "sách"}» chặng" else "Khoáng thạch"
-        return if (o.inKiep) "$what ${Treasure.TIER_NAMES[o.tier]} · kiếp phá lô ${Store.kiepMet(o)}/${Store.kiepDays(o.tier)}" else "$what ${Treasure.TIER_NAMES[o.tier]} · ${o.percent}%"
+        return when {
+            o.inKiep -> "$what ${Treasure.TIER_NAMES[o.tier]} · kiếp phá lô ${Store.kiepMet(o)}/${Store.kiepDays(o.tier)}"
+            o.busy -> "$what ${Treasure.TIER_NAMES[o.tier]} · ${KhaiLo.phaseLine(o).lowercase()}"
+            else -> "$what ${Treasure.TIER_NAMES[o.tier]} · ${o.percent}%"
+        }
     }
 
     private fun useItem(i: Int) {
@@ -609,7 +616,11 @@ class PhapBaoActivity : TabActivity() {
 
     /** A slot tapped: an empty one takes a book being read or an ore of the bag; a full one gives it back. */
     private fun slot(ore: com.exacta.reader.data.Ore?) {
-        if (ore != null && ore.tier >= 3 && !ore.inKiep && !ore.isFinish && Store.items[Treasure.TU_LINH_DAN] > 0) {
+        if (ore != null && ore.khai > 0 && !ore.inKiep) {
+            khaiDialog(ore)
+            return
+        }
+        if (ore != null && ore.tier >= 3 && !ore.busy && !ore.isFinish && Store.items[Treasure.TU_LINH_DAN] > 0) {
             AlertDialog.Builder(this)
                 .setTitle("${Treasure.TIER_NAMES[ore.tier]} · ${ore.percent}%")
                 .setItems(arrayOf("Rót Tụ Linh Đan (còn ${Store.items[Treasure.TU_LINH_DAN]})", "Lấy ra khỏi lò")) { _, w ->
@@ -649,6 +660,45 @@ class PhapBaoActivity : TabActivity() {
             }
             .setNegativeButton("Thôi", null)
             .show()
+    }
+
+    /** 4.1: a treasure formed, its furnace waiting to be opened: the steps, the condition, tụ linh. */
+    private fun khaiDialog(o: com.exacta.reader.data.Ore) {
+        val t = o.tier
+        val sb = StringBuilder()
+        sb.append("${Treasure.CLANS[t]} ${Treasure.TIER_NAMES[t]} đã thành hình. Khai lô:\n")
+        for ((i, s) in KhaiLo.steps(t).withIndex()) sb.append("${i + 1}. $s\n")
+        sb.append("\n")
+        if (o.khai == KhaiLo.TASK) {
+            sb.append("Nhiệm vụ: ngày ${KhaiLo.taskMet(o)}/${KhaiLo.TASK_DAYS[t]}, mỗi ngày đọc từ ${KhaiLo.TASK_MIN[t]} phút (hôm nay ${Store.minutes(Store.today())} phút).")
+        } else {
+            val met = KhaiLo.condMet(o)
+            sb.append("Điều kiện: ${KhaiLo.condText(o)} · ${if (met) "đã đủ" else "chưa đủ"}.")
+            when {
+                o.tuLinh == 1 -> sb.append("\n\nĐang tụ linh: bế quan ${KhaiLo.tlMinutes(t)} phút tới cùng là đủ linh khí khai lô.")
+                !met -> {
+                    sb.append("\n\nChưa đủ điều kiện thì tụ linh: trả những thứ dưới đây rồi bế quan ${KhaiLo.tlMinutes(t)} phút tới cùng.\n")
+                    for ((text, ok) in KhaiLo.needs(o)) sb.append(if (ok) "✓ " else "· ").append(text).append("\n")
+                }
+            }
+        }
+        val d = AlertDialog.Builder(this)
+            .setTitle("Khai lô · ${Treasure.TIER_NAMES[t]}")
+            .setMessage(sb.toString().trimEnd())
+            .setNegativeButton("Đóng", null)
+            .setNeutralButton("Lấy ra") { _, _ ->
+                AlertDialog.Builder(this)
+                    .setTitle("Lấy khỏi lò?")
+                    .setMessage(if (o.isBook) "Pháp bảo đã thành hình sẽ mất." else "Khoáng thạch về lại túi, pháp bảo đã thành hình thì mất.")
+                    .setPositiveButton("Lấy ra") { _, _ -> Store.takeOut(o); refresh() }
+                    .setNegativeButton("Thôi", null)
+                    .show()
+            }
+        if (KhaiLo.canTuLinh(o)) d.setPositiveButton("Tụ linh") { _, _ ->
+            if (KhaiLo.startTuLinh(o)) android.widget.Toast.makeText(this, "Đã tụ linh: hãy bế quan ${KhaiLo.tlMinutes(t)} phút", android.widget.Toast.LENGTH_SHORT).show()
+            refresh()
+        }
+        d.show()
     }
 
     /** A stage of a grade, or the whole book. */

@@ -111,7 +111,7 @@ class ScreensTest {
         Store.kyNgoLog.clear()
         Store.kyNgoLog.addAll(listOf("27/11 · nhặt được Thiên Hỏa Phù", "25/11 · khí linh của Long Song kiếm thức tỉnh: «Ẩn Long»", "22/11 · nhặt được khoáng thạch Địa phẩm"))
         Store.forge.clear()
-        Store.forge.addAll(listOf(Ore(1, 9_000), Ore(3, 12_000), Ore(0, 5_000)))
+        Store.forge.addAll(listOf(Ore(1, 9_000), Ore(3, 12_000, khai = 2, khaiStart = today - 3, cond = 3), Ore(2, 0, khai = 1, khaiStart = today - 1)))
         val first = Store.books.values.first()
         Store.forge.add(Ore(2, 60_000, first.path, Ore.GOAL_STAGE))
         Store.forge.add(Ore(Treasure.tierForBook(first.words), 0, first.path, Ore.GOAL_FINISH))

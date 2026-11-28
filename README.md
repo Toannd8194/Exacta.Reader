@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-4.0.apk`](dist/Van-Quyen-Tien-Do-4.0.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-4.1.apk`](dist/Van-Quyen-Tien-Do-4.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,30 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 4.1 · Lô Hỏa Thuần Thanh
+
+- **Sáu giai đoạn luyện bảo**: mỗi 20% chữ của một ô lò lên một giai đoạn: Phôi liệu, Luyện hỏa, Đúc phôi, Khắc trận văn,
+  Khai phong; đủ chữ là **Thành hình**. Mỗi ô lò (cả ô sách lẫn ô khoáng thạch) hiện chính pháp bảo đang luyện ở giai đoạn
+  của nó, vẽ pixel cùng phong cách khoáng thạch (`tools/luyen_bao.py`), thay cho bìa sách.
+- **Khai lô theo phẩm**: thành hình chưa phải xuất thế.
+  - Hoàng phẩm (phàm binh): thành hình là xuất thế ngay.
+  - Huyền phẩm (linh khí): nhiệm vụ khai lô 2 ngày đọc từ 15 phút. Địa phẩm (bảo khí): 3 ngày từ 20 phút.
+  - Thiên phẩm (pháp bảo): nhiệm vụ 3 ngày từ 25 phút, rồi một **điều kiện khai lô** (Trúc Cơ, linh căn đã thức tỉnh, đã
+    bái nhập tông môn, tâm ma dưới 30), rồi kiếp phá lô.
+  - Âm Dương phẩm (tiên khí): nhiệm vụ 4 ngày từ 30 phút; điều kiện (Nguyên Anh, đệ tử nội môn, đã bước lên tiên lộ, công
+    pháp tầng 5); kiếp phá lô.
+  - Hỗn Độn phẩm (thần khí): nhiệm vụ 5 ngày từ 30 phút; điều kiện (Luyện Hư, chân truyền, công pháp tầng 9, tâm ma dưới
+    10); kiếp phá lô.
+- **Tụ linh**: chưa đủ điều kiện thì đổi bằng tụ linh: Tụ Linh Đan (1, 2, 3 viên theo phẩm), Tụ Linh trận đặt ở trận nhãn
+  động phủ, linh thạch (320, 700, 1.500), tu vi (2, 3, 4 vạn), rồi bế quan tới cùng 60, 75 hoặc 90 phút. Chạm ô lò đang chờ
+  điều kiện để xem đủ thiếu từng thứ và bắt đầu tụ linh.
+- **Home kiểu bảng**: ô Pháp bảo cao hơn (bằng ô pháp bảo cũ cộng nút Niên kỷ), hiện pháp bảo đang luyện ở giai đoạn của
+  nó, tên giai đoạn hoặc việc khai lô đang chờ, và dải sáu giai đoạn. Đạo hiệu và Cài đặt, ít dùng, chung chỗ của một nút
+  dưới ô pháp bảo (từ Hóa Thần, nút Đạo hiệu nhường chỗ cho Linh giới, Tiên đồ hay cơ sở của giới; thanh trên vẫn mở Đạo
+  hiệu). Hàng nút dưới: Công pháp, Tiên lộ, Động phủ, Tông môn, Niên kỷ. Lò trống ghi «Lò chưa nhóm lửa», không còn dòng
+  chữ bị cắt.
+- versionCode 410.
 
 ## Bản 4.0 · Hỗn Nguyên Nhất Khí
 
@@ -575,6 +599,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.6 | Cổ Vận Thanh Phong | Câu chữ cổ phong, kỳ ngộ lục hai cột, Tiên lộ, pháp bảo và icon pixel, trình đọc tính bằng em, Home cân lại |
   | 3.7 | Liên Đài Hóa Độ | Bát Nhã Liên Đài: công đức, xá lợi, độ hóa đồng đạo, Thiền Viện, Vô niệm kiếp, Đại kiếp Liên Hoa |
   | 4.0 | Hỗn Nguyên Nhất Khí | Hồng Hoang, Vong Xuyên, Thư Hải mở cửa; sứ giả, hỗn nguyên khí, Quy Nhất: phần hai viên mãn |
+  | 4.1 | Lô Hỏa Thuần Thanh | Sáu giai đoạn luyện bảo, khai lô theo phẩm (nhiệm vụ, điều kiện hoặc tụ linh, kiếp), Home cân lại ô pháp bảo |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

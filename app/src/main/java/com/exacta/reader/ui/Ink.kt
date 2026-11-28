@@ -308,6 +308,25 @@ class Ink(private val context: Context, width: Int) {
     }
 
     /** A grayscale drawing (res/drawable-nodpi/<name>.png) as it is, optionally faded. */
+    /** 4.1: a treasure in the furnace at its stage 1 – 6 (Phôi liệu … Thành hình). */
+    fun stage(c: Canvas, stage: Int, x: Float, y: Float, size: Float, alpha: Int = 255) = art(c, "art_stage_" + stage.coerceIn(1, 6), x, y, size, alpha)
+
+    /** Six cells, the first `stage` filled: the way from Phôi liệu to Thành hình. */
+    fun stageStrip(c: Canvas, x: Float, y: Float, w: Float, h: Float, stage: Int) {
+        val g = 4 * u
+        val cw = (w - 5 * g) / 6
+        for (i in 0 until 6) {
+            val r = RectF(x + i * (cw + g), y, x + i * (cw + g) + cw, y + h)
+            if (i < stage) c.drawRoundRect(r, 3 * u, 3 * u, fill) else c.drawRoundRect(inset(r, 0.6f * u), 3 * u, 3 * u, stroke(1.3f))
+        }
+    }
+
+    /** A centred line made smaller to fit, cut only past that. */
+    fun centeredFit(c: Canvas, s: String, x: Float, w: Float, y: Float, p: Paint, least: Float = 0.7f) {
+        val q = shrink(s, w, p, least)
+        centered(c, fit(s, w, q), x, w, y, q)
+    }
+
     fun art(c: Canvas, name: String, x: Float, y: Float, size: Float, alpha: Int = 255) {
         val id = drawable(name)
         if (id == 0) return

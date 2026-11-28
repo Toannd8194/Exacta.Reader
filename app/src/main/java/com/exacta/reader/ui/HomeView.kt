@@ -128,14 +128,14 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         drawBook(c, k, bookRect); bookTarget(bookRect); libraryButton(c, k, bookRect)
         val twoThirds = (a.width() - g) * 2 / 3
         val realm = RectF(a.left, bookRect.bottom + g, a.left + twoThirds, row.top - g)
-        // 3.6: two of the seven buttons go up under the treasures, so the row below keeps five, larger.
-        val side = RectF(realm.right + g, realm.bottom - 2 * DOCK_H * u - g, a.right, realm.bottom)
+        // 4.1: Đạo hiệu and Cài đặt, little used, share one button's room under the treasures; the
+        // treasures card takes the rest of the column.
+        val side = RectF(realm.right + g, realm.bottom - DOCK_H * u, a.right, realm.bottom)
         val treasures = RectF(realm.right + g, realm.top, a.right, side.top - g)
         on(realm, Action.TU_VI)
         drawRealmFull(c, k, realm, today, lunar)
         drawTreasures(c, k, treasures); on(treasures, Action.PHAP_BAO)
-        drawDock(c, k, RectF(side.left, side.top, side.right, side.top + DOCK_H * u), listOf(Action.NIEN_KY))
-        drawDock(c, k, RectF(side.left, side.bottom - DOCK_H * u, side.right, side.bottom), listOf(Action.SETTINGS))
+        drawDock(c, k, side, listOf(Action.DAO_HIEU, Action.SETTINGS))
     }
 
     /** The realm card with the trials inside: greeting, realm, road, the day's numbers, thiên kiếp, bí cảnh. */
@@ -245,9 +245,9 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         }
     }
 
-    /** Five even buttons: Công pháp, Tiên lộ, Động phủ, Tông môn, Đạo hiệu (Niên kỷ and Cài đặt sit by the treasures). */
+    /** Five even buttons: Công pháp, Tiên lộ, Động phủ, Tông môn, Niên kỷ (Đạo hiệu and Cài đặt sit by the treasures). */
     private fun drawBottomRow(c: Canvas, k: Ink, r: RectF) {
-        drawDock(c, k, r, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.DAO_HIEU))
+        drawDock(c, k, r, listOf(Action.CONG_PHAP, Action.DAO_LO, Action.DONG_PHU, Action.TONG_MON, Action.NIEN_KY))
     }
 
 
@@ -592,6 +592,11 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
 
     // --- The treasures ----------------------------------------------------------------------
 
+    /** The slot the card shows: one opening its furnace first, else the one furthest along. */
+    private fun leadSlot(): com.exacta.reader.data.Ore? =
+        Store.forge.filter { it.busy }.maxByOrNull { it.tier } ?: Store.forge.maxByOrNull { it.percent }
+
+    /** 4.1: the treasure in the furnace at its stage (Phôi liệu … Thành hình, then khai lô), the six slots. */
     private fun drawTreasures(c: Canvas, k: Ink, r: RectF) {
         val u = k.u
         k.card(c, r)
@@ -601,61 +606,69 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
+        val nb = k.ui10Bold
         k.text(c, "PHÁP BẢO", x, r.top + pad, sb)
         if (Store.unseen > 0) k.right(c, "•${Store.unseen} mới", x + w, r.top + pad, sb)
         val footY = r.bottom - pad - sl
-        k.centered(c, "${Store.beasts.size} món · ${Store.linhThach} linh thạch", x, w, footY, small)
-
-        // The forge: six slots in two rows, when the card is tall enough for them.
-        val nb = k.ui10Bold
+        k.centeredFit(c, "${Store.beasts.size} món · ${Store.linhThach} linh thạch", x, w, footY, small)
         val top = r.top + pad + sl + 10 * u
+
+        // What the lead slot shows: its stage, its name, what it waits on.
+        val o = leadSlot()
+        val st = if (o != null) com.exacta.reader.data.KhaiLo.stage(o) else 0
+        val head = when {
+            o == null -> "Lò chưa nhóm lửa"
+            else -> com.exacta.reader.data.KhaiLo.phaseLine(o)
+        }
+        val detail = when {
+            o == null -> "Đặt khoáng thạch hay sách"
+            o.inKiep -> "ngày ${Store.kiepMet(o)}/${Store.kiepDays(o.tier)} · ${Store.kiepMinutes(o.tier)} phút"
+            o.khai == com.exacta.reader.data.KhaiLo.TASK ->
+                "ngày ${com.exacta.reader.data.KhaiLo.taskMet(o)}/${com.exacta.reader.data.KhaiLo.TASK_DAYS[o.tier]} · ${com.exacta.reader.data.KhaiLo.TASK_MIN[o.tier]} phút"
+            o.khai == com.exacta.reader.data.KhaiLo.COND && o.tuLinh == 1 -> "bế quan ${com.exacta.reader.data.KhaiLo.tlMinutes(o.tier)} phút"
+            o.khai == com.exacta.reader.data.KhaiLo.COND -> com.exacta.reader.data.KhaiLo.condText(o)
+            else -> "${Treasure.TIER_NAMES[o.tier]} · ${o.percent}%"
+        }
+        val stripH = 14 * u
+        val textH = k.lineH(nb) + sl + 10 * u + stripH
+
+        // The six slots under it, when the card is tall enough.
         val slotW = w / 3
-        val oreS = minOf(slotW - 8 * u, 42 * u)
+        val oreS = minOf(slotW - 10 * u, 40 * u)
         val cellH = oreS + 2 * u + sl
-        val forgeH = 2 * cellH + 6 * u + 20 * u
-        val beast = Store.strongest()
-        val names = if (beast != null) k.wrap(beast.name, w, nb, 2) else listOf("Linh tinh chờ luyện")
-        val textH = names.size * k.lineH(nb) + 2 * sl + 8 * u
-        val showForge = footY - top - forgeH - textH >= 80 * u
-        val bottom = if (showForge) footY - 8 * u - forgeH else footY - 10 * u
-        if (showForge) {
-            var fy = bottom + 20 * u
-            c.drawRect(x, fy - 12 * u, x + w, fy - 11 * u, k.gray)
+        val gridH = 2 * cellH + 6 * u + 18 * u
+        val showGrid = footY - 8 * u - top - gridH - textH >= 90 * u
+        val bottom = if (showGrid) footY - 8 * u - gridH else footY - 10 * u
+        if (showGrid) {
+            val fy = bottom + 18 * u
+            c.drawRect(x, fy - 10 * u, x + w, fy - 9 * u, k.gray)
             for (i in 0 until Store.FORGE_SLOTS) {
                 val ore = Store.forge.getOrNull(i)
                 val sx = x + (i % 3) * slotW
                 val cy = fy + (i / 3) * (cellH + 6 * u)
-                when {
-                    ore == null -> k.art(c, "art_crystal", sx + (slotW - oreS) / 2, cy, oreS, 60)
-                    ore.inKiep -> k.icon(c, "thienkiep", sx + (slotW - oreS * 0.8f) / 2, cy + oreS * 0.1f, oreS * 0.8f)
-                    ore.isBook -> {
-                        val b = Store.books[ore.book]
-                        val cw = oreS * 0.68f
-                        k.cover(c, b?.cover ?: "", b?.title ?: "", RectF(sx + (slotW - cw) / 2, cy, sx + (slotW + cw) / 2, cy + oreS))
-                    }
-                    else -> k.ore(c, ore.tier, ore.percent, sx + (slotW - oreS) / 2, cy, oreS)
+                if (ore == null) k.art(c, "art_crystal", sx + (slotW - oreS) / 2, cy, oreS, 50)
+                else k.stage(c, com.exacta.reader.data.KhaiLo.stage(ore), sx + (slotW - oreS) / 2, cy, oreS)
+                val label = when {
+                    ore == null -> "·"
+                    ore.inKiep -> "kiếp"
+                    ore.busy -> "khai lô"
+                    else -> "${ore.percent}%"
                 }
-                k.centered(c, if (ore != null) "${ore.percent}%" else "·", sx, slotW, cy + oreS + 2 * u, small)
+                k.centeredFit(c, label, sx, slotW, cy + oreS + 2 * u, small)
             }
         }
 
-        // The strongest treasure (or the waiting furnace), as large as the card allows.
-        val art = minOf(w * 0.82f, bottom - top - textH).coerceAtLeast(48 * u)
+        // The lead treasure, as large as the card allows.
+        val art = minOf(w * 0.86f, bottom - top - textH).coerceAtLeast(48 * u)
         val ay = top + maxOf(0f, (bottom - top - art - textH) / 2)
-        if (beast != null) k.badge(c, beast.species, x + (w - art) / 2, ay, art)
-        else k.art(c, "art_crystal", x + (w - art * 0.9f) / 2, ay + art * 0.05f, art * 0.9f)
-        var ny = ay + art + 8 * u
-        for (l in names) {
-            k.centered(c, l, x, w, ny, nb)
-            ny += k.lineH(nb)
-        }
-        val sub = when {
-            beast == null -> "Thiên tài địa bảo, đợi ngày khai lô"
-            beast.spirit.isNotEmpty() -> "«${beast.spirit}» · " + Treasure.TIER_NAMES[beast.tier]
-            else -> Treasure.CLANS[beast.tier] + " · " + Treasure.TIER_NAMES[beast.tier]
-        }
-        if (small.measureText(sub) <= w) k.centered(c, sub, x, w, ny, small)
-        else for ((j, part) in sub.split(" · ").withIndex()) k.centered(c, part, x, w, ny + j * sl, small)
+        if (o == null) k.art(c, "art_crystal", x + (w - art) / 2, ay, art, 90)
+        else k.stage(c, st, x + (w - art) / 2, ay, art)
+        var ty = ay + art + 6 * u
+        k.centeredFit(c, head, x, w, ty, nb)
+        ty += k.lineH(nb)
+        k.centeredFit(c, detail, x, w, ty, small)
+        ty += sl + 10 * u
+        k.stageStrip(c, x + w * 0.08f, ty, w * 0.84f, stripH, st)
     }
 
     // --- Omega cards ------------------------------------------------------------------------
@@ -760,7 +773,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             val (name, label) = all.getValue(action)
             val cell = RectF(r.left + i * (cw + g), r.top, r.left + i * (cw + g) + cw, r.bottom)
             k.card(c, cell)
-            if (actions.size >= 5) {
+            if (actions.size >= 5 || cw < 230 * u) {
                 val ic = 30 * u
                 val lp = k.smallBold
                 val top = cell.centerY() - (ic + 4 * u + k.lineH(lp)) / 2
