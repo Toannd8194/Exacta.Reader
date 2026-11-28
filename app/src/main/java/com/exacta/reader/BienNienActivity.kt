@@ -138,6 +138,8 @@ class BienNienActivity : TabActivity() {
                 "Qua Lục Giới Môn: mang theo bản mệnh, công pháp, linh căn, kiếp ấn; tiên hiệu theo giới; màn kết phần một; tiền đình ghi mọi chữ đọc chờ phần hai."),
             Era("2.7.1", "Tế Luyện Bố Trận",
                 "Tế luyện 36 tầng cấm chế: pháp khí, pháp bảo, linh bảo, thông thiên linh bảo; bảy trận pháp trong động phủ, trận nhãn theo linh mạch; linh thạch vẽ lại."),
+            Era("2.7.2", "Hộ Thân Họa Phù",
+                "Ô trang bị từ Kim Đan, chỉ món đeo mới dùng được trong biến cố và kiếp; phù thất: vẽ chín loại phù bằng phù chỉ, chu sa và một buổi đọc liền."),
         )
     }
 }

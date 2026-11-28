@@ -109,7 +109,8 @@ object BiCanh {
     // --- Biến cố ----------------------------------------------------------------------------------------
 
     private fun has(kind: Int) = DaoPhap.thuatOn.any { DaoPhap.on(it) && PhapMon.THUAT_PHAP[it].kind == kind }
-    private fun strongest() = Store.strongest()?.tier ?: -1
+    /** From Kim Đan only what is worn serves in a fight. */
+    private fun strongest() = TrangBi.bestTier()
     private fun pills() = (0 until Treasure.ITEMS).filter { Treasure.isPill(it) && Store.items[it] > 0 }
 
     fun chances(): Map<String, Int> = mapOf(
@@ -120,7 +121,7 @@ object BiCanh {
 
     fun choices(type: Int = current()): List<Choice> {
         val ch = chances()
-        val best = Store.strongest()
+        val best = TrangBi.best()
         return when (type) {
             YEU_THU -> listOf(
                 Choice("Dùng thuật công kích", "cần mang một thuật công kích", has(PhapMon.K_CONG_KICH)),

@@ -521,12 +521,16 @@ def herb_list(spec):
     return ', '.join(out)
 
 
+PHUS27 = re.findall(r'Phu\((\d+), (\d), (\d), (\d+), (\d)\)', read('data', 'TrangBi.kt'))
+assert len(PHUS27) == 9, len(PHUS27)
+THAN_TRONG = ['Nhất trọng', 'Nhị trọng', 'Tam trọng', 'Tứ trọng', 'Ngũ trọng', 'Lục trọng', 'Thất trọng', 'Bát trọng', 'Cửu trọng']
 TELUYEN = read('data', 'TeLuyen.kt')
 TRANS27 = re.findall(r'Tran\("([^"]+)", "([^"]+)", (\d+), (\d)\)', TELUYEN)
 assert len(TRANS27) == 7, len(TRANS27)
 
 
 def part2c():
+    phus = table(['Phù', 'Phù chỉ', 'Chu sa', 'Buổi đọc', 'Thần thức'], [[f'<b>{e(ITEM_NAMES[int(i)])}</b>', p, k, f'{m}′', e(THAN_TRONG[int(tr)])] for i, p, k, m, tr in PHUS27], 'lib')
     trans = table(['Trận', 'Hiệu quả', 'Giá', 'Linh mạch'], [[f'<b>{e(n)}</b>', e(g), f'{p} LT', e(GIAI[int(gi) - 1])] for n, g, p, gi in TRANS27], 'lib')
     recipes = table(['Đan', 'Loại', 'Linh thảo', 'Hỏa hầu', 'Cần', 'Độc', 'Công dụng'], [
         [f'<b>{e(n)}</b>', e(DAN_GROUPS[GROUP_CONST.index(g)]), e(herb_list(h)), f'{m}′', e(DAN_CAP[int(c) - 1]), d, e(t)]
@@ -552,6 +556,12 @@ một hạt cùng loại. Hạt mua ở Dược viên (LT): {seeds}; còn hái �
 <p>Tỉ lệ thành = 60% + 8% mỗi bậc luyện đan sư trên mức đan cần + 3% mỗi 100 năm thảo dư (tối đa 15%), trong khoảng 20 – 98%.
 Thành thì phẩm đan theo độ dư: dư từ 20 trung phẩm, 40 thượng phẩm, 60 cực phẩm. Luyện đan sư Tứ phẩm ra 2 viên một lò, Thất phẩm
 3 viên. Cấp luyện đan sư theo số lò thành: {caps}.</p>
+
+{h2('Phù thất', True)}
+<p>Từ bản 2.7.2 phù lục vẽ được bằng tay (Pháp bảo › Túi đồ, trang 3): phù chỉ, chu sa và một buổi đọc liền giữ nét bút; dừng sớm
+là đứt nét, mất vật liệu. Tỉ lệ 55% + 6% mỗi trọng thần thức trên mức phù cần, Bách nghệ +10%, Phù Lục Sơn +10% (20 – 95%); dư từ
+40% thì được hai tấm. Phù chỉ mua 10 LT hoặc nhặt ở bí cảnh (2 mỗi tuần); chu sa chỉ có ở bí cảnh tuần (1 – 2).</p>
+{phus}
 
 {h2('Trận pháp', True)}
 <p>Từ bản 2.7.1. Dựng trận bằng linh thạch ở Động phủ › Trận pháp; trận chỉ có hiệu lực khi bày vào <b>trận nhãn</b>: một trận nhãn,
@@ -841,6 +851,12 @@ bảo</b>, 28 – 36 <b>thông thiên linh bảo</b>. Qua mốc tầng 9, 18, 27
 phẩm) và 50 / 150 / 400 LT; thông thiên linh bảo chỉ luyện được ở Linh giới. Đổi món đang luyện thì giữ tầng đã luyện, mất phần chữ dở.
 Món luyện sâu nhất cho: linh lực +1% mỗi 4 tầng, đột phá +1% mỗi phẩm, bí cảnh liều đánh và điện chủ +4% mỗi phẩm, lôi kiếp Độ Kiếp
 +2% mỗi phẩm.</p>
+
+{h2('Ô trang bị', True)}
+<p>Từ bản 2.7.2. Ở Kim Đan người tu đeo được 2 pháp bảo, mỗi đại cảnh giới thêm một ô (Nguyên Anh 3 … Tiên nhân 9); bản mệnh luôn
+đeo, không tốn ô. Từ Kim Đan, chỉ món <b>đang đeo</b> mới dùng được trong biến cố bí cảnh (liều đánh, phá bằng pháp bảo, điện chủ)
+và lôi kiếp Độ Kiếp; mỗi món đeo thêm sau món đầu là hộ thân +1% ở lôi kiếp và thiên kiếp, tối đa 5%. Trước Kim Đan cả bộ sưu tập
+cùng ra tay. Đeo, tháo ở Bảo khố: chạm một món.</p>
 
 {h2('Bộ pháp bảo')}
 <p>18 bộ, mỗi bộ bốn loại; mỗi loại thuộc đúng một bộ. Có đủ bốn loại thì bộ <b>kích hoạt mãi mãi</b> (kể cả khi sau này

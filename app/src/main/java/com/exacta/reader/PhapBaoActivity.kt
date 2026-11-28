@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import com.exacta.reader.data.Beast
 import com.exacta.reader.data.Store
+import com.exacta.reader.data.TuLuyen
 import com.exacta.reader.game.Treasure
 import com.exacta.reader.ui.Hits
 import com.exacta.reader.ui.Ink
@@ -36,6 +37,59 @@ class PhapBaoActivity : TabActivity() {
         3 -> treasury(c, k, area, page, hits)
         4 -> sets(c, k, area, page, hits)
         else -> refine(c, k, area, page, hits)
+    }
+
+    // --- Phù thất: the phù lục drawn by hand --------------------------------------------------------------
+
+    private fun phuThat(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val p = com.exacta.reader.data.PhuLuc
+        var y = k.section(c, a.left, a.top, a.width(), "PHÙ THẤT · PHÙ CHỈ ${p.paper} · CHU SA ${p.ink}")
+        val buy = RectF(a.right - 230 * u, y, a.right, y + 48 * u)
+        y = para(c, k, "Vẽ phù: phù chỉ, chu sa và một buổi đọc liền giữ nét bút. Thần thức càng cao nét càng linh. Chu sa chỉ có ở bí cảnh tuần.",
+            a.left, y, buy.left - a.left - 14 * u, small, 3)
+        k.button(c, buy, "Mua phù chỉ · ${p.PAPER_PRICE} LT", sb, enabled = Store.linhThach >= p.PAPER_PRICE)
+        if (Store.linhThach >= p.PAPER_PRICE) hits.add(buy) { p.buyPaper(); refresh() }
+        y = maxOf(y, buy.bottom) + 12 * u
+        if (p.drawing >= 0) {
+            val r = RectF(a.left, y, a.right, y + 2 * 14 * u + k.lineH(k.ui10Bold) + sl + 52 * u)
+            k.card(c, r, selected = true)
+            k.text(c, "Đang vẽ ${p.name(p.drawing)}", r.left + 14 * u, r.top + 14 * u, k.ui10Bold)
+            k.line(c, "Buổi đọc tới phải liền ${p.PHUS[p.drawing].minutes} phút; dừng sớm là đứt nét. Tỉ lệ ${p.drawChance}%.", r.left + 14 * u, r.top + 14 * u + k.lineH(k.ui10Bold), r.width() - 28 * u, small)
+            val b = RectF(r.left + 14 * u, r.bottom - 14 * u - 44 * u, r.right - 14 * u, r.bottom - 14 * u)
+            k.button(c, b, "Gác bút, lấy lại phù chỉ và chu sa", sb)
+            hits.add(b) { p.cancel(); refresh() }
+            y = r.bottom + 12 * u
+        } else if (p.lastResult.isNotEmpty()) {
+            k.line(c, "Gần nhất: ${p.lastResult}", a.left, y, a.width(), sb)
+            y += sl + 8 * u
+        }
+        val gap = 10 * u
+        val cw = (a.width() - gap) / 2
+        val rows = (p.PHUS.size + 1) / 2
+        val ch = ((a.bottom - y - (rows - 1) * gap) / rows).coerceAtMost(2 * 12 * u + k.lineH(k.ui10Bold) + 2 * sl)
+        for (i in p.PHUS.indices) {
+            val f = p.PHUS[i]
+            val r = RectF(a.left + (i % 2) * (cw + gap), y + (i / 2) * (ch + gap), a.left + (i % 2) * (cw + gap) + cw, y + (i / 2) * (ch + gap) + ch)
+            val can = p.canDraw(i)
+            if (can || TuLuyen.trong() >= f.trong) k.card(c, r, selected = can) else c.drawRoundRect(k.inset(r, u), 12 * u, 12 * u, k.faint)
+            val pic = minOf(ch - 20 * u, 44 * u)
+            k.art(c, "art_item_${f.item}", r.left + 8 * u, r.top + (ch - pic) / 2, pic, if (can) 255 else 90)
+            val tx = r.left + 16 * u + pic
+            val tw = r.right - 10 * u - tx
+            k.line(c, p.name(i), tx, r.top + 10 * u, tw, k.ui10Bold)
+            k.line(c, "${f.paper} chỉ · ${f.ink} chu sa · ${f.minutes} phút", tx, r.top + 10 * u + k.lineH(k.ui10Bold), tw, small)
+            k.line(c, if (TuLuyen.trong() < f.trong) "Cần thần thức ${TuLuyen.TRONG[f.trong]}" else "Tỉ lệ ${p.chance(i)}% · có ${Store.items[f.item]}", tx, r.top + 10 * u + k.lineH(k.ui10Bold) + sl, tw, if (can) sb else small)
+            if (can) hits.add(r) {
+                AlertDialog.Builder(this).setTitle("Vẽ ${p.name(i)}?")
+                    .setMessage("${Treasure.ITEM_TEXTS[f.item]}\n\nTốn ${f.paper} phù chỉ, ${f.ink} chu sa. Buổi đọc tới phải liền ${f.minutes} phút; dừng sớm là đứt nét, mất vật liệu. Tỉ lệ ${p.chance(i)}%; vẽ khéo được hai tấm.")
+                    .setPositiveButton("Vẽ phù") { _, _ -> p.start(i); refresh() }.setNegativeButton("Thôi", null).show()
+            }
+        }
+        return 3
     }
 
     // --- Tế luyện cấm chế -------------------------------------------------------------------------------
@@ -198,6 +252,7 @@ class PhapBaoActivity : TabActivity() {
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
+        if (page == 2) return phuThat(c, k, a, hits)
         if (page == 1) {
             var y = k.section(c, a.left, a.top, a.width(), "ĐANG CÓ HIỆU LỰC")
             val active = listOfNotNull(
@@ -232,7 +287,7 @@ class PhapBaoActivity : TabActivity() {
                 k.text(c, k.fit(line, a.width() - 24 * u, small), a.left + 20 * u, y, small)
                 y += sl + 4 * u
             }
-            return 2
+            return 3
         }
 
         var y = k.section(c, a.left, a.top, a.width(), "KHOÁNG THẠCH · ${Store.bag.sum()} viên")
@@ -268,7 +323,7 @@ class PhapBaoActivity : TabActivity() {
             k.text(c, "× ${Store.items[i]}", tx, ty, small)
             hits.add(r) { itemDialog(i) }
         }
-        return 2
+        return 3
     }
 
     private fun toast(t: String) = android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_SHORT).show()
@@ -428,7 +483,9 @@ class PhapBaoActivity : TabActivity() {
         k.card(c, bar, selected = ready.isNotEmpty())
         val btn = RectF(bar.right - 190 * u, bar.top + 8 * u, bar.right - 8 * u, bar.bottom - 8 * u)
         k.button(c, btn, if (ready.isEmpty()) "Hợp luyện" else "Hợp luyện · ${ready.size}", enabled = ready.isNotEmpty())
-        val hint = if (ready.isEmpty()) "Hợp luyện: 3 pháp bảo dư cùng phẩm thành 1 khoáng thạch phẩm trên · đã luyện ${Store.mergeCount} lần"
+        val tb = com.exacta.reader.data.TrangBi
+        val wear = if (tb.active()) "Ô trang bị ${tb.worn.size}/${tb.slots()} · " else ""
+        val hint = wear + if (ready.isEmpty()) "Hợp luyện: 3 pháp bảo dư cùng phẩm thành 1 khoáng thạch phẩm trên · đã luyện ${Store.mergeCount} lần"
             else "Có ${ready.size} phẩm đủ 3 pháp bảo dư để hợp luyện · đã luyện ${Store.mergeCount} lần"
         val hl = k.wrap(hint, btn.left - bar.left - 24 * u, k.small, 2)
         var hy = bar.centerY() - hl.size * k.lineH(k.small) / 2
@@ -464,6 +521,12 @@ class PhapBaoActivity : TabActivity() {
                 ny += k.lineH(sb) - 2 * u
             }
             k.centered(c, if (b.spirit.isNotEmpty()) "«${b.spirit}»" else Treasure.CLANS[b.tier], r.left + 4 * u, r.width() - 8 * u, ny + 2 * u, small)
+            if (com.exacta.reader.data.TrangBi.isWorn(b.seed) && com.exacta.reader.data.TrangBi.active()) {
+                // Worn on the body: a black corner tag.
+                val tag = RectF(r.right - 58 * u, r.top + 4 * u, r.right - 4 * u, r.top + 4 * u + k.lineH(sb) + 2 * u)
+                c.drawRoundRect(tag, 6 * u, 6 * u, k.fill)
+                k.centered(c, "đeo", tag.left, tag.width(), tag.top + u, k.paint(Ink.SMALL, bold = true, color = android.graphics.Color.WHITE))
+            }
             hits.add(r) { showBeast(b) }
         }
         return pages
@@ -623,7 +686,15 @@ class PhapBaoActivity : TabActivity() {
     private fun showBeast(b: Beast) {
         val day = if (b.bornDay >= 0) LocalDate.ofEpochDay(b.bornDay).let { " ngày ${it.dayOfMonth}/${it.monthValue}/${it.year}" } else ""
         val set = Treasure.setOf(b.species)
-        AlertDialog.Builder(this)
+        val tb = com.exacta.reader.data.TrangBi
+        val wearLine = if (!tb.active()) "\n\nÔ trang bị mở ở Kim Đan." else if (com.exacta.reader.data.LinhGioi.isBanMenh(b.seed)) "\n\nBản mệnh: luôn đeo trên người."
+            else if (tb.isWorn(b.seed)) "\n\nĐang đeo trên người (ô ${tb.worn.size}/${tb.slots()})." else "\n\nCất trong bảo khố. Ô trang bị ${tb.worn.size}/${tb.slots()}: chỉ món đeo mới dùng được trong biến cố bí cảnh và lôi kiếp."
+        val d = AlertDialog.Builder(this)
+        if (tb.active() && !com.exacta.reader.data.LinhGioi.isBanMenh(b.seed)) {
+            if (b.seed in tb.worn) d.setNegativeButton("Tháo xuống") { _, _ -> tb.takeOff(b.seed); refresh() }
+            else if (tb.canWear(b.seed)) d.setNegativeButton("Đeo lên người") { _, _ -> tb.wear(b.seed); refresh() }
+        }
+        d
             .setTitle(b.name)
             .setMessage(
                 "${Treasure.CLANS[b.tier]} · ${Treasure.TIER_NAMES[b.tier]}\n" +
@@ -631,7 +702,7 @@ class PhapBaoActivity : TabActivity() {
                     (if (b.spirit == Treasure.TRIAL_MARK) "Đã qua kiếp phá lô: «${b.spirit}»\n" else if (b.spirit.isNotEmpty()) "Khí linh thức tỉnh: «${b.spirit}»\n" else "") +
                     (if (set >= 0) "Thuộc bộ: ${Treasure.SET_NAMES[set]}\n" else "") +
                     "Luyện thành$day\n" +
-                    (if (b.book.isNotEmpty()) "Từ «${b.book}»" else "")
+                    (if (b.book.isNotEmpty()) "Từ «${b.book}»" else "") + wearLine
             )
             .setPositiveButton("Đóng", null)
             .show()

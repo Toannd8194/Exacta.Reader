@@ -43,6 +43,7 @@ class TienDinhTest {
         DaoPhap.reset(); DongPhu.reset(); TongMon.reset(); BiCanh.reset(); DaoLo.reset(); LinhGioi.reset(); DoKiep.reset()
         TienDinh.reset(); TienDinh.started = true
         com.exacta.reader.data.TeLuyen.reset(); com.exacta.reader.data.TranPhap.reset()
+        com.exacta.reader.data.TrangBi.reset(); com.exacta.reader.data.PhuLuc.reset()
     }
 
     @After

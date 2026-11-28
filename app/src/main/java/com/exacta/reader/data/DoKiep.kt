@@ -153,8 +153,9 @@ object DoKiep {
         val kind = tang.kind
         val half = if (kind == CUU_CUU) 2 else 1
         if (kind == LOI || kind == CUU_CUU) {
-            val best = Store.beasts.maxOfOrNull { it.tier } ?: -1
-            if (best >= 0) list.add(Triple("Pháp bảo mạnh nhất, phẩm ${best + 1}", 3 * (best + 1) / half, 0))
+            val best = TrangBi.bestTier()
+            if (best >= 0) list.add(Triple("Pháp bảo đeo mạnh nhất, phẩm ${best + 1}", 3 * (best + 1) / half, 0))
+            if (TrangBi.guard() > 0) list.add(Triple("Pháp bảo hộ thân", TrangBi.guard() / half, 0))
             if (LinhGioi.banMenhLevel() > 0) list.add(Triple("Bản mệnh tầng ${LinhGioi.banMenhLevel()}", 2 * LinhGioi.banMenhLevel() / half, 0))
             val body = DaoLo.breakParts(8).filter { it.second != 0 && !it.first.startsWith("Đạo lộ hợp") && !it.first.startsWith("Song Anh") }
             for (p in body) list.add(Triple(p.first, p.second / half, if (p.first.startsWith("Thể phách")) 1 else 0))

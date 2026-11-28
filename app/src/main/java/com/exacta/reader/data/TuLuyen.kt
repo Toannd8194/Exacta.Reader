@@ -467,6 +467,7 @@ object TuLuyen {
         if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
         list.addAll(DaoLo.breakParts(g))
         list.addAll(LinhGioi.breakParts(g))
+        if ((g == 3 || g >= 5) && TrangBi.guard() > 0) list.add("Pháp bảo hộ thân, ${TrangBi.serving().size} món" to TrangBi.guard())
         if (TeLuyen.breakPart() > 0) list.add("${TeLuyen.GRADES[TeLuyen.bestGrade()]} cấm chế tầng ${TeLuyen.bestLevel()}" to TeLuyen.breakPart())
         DoKiep.lifeGamble()?.let { list.add(it) }
         if (DongPhu.breakPill[g] > 0) list.add(com.exacta.reader.game.DanDao.RECIPES[com.exacta.reader.game.DanDao.breakRecipe(g)].name to DongPhu.breakPill[g])

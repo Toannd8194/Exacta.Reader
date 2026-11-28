@@ -43,6 +43,7 @@ class TeLuyenTest {
         DaoPhap.reset(); DongPhu.reset(); TongMon.reset(); BiCanh.reset(); DaoLo.reset(); LinhGioi.reset(); DoKiep.reset(); TienDinh.reset()
         TeLuyen.reset(); TeLuyen.started = true
         TranPhap.reset(); TranPhap.started = true
+        com.exacta.reader.data.TrangBi.reset(); com.exacta.reader.data.PhuLuc.reset()
     }
 
     private fun beast(seed: Long, tier: Int): Beast = Beast(seed, tier, today, "Thử", 0).also { Store.beasts.add(it) }

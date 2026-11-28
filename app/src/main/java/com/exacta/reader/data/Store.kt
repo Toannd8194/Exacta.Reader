@@ -250,6 +250,8 @@ object Store {
         if (!TienDinh.started) TienDinh.migrate()
         if (!TeLuyen.started) TeLuyen.migrate()
         if (!TranPhap.started) TranPhap.migrate()
+        if (!TrangBi.started) TrangBi.migrate()
+        if (!PhuLuc.started) PhuLuc.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -330,6 +332,8 @@ object Store {
         o.optJSONObject("tienDinh")?.let { TienDinh.read(it) }
         o.optJSONObject("teLuyen")?.let { TeLuyen.read(it) }
         o.optJSONObject("tranPhap")?.let { TranPhap.read(it) }
+        o.optJSONObject("trangBi")?.let { TrangBi.read(it) }
+        o.optJSONObject("phuLuc")?.let { PhuLuc.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -418,6 +422,8 @@ object Store {
             put("tienDinh", TienDinh.toJson())
             put("teLuyen", TeLuyen.toJson())
             put("tranPhap", TranPhap.toJson())
+            put("trangBi", TrangBi.toJson())
+            put("phuLuc", PhuLuc.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -477,6 +483,8 @@ object Store {
         TienDinh.reset()
         TeLuyen.reset()
         TranPhap.reset()
+        TrangBi.reset()
+        PhuLuc.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -493,6 +501,8 @@ object Store {
         if (!TienDinh.started) TienDinh.migrate()
         if (!TeLuyen.started) TeLuyen.migrate()
         if (!TranPhap.started) TranPhap.migrate()
+        if (!TrangBi.started) TrangBi.migrate()
+        if (!PhuLuc.started) PhuLuc.migrate()
         dirty = true
         save()
         return true
@@ -520,6 +530,7 @@ object Store {
     fun endSession(seconds: Long) {
         TuLuyen.onSessionEnd(seconds)
         DongPhu.onSessionEnd(seconds)
+        PhuLuc.onSessionEnd(seconds)
         checkRealm()
         touch()
     }
@@ -547,6 +558,7 @@ object Store {
         }
         TuLuyen.onSeconds(book, seconds, session)
         DongPhu.onSeconds(session)
+        PhuLuc.onSeconds(session)
         checkKiep()
         checkRealm()
         checkBiCanh()
@@ -1458,6 +1470,7 @@ object Store {
         LinhGioi.check()
         DoKiep.check()
         TeLuyen.cleanLost()
+        TrangBi.cleanLost()
         val level = level()
         if (level > realmSeen) {
             realmSeen = level
@@ -1498,6 +1511,7 @@ object Store {
         biCanhWeek = week
         biCanhCount++
         LinhGioi.onBiCanh(week)
+        PhuLuc.onBiCanh()
         val lift = if (setActive(14)) 1 else 0
         giveOre((maxOf(Treasure.rollTier(), 1) + lift).coerceAtMost(Treasure.TIERS - 1), "Qua bí cảnh tuần")  // never below Huyền
         if (setActive(5)) giveOre(maxOf(Treasure.rollTier(), 1), "Phong Thần Bảo Lục")
