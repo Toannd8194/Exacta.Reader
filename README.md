@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.2.apk`](dist/Van-Quyen-Tien-Do-3.2.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.2.1.apk`](dist/Van-Quyen-Tien-Do-3.2.1.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,27 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 3.2.1 · Bát Quái Khai Trận
+
+- **Khoáng thạch vẽ lại thành pixel thật**: lưới 32 × 32 ô, viền một ô, mỗi chất liệu một dải sáu màu (bóng ngả lạnh, sáng ngả
+  ấm), chọn độ sáng để màn e-ink đen trắng vẫn rõ khối. Sáu cấp:
+  1. Hoàng: hòn đá góc cạnh, vỡ thành những mặt phẳng.
+  2. Huyền: tinh thiết vừa đào lên, sáng như thép, đất còn bám.
+  3. Địa: hồng ngọc ẩn trong đá, ló ra từ khe vỡ.
+  4. Thiên: khối thiên thạch rực lửa, kéo đuôi lửa.
+  5. Âm Dương: viên ngọc Thái Cực, hai luồng khí tức sáng tối quấn quanh rồi bốc lên.
+  6. Hỗn Độn: viên ngọc hỗn độn trong đài cánh vàng, nửa thật nửa ảo: một bên đặc, một bên lúc có lúc không, bóng viên ngọc
+     trôi đi, cánh vỡ thành bụi sáng.
+
+  Linh thạch cũng vẽ lại ở lưới 32.
+- **Tĩnh thất**: bế quan tối đa 90 phút (30, 45, 60, 75, 90); đẳng cao nhất Thiên Cung là **tiềm tu** 120 phút. Bỏ mức 180
+  phút. Sáu đẳng xếp hai cột, vừa một trang. Bế quan dở ở mức cũ quá 120 phút được hạ về 120.
+- **18 trận pháp** (thêm 11): Tụ Tài (linh thạch từ chữ +15%), Cố Nguyên (căn cơ +5), Minh Ngộ (đọc trọn một cuốn ngộ tính +1),
+  Định Thần (tâm cảnh +5), Kim Cương (thể phách +15%), Ngũ Hành (chữ vào tầng công pháp +20%), Chiêu Duyên (kỳ ngộ +15%), Dẫn
+  Lôi (đột phá +3%), Luyện Khí (tế luyện +20%), Tụ Hồn (thần thức +5), Cửu Cung Bát Quái (linh lực +6%, tâm ma chậm 10%, cần
+  linh mạch Bát giai). Vẫn tối đa ba trận nhãn, nên phải chọn. Tab Trận pháp chia trang, trận đang bày đứng đầu.
+- versionCode 321.
 
 ## Bản 3.2 · Tâm Đăng Bất Diệt
 
@@ -171,7 +192,7 @@ Bản chuẩn bị cho phần hai: mỗi giới sống bằng một lối đọc
 - **Thọ nguyên**: mỗi ngày là một năm, mỗi cảnh giới một hạn (Tu vi › Thân, trang 2); sắp cạn thì đột phá liều mạng +10%.
   **Chế độ Chân Tu** (Cài đặt › Chế độ tu, tùy chọn): cạn thọ nguyên là tọa hóa, chuyển thế tu lại từ Luyện Khí, nhanh gấp
   rưỡi tới cảnh giới kiếp trước; Vong Xuyên Bỉ Ngạn nhớ những lần chuyển thế.
-- **Động phủ**: tĩnh thất sáu đẳng (Thạch Thất 30 phút tới Thiên Cung 180 phút), nâng bằng linh thạch, đẳng cao lò nóng hơn;
+- **Động phủ**: tĩnh thất sáu đẳng (Thạch Thất 30 phút tới Thiên Cung: tiềm tu 120 phút), nâng bằng linh thạch, đẳng cao lò nóng hơn;
   32 đan phương (thêm luyện thần, thọ nguyên, căn cơ, ngộ đạo, đan phá cảnh Hợp Thể, Đại Thừa, Độ Kiếp, Song Anh), mua đan
   phương ngay ở đan phòng; 12 linh thảo; chọn hạt gieo bằng thẻ.
 - versionCode 260.
@@ -385,6 +406,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.0.1 | Sơn Môn Định Phận | Tông môn mở theo cảnh giới, chức vụ theo thời gian, bổng ngày, phản tông |
   | 3.1 | Vạn Pháp Trùng Tu | 72 công pháp, 12 mạch, ba đặc hiệu, lối vận công, xung quan, chuyển tu, phụ tu |
   | 3.2 | Tâm Đăng Bất Diệt | 18 tâm pháp, bốn phái, năm cảnh, vận chuyển theo lối đọc, xung khắc, ba ô |
+  | 3.2.1 | Bát Quái Khai Trận | Khoáng thạch pixel 32 ô có màu, tĩnh thất tới 90 phút và tiềm tu 120, 18 trận pháp |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

@@ -417,7 +417,7 @@ object DaoPhap {
         val before = tang()
         val way = inWay(CONG_PHAP[active].mach, book)
         if (way) wayWords += words
-        val n = words * (if (way) PhapMon.WAY_PERCENT else 100) / 100 * (100 + PhapMon.effectValue(PhapMon.E_VAN_CONG, lv(PhapMon.E_VAN_CONG))) / 100
+        val n = words * (if (way) PhapMon.WAY_PERCENT else 100) / 100 * (100 + PhapMon.effectValue(PhapMon.E_VAN_CONG, lv(PhapMon.E_VAN_CONG)) + TranPhap.vanCong()) / 100
         c.words = minOf(c.words + n, c.opened * need(active))
         val after = tang()
         val name = CONG_PHAP[active].name
@@ -460,7 +460,7 @@ object DaoPhap {
         list.addAll(LinhGioi.speedParts())
         if (DoKiep.speedBonus() > 0) list.add("Ký ức tiền kiếp" to DoKiep.speedBonus())
         if (TeLuyen.speedBonus() > 0) list.add("Pháp bảo cấm chế tầng ${TeLuyen.bestLevel()}" to TeLuyen.speedBonus())
-        if (TranPhap.speedBonus() > 0) list.add("Tụ Linh Trận" to TranPhap.speedBonus())
+        if (TranPhap.speedBonus() > 0) list.add("Trận pháp" to TranPhap.speedBonus())
         return list
     }
 
@@ -484,7 +484,7 @@ object DaoPhap {
 
     fun onFinish(book: Book) {
         if (!started) return
-        gainNgo(1 + (if (book.words >= TuLuyen.NGO_DAO_WORDS) 1 else 0) + lv(PhapMon.E_NGO_TINH), "Đọc trọn «${book.title}»")
+        gainNgo(1 + (if (book.words >= TuLuyen.NGO_DAO_WORDS) 1 else 0) + lv(PhapMon.E_NGO_TINH) + TranPhap.ngo(), "Đọc trọn «${book.title}»")
         // 3.2: the tâm pháp that turn with a book read through.
         for (id in tamOn.toList()) if (TAM_PHAP[id].way == PhapMon.W_FINISH) turn(id, PhapMon.FINISH_TURNS)
     }
@@ -624,8 +624,8 @@ object DaoPhap {
     /** The 2.1 name: a sitting of 30 minutes, the reading out of every way. */
     fun onSitting30() = onTamSeconds(null, 0, 30 * 60L)
 
-    fun tamCanhBonus() = 5 * tamOn.count { canh(it) >= 3 } + PhapMon.effectValue(PhapMon.E_TAM_CANH, lv(PhapMon.E_TAM_CANH)) - (if (flaw(PhapMon.F_TAM_CANH)) 5 else 0)
-    fun canCoBonus() = PhapMon.effectValue(PhapMon.E_CAN_CO, lv(PhapMon.E_CAN_CO)) + (if (tamWorks(PhapMon.TP_DUONG_KHI)) 5 else 0) - (if (flaw(PhapMon.F_CAN_CO)) 5 else 0)
+    fun tamCanhBonus() = 5 * tamOn.count { canh(it) >= 3 } + TranPhap.tamCanh() + PhapMon.effectValue(PhapMon.E_TAM_CANH, lv(PhapMon.E_TAM_CANH)) - (if (flaw(PhapMon.F_TAM_CANH)) 5 else 0)
+    fun canCoBonus() = TranPhap.canCo() + PhapMon.effectValue(PhapMon.E_CAN_CO, lv(PhapMon.E_CAN_CO)) + (if (tamWorks(PhapMon.TP_DUONG_KHI)) 5 else 0) - (if (flaw(PhapMon.F_CAN_CO)) 5 else 0)
 
     /** Percent of a rise of tâm ma that comes through. */
     fun stirPercent() = (if (tamWorks(PhapMon.TP_THANH_TAM)) 50 else 100) * (100 - PhapMon.effectValue(PhapMon.E_TINH_TAM, lv(PhapMon.E_TINH_TAM))).coerceAtLeast(40) / 100 *

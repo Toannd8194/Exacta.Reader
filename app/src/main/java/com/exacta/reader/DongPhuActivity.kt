@@ -36,12 +36,12 @@ class DongPhuActivity : TabActivity() {
         2 -> danPhong(c, k, area, page, hits)
         3 -> danDuoc(c, k, area, page, hits)
         4 -> tinhThat(c, k, area, hits)
-        else -> tranPhap(c, k, area, hits)
+        else -> tranPhap(c, k, area, page, hits)
     }
 
     // --- Trận pháp ------------------------------------------------------------------------------------
 
-    private fun tranPhap(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+    private fun tranPhap(c: Canvas, k: Ink, a: RectF, page: Int, hits: Hits): Int {
         val u = k.u
         val small = k.small
         val sb = k.smallBold
@@ -49,8 +49,12 @@ class DongPhuActivity : TabActivity() {
         var y = k.section(c, a.left, a.top, a.width(), "TRẬN PHÁP · TRẬN NHÃN ${tp.set.size}/${tp.eyes()}")
         y = para(c, k, "Dựng trận bằng linh thạch, đặt vào trận nhãn mới có hiệu lực. Linh mạch mở thêm trận nhãn ở Tứ giai và Thất giai. Chạm trận đã dựng để bày hay thu.",
             a.left, y, a.width(), small, 3) + 10 * u
-        val h = ((a.bottom - y - 6 * 8 * u) / 7).coerceAtMost(2 * 12 * u + k.lineH(k.ui10Bold) + 2 * u + k.lineH(small))
-        for ((i, tr) in tp.TRANS.withIndex()) {
+        val h = 2 * 12 * u + k.lineH(k.ui10Bold) + 2 * u + k.lineH(small)
+        val per = ((a.bottom - y + 8 * u) / (h + 8 * u)).toInt().coerceAtLeast(1)
+        // Those set first, then those built, then the rest by the linh mạch they ask.
+        val order = tp.TRANS.indices.sortedWith(compareBy<Int>({ !tp.on(it) }, { it !in tp.built }, { tp.TRANS[it].giai }, { it }))
+        for (i in order.drop(page * per).take(per)) {
+            val tr = tp.TRANS[i]
             val r = RectF(a.left, y, a.right, y + h)
             val built = i in tp.built
             val on = tp.on(i)
@@ -78,7 +82,7 @@ class DongPhuActivity : TabActivity() {
             }
             y = r.bottom + 8 * u
         }
-        return 1
+        return (tp.TRANS.size + per - 1) / per
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
@@ -455,13 +459,13 @@ class DongPhuActivity : TabActivity() {
         val tx = card.left + 2 * pad + 64 * u
         val tw = card.right - pad - tx
         if (Store.beQuanTarget > 0) {
-            k.text(c, "Đang bế quan · ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút", tx, card.top + pad, k.ui12Bold)
+            k.text(c, "Đang ${Store.beQuanName(Store.beQuanTarget).lowercase()} · ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút", tx, card.top + pad, k.ui12Bold)
             k.meter(c, tx, card.top + pad + k.lineH(k.ui12Bold) + 8 * u, tw, Store.beQuanSeconds / 60f / Store.beQuanTarget)
             para(c, k, "Đọc đủ phút thì viên mãn, nhận ${Store.beQuanReward(Store.beQuanTarget)} linh thạch. Trong lúc bế quan: lò luyện ×1,5, kỳ ngộ ×2.",
                 tx, card.top + pad + k.lineH(k.ui12Bold) + 30 * u, tw, small, 2)
         } else {
             k.text(c, "Tĩnh thất ${Store.TT_DANG[Store.tinhThat - 1].lowercase()} · ${Store.TINH_THAT[Store.tinhThat - 1]}", tx, card.top + pad, k.ui12Bold)
-            para(c, k, "Mỗi đẳng tĩnh thất giữ được một độ dài bế quan. Chọn đẳng, đọc cho đủ phút (cộng dồn) thì viên mãn; đẳng càng cao lò luyện càng nóng, kỳ ngộ ×2.",
+            para(c, k, "Mỗi đẳng giữ được một độ dài bế quan, tới 90 phút; Thiên Cung giữ được tiềm tu 120 phút. Đọc đủ phút (cộng dồn) thì viên mãn; đẳng càng cao lò càng nóng, kỳ ngộ ×2.",
                 tx, card.top + pad + k.lineH(k.ui12Bold) + 4 * u, tw, small, 3)
         }
         y = card.bottom + 16 * u
@@ -475,30 +479,36 @@ class DongPhuActivity : TabActivity() {
             y = b.bottom + 18 * u
         } else {
             y = k.section(c, a.left, y, a.width(), "SÁU ĐẲNG TĨNH THẤT")
+            // Two columns of three: each đẳng, its sitting and its reward, or the price to raise it.
+            val gap = 10 * u
+            val cw = (a.width() - gap) / 2
             val h = 2 * 12 * u + k.lineH(k.ui10Bold) + 2 * u + sl
             for (i in 0 until 6) {
                 val m = Store.TT_MINUTES[i]
-                val r = RectF(a.left, y, a.right, y + h)
+                val x = a.left + (i % 2) * (cw + gap)
+                val r = RectF(x, y + (i / 2) * (h + gap), x + cw, y + (i / 2) * (h + gap) + h)
                 val own = i < Store.tinhThat
                 val next = i == Store.tinhThat
                 if (own || next) k.card(c, r, selected = false) else c.drawRoundRect(k.inset(r, u), 12 * u, 12 * u, k.faint)
-                val tag = if (own) "$m phút" else if (next) "nâng: ${Store.TT_PRICE[i]} LT" else "chưa mở"
-                k.right(c, tag, r.right - 14 * u, r.top + 12 * u + (k.lineH(k.ui10Bold) - k.lineH(sb)) / 2, sb)
-                k.line(c, "${Store.TT_DANG[i]} · ${Store.TINH_THAT[i]}", r.left + 14 * u, r.top + 12 * u, r.width() - 28 * u - sb.measureText(tag) - 10 * u, k.ui10Bold)
-                k.line(c, "Bế quan $m phút · ${Store.TT_REWARD[i]} linh thạch · lò ×${(15 + i) / 10},${(15 + i) % 10}", r.left + 14 * u, r.top + 12 * u + k.lineH(k.ui10Bold) + 2 * u,
-                    r.width() - 28 * u, if (own) small else k.paint(Ink.SMALL, color = Ink.DARK))
+                k.line(c, "${Store.TINH_THAT[i]} · ${Store.TT_DANG[i].lowercase()}", r.left + 14 * u, r.top + 12 * u, r.width() - 28 * u, k.ui10Bold)
+                val line2 = when {
+                    own -> "${Store.beQuanName(m)} $m phút · ${Store.TT_REWARD[i]} LT"
+                    next -> "Nâng: ${Store.TT_PRICE[i]} linh thạch"
+                    else -> "${Store.beQuanName(m)} $m phút · chưa mở"
+                }
+                k.line(c, line2, r.left + 14 * u, r.top + 12 * u + k.lineH(k.ui10Bold) + 2 * u, r.width() - 28 * u,
+                    if (own || next) small else k.paint(Ink.SMALL, color = Ink.DARK))
                 if (own) hits.add(r) {
                     Store.startBeQuan(m)
-                    toast("Bế quan $m phút: mở sách mà đọc")
+                    toast("${Store.beQuanName(m)} $m phút: mở sách mà đọc")
                     refresh()
                 } else if (next) hits.add(r) {
                     if (Store.upgradeTinhThat()) toast("Tĩnh thất lên ${Store.TT_DANG[Store.tinhThat - 1].lowercase()}")
                     else toast("Cần ${Store.TT_PRICE[i]} linh thạch")
                     refresh()
                 }
-                y = r.bottom + 8 * u
             }
-            y += 8 * u
+            y += 3 * h + 2 * gap + 18 * u
         }
         y = k.section(c, a.left, y, a.width(), "ĐÃ BẾ QUAN")
         k.pair(c, "Viên mãn", "${Store.beQuanDone} lần · ${Store.beQuanMinutes} phút", a.left, y, a.width()); y += sl + 6 * u

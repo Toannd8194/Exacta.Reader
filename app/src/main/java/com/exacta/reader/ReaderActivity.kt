@@ -556,12 +556,12 @@ class ReaderActivity : AppCompatActivity(), ReaderSheet.Host {
     private fun beQuanDialog() {
         val b = androidx.appcompat.app.AlertDialog.Builder(this)
         if (Store.beQuanTarget > 0) {
-            b.setTitle("Đang bế quan · ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút")
+            b.setTitle("Đang ${Store.beQuanName(Store.beQuanTarget).lowercase()} · ${Store.beQuanSeconds / 60}/${Store.beQuanTarget} phút")
                 .setMessage("Đọc đủ ${Store.beQuanTarget} phút thì viên mãn, nhận ${Store.beQuanReward(Store.beQuanTarget)} linh thạch. Trong lúc bế quan, lò luyện cháy ×1,5 và kỳ ngộ ×2.")
                 .setPositiveButton("Tiếp tục", null)
                 .setNegativeButton("Xuất quan sớm") { _, _ -> Store.cancelBeQuan(); updateFooter(); sheet.invalidate() }
         } else {
-            val labels = Store.BE_QUAN_CHOICES.map { "Bế quan $it phút · ${Store.beQuanReward(it)} linh thạch" }
+            val labels = Store.BE_QUAN_CHOICES.map { "${Store.beQuanName(it)} $it phút · ${Store.beQuanReward(it)} linh thạch" }
             b.setTitle("Bế quan")
                 .setItems(labels.toTypedArray()) { _, i ->
                     Store.startBeQuan(Store.BE_QUAN_CHOICES[i])

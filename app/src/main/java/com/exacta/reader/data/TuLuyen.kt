@@ -131,11 +131,11 @@ object TuLuyen {
     fun authors(): Int = Store.books.values.filter { it.finishDay >= 0 }.map { it.author.trim().lowercase() }.filter { it.isNotEmpty() }.toSet().size
 
     /** Thần thức: 5 an author read through, 1 a book. */
-    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + PhapMon.effectValue(PhapMon.E_THAN_THUC, DaoPhap.lv(PhapMon.E_THAN_THUC)) + DongPhu.thanBonus) * DaoLo.thanPercent() / 100 * LinhGioi.thanPercent() / 100
+    fun thanThuc(): Int = (5 * authors() + Store.books.values.count { it.finishDay >= 0 } + PhapMon.effectValue(PhapMon.E_THAN_THUC, DaoPhap.lv(PhapMon.E_THAN_THUC)) + DongPhu.thanBonus + TranPhap.thanThuc()) * DaoLo.thanPercent() / 100 * LinhGioi.thanPercent() / 100
     fun trong(v: Int = thanThuc()) = THAN_THUC_AT.indexOfLast { v >= it }
 
     /** Thể phách: hours read, 3 a sitting of an hour. */
-    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { it * (100 + PhapMon.effectValue(PhapMon.E_THE_PHACH, DaoPhap.lv(PhapMon.E_THE_PHACH)) - (if (DaoPhap.flaw(PhapMon.F_THE_PHACH)) 15 else 0)) / 100 }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }.let { it * DaoLo.thePercent() / 100 * LinhGioi.thePercent() / 100 }
+    fun thePhach(): Int = ((Store.totalSeconds / 3600).toInt() + 3 * dayVeryLong.values.sum() + DongPhu.theBonus).let { it * (100 + PhapMon.effectValue(PhapMon.E_THE_PHACH, DaoPhap.lv(PhapMon.E_THE_PHACH)) + TranPhap.thePart() - (if (DaoPhap.flaw(PhapMon.F_THE_PHACH)) 15 else 0)) / 100 }.let { if (TongMon.perk(TongMon.THIET_COT)) it * 115 / 100 else it }.let { it * DaoLo.thePercent() / 100 * LinhGioi.thePercent() / 100 }
     fun theTier(v: Int = thePhach()) = THE_AT.indexOfLast { v >= it }
 
     // --- Realms and tiểu cảnh ----------------------------------------------------------------------
@@ -467,6 +467,7 @@ object TuLuyen {
             if (DaoPhap.lv(PhapMon.E_DOT_PHA) > 0) list.add("Đặc hiệu công pháp" to PhapMon.effectValue(PhapMon.E_DOT_PHA, DaoPhap.lv(PhapMon.E_DOT_PHA)))
         }
         if (DaoPhap.phapTuong() > 0) list.add("Pháp Tướng Thiên Địa" to DaoPhap.phapTuong())
+        if (TranPhap.breakPart() > 0) list.add("Dẫn Lôi Trận" to TranPhap.breakPart())
         if (DongPhu.breakBonus() > 0) list.add("Linh mạch ${DongPhu.giaiName()}" to DongPhu.breakBonus())
         if (TongMon.perk(TongMon.KIEM_LU)) list.add("Kiếm Lư kiếm ý" to 3)
         list.addAll(DaoLo.breakParts(g))

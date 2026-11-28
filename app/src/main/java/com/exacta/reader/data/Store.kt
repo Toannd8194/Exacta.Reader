@@ -312,7 +312,7 @@ object Store {
         setsDone = o.optInt("sets"); nienKySeen = o.optInt("nienKySeen", -1)
         o.optJSONObject("tienTe")?.let {
             linhThach = it.optLong("lt"); linhThachEarned = it.optLong("ltEarned"); ltWords = it.optLong("ltWords")
-            beQuanTarget = it.optInt("bqTarget"); beQuanSeconds = it.optLong("bqSeconds")
+            beQuanTarget = it.optInt("bqTarget").coerceAtMost(TT_MINUTES.last()); beQuanSeconds = it.optLong("bqSeconds")
             beQuanDone = it.optInt("bqDone"); beQuanMinutes = it.optLong("bqMinutes")
             // 2.6: an old save gets the đẳng its bế quan have earned (up to Tứ đẳng).
             tinhThat = if (it.has("tinhThat")) it.optInt("tinhThat", 1) else 1 + listOf(1, 5, 10).count { n -> beQuanDone >= n }
@@ -710,7 +710,7 @@ object Store {
         }
         if (beQuanTarget > 0) burn = burn * beQuanBurn() / 10
         burn = burn * TranPhap.burnPercent() / 100
-        ltWords += words * (100 + PhapMon.effectValue(PhapMon.E_LINH_THACH, DaoPhap.lv(PhapMon.E_LINH_THACH)) - (if (DaoPhap.flaw(PhapMon.F_LINH_THACH)) 20 else 0)) / 100
+        ltWords += words * (100 + PhapMon.effectValue(PhapMon.E_LINH_THACH, DaoPhap.lv(PhapMon.E_LINH_THACH)) + TranPhap.ltPart() - (if (DaoPhap.flaw(PhapMon.F_LINH_THACH)) 20 else 0)) / 100
         while (ltWords >= 10_000) {
             ltWords -= 10_000
             gainLinhThach(5L * feastMultiplier())
@@ -827,12 +827,15 @@ object Store {
 
     /**
      * 2.6: the tĩnh thất has six đẳng; each lets the cultivator hold a longer bế quan, with more
-     * linh thạch and a hotter forge. Raised with linh thạch.
+     * linh thạch and a hotter forge. Raised with linh thạch. 3.2.1: bế quan goes to 90 minutes at
+     * most; the sixth đẳng holds a tiềm tu of 120 (no one reads 180 at a sitting).
      */
     val TINH_THAT = arrayOf("Thạch Thất", "Mộc Thất", "Ngọc Thất", "Linh Thất", "Tử Phủ", "Thiên Cung")
     val TT_DANG = arrayOf("Nhất đẳng", "Nhị đẳng", "Tam đẳng", "Tứ đẳng", "Ngũ đẳng", "Lục đẳng")
-    val TT_MINUTES = intArrayOf(30, 45, 60, 90, 120, 180)
-    val TT_REWARD = longArrayOf(15, 25, 40, 65, 100, 170)
+    val TT_MINUTES = intArrayOf(30, 45, 60, 75, 90, 120)
+    val TT_REWARD = longArrayOf(15, 25, 40, 55, 70, 100)
+    /** A sitting held past bế quan's 90 minutes is tiềm tu. */
+    fun beQuanName(minutes: Int) = if (minutes > 90) "Tiềm tu" else "Bế quan"
     val TT_PRICE = longArrayOf(0, 150, 400, 900, 1_800, 3_500)
     var tinhThat = 1            // đẳng of the tĩnh thất (1 … 6)
     val BE_QUAN_CHOICES: IntArray get() = TT_MINUTES.copyOf(tinhThat.coerceIn(1, 6))
@@ -844,7 +847,7 @@ object Store {
         if (tinhThat >= 6 || linhThach < TT_PRICE[tinhThat]) return false
         linhThach -= TT_PRICE[tinhThat]
         tinhThat++
-        note("Tĩnh thất lên ${TT_DANG[tinhThat - 1]} · ${TINH_THAT[tinhThat - 1]}: bế quan ${TT_MINUTES[tinhThat - 1]} phút")
+        note("Tĩnh thất lên ${TT_DANG[tinhThat - 1]} · ${TINH_THAT[tinhThat - 1]}: ${beQuanName(TT_MINUTES[tinhThat - 1]).lowercase()} ${TT_MINUTES[tinhThat - 1]} phút")
         touch()
         return true
     }
@@ -852,7 +855,7 @@ object Store {
     fun startBeQuan(minutes: Int) {
         beQuanTarget = minutes
         beQuanSeconds = 0
-        note("Bế quan $minutes phút: lò ×1,5, kỳ ngộ ×2")
+        note("${beQuanName(minutes)} $minutes phút: lò ×1,5, kỳ ngộ ×2")
         touch()
     }
 
@@ -998,7 +1001,7 @@ object Store {
     fun luck(permille: Int): Int {
         if (permille >= 1000) return 1000
         val v = permille.toLong() * (if (setActive(10)) 15 else 10) / 10 * (if (seekWords > 0) 3 else 1) *
-            (if (beQuanTarget > 0) 2 else 1) * (100 + PhapMon.effectValue(PhapMon.E_KY_NGO, DaoPhap.lv(PhapMon.E_KY_NGO)) - (if (DaoPhap.flaw(PhapMon.F_KY_NGO)) 20 else 0)) / 100
+            (if (beQuanTarget > 0) 2 else 1) * (100 + PhapMon.effectValue(PhapMon.E_KY_NGO, DaoPhap.lv(PhapMon.E_KY_NGO)) + TranPhap.kyNgo() - (if (DaoPhap.flaw(PhapMon.F_KY_NGO)) 20 else 0)) / 100
         return v.coerceAtMost(950).toInt()
     }
 

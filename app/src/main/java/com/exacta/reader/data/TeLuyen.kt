@@ -57,7 +57,7 @@ object TeLuyen {
     fun onWords(read: Long) {
         if (active < 0 || read <= 0) return
         // 3.1: a công pháp of tế luyện speeds the furnace.
-        val n = read * (100 + com.exacta.reader.game.PhapMon.effectValue(com.exacta.reader.game.PhapMon.E_TE_LUYEN, DaoPhap.lv(com.exacta.reader.game.PhapMon.E_TE_LUYEN))) / 100
+        val n = read * (100 + com.exacta.reader.game.PhapMon.effectValue(com.exacta.reader.game.PhapMon.E_TE_LUYEN, DaoPhap.lv(com.exacta.reader.game.PhapMon.E_TE_LUYEN)) + TranPhap.teLuyen()) / 100
         val b = LinhGioi.beast(active)
         if (b == null) { stop(); return }
         var left = n
@@ -137,7 +137,10 @@ object TeLuyen {
     }
 }
 
-/** 2.7.1 Trận pháp: built in the động phủ with linh thạch, set in the trận nhãn the linh mạch opens. */
+/**
+ * 2.7.1 Trận pháp: built in the động phủ with linh thạch, set in the trận nhãn the linh mạch opens.
+ * 3.2.1: eighteen trận, each on one measure of the game; three eyes at most, so the choice is real.
+ */
 object TranPhap {
     class Tran(val name: String, val good: String, val price: Long, val giai: Int)
 
@@ -148,6 +151,17 @@ object TranPhap {
     const val DUONG_LINH = 4
     const val DAN_HOA = 5
     const val TU_BAO = 6
+    const val TU_TAI = 7
+    const val CO_NGUYEN = 8
+    const val MINH_NGO = 9
+    const val DINH_THAN = 10
+    const val KIM_CUONG = 11
+    const val NGU_HANH = 12
+    const val CHIEU_DUYEN = 13
+    const val DAN_LOI = 14
+    const val LUYEN_KHI = 15
+    const val TU_HON = 16
+    const val CUU_CUNG = 17
 
     val TRANS = listOf(
         Tran("Tụ Linh Trận", "linh lực +10%", 300, 1),
@@ -157,6 +171,17 @@ object TranPhap {
         Tran("Dưỡng Linh Trận", "dược viên +5 năm dược linh mỗi ngày", 300, 2),
         Tran("Đan Hỏa Trận", "luyện đan +8%", 300, 3),
         Tran("Tụ Bảo Trận", "lò luyện cháy nhanh 15%", 450, 4),
+        Tran("Tụ Tài Trận", "linh thạch từ chữ đọc +15%", 350, 2),
+        Tran("Cố Nguyên Trận", "căn cơ +5", 300, 2),
+        Tran("Minh Ngộ Trận", "đọc trọn một cuốn: ngộ tính +1", 500, 3),
+        Tran("Định Thần Trận", "tâm cảnh +5", 400, 3),
+        Tran("Kim Cương Trận", "thể phách +15%", 450, 3),
+        Tran("Ngũ Hành Trận", "chữ vào tầng công pháp +20%", 600, 4),
+        Tran("Chiêu Duyên Trận", "kỳ ngộ nhiều thêm 15%", 550, 4),
+        Tran("Dẫn Lôi Trận", "tỉ lệ đột phá +3%", 700, 5),
+        Tran("Luyện Khí Trận", "tế luyện cấm chế nhanh 20%", 650, 5),
+        Tran("Tụ Hồn Trận", "thần thức +5", 800, 6),
+        Tran("Cửu Cung Bát Quái Trận", "linh lực +6%, tâm ma tăng chậm 10%", 2_500, 8),
     )
 
     var started = false
@@ -190,14 +215,24 @@ object TranPhap {
         return true
     }
 
-    fun speedBonus() = if (on(TU_LINH)) 10 else 0
-    fun stirPercent() = if (on(THANH_TAM)) 80 else 100
+    fun speedBonus() = (if (on(TU_LINH)) 10 else 0) + (if (on(CUU_CUNG)) 6 else 0)
+    fun stirPercent() = (if (on(THANH_TAM)) 80 else 100) * (if (on(CUU_CUNG)) 90 else 100) / 100
     fun spare() = if (on(HO_SON)) 1 else 0
     fun kiepPart() = if (on(HO_SON)) 8 else 0
     fun biCanhPart() = if (on(ME_TUNG)) 10 else 0
     fun years() = if (on(DUONG_LINH)) 5 else 0
     fun brew() = if (on(DAN_HOA)) 8 else 0
     fun burnPercent() = if (on(TU_BAO)) 115 else 100
+    fun ltPart() = if (on(TU_TAI)) 15 else 0
+    fun canCo() = if (on(CO_NGUYEN)) 5 else 0
+    fun ngo() = if (on(MINH_NGO)) 1 else 0
+    fun tamCanh() = if (on(DINH_THAN)) 5 else 0
+    fun thePart() = if (on(KIM_CUONG)) 15 else 0
+    fun vanCong() = if (on(NGU_HANH)) 20 else 0
+    fun kyNgo() = if (on(CHIEU_DUYEN)) 15 else 0
+    fun breakPart() = if (on(DAN_LOI)) 3 else 0
+    fun teLuyen() = if (on(LUYEN_KHI)) 20 else 0
+    fun thanThuc() = if (on(TU_HON)) 5 else 0
 
     fun migrate() {
         reset()

@@ -150,6 +150,8 @@ class BienNienActivity : TabActivity() {
                 "72 công pháp trong 12 mạch; ba đặc hiệu mở ở tầng 1, 5, 9 và khuyết điểm; lối vận công theo cách đọc; xung quan; chuyển tu cùng mạch; phụ tu; khoáng thạch vẽ lại."),
             Era("3.2", "Tâm Đăng Bất Diệt",
                 "18 tâm pháp trong bốn phái; năm cảnh từ Nhập môn tới Hóa cảnh; vận chuyển theo lối đọc riêng; Ma đạo xung khắc Phật, Nho; ba ô tâm pháp; khoáng thạch và linh thạch vẽ lại."),
+            Era("3.2.1", "Bát Quái Khai Trận",
+                "Khoáng thạch vẽ lại thành pixel 32 ô có màu: đá góc cạnh, tinh thiết bám đất, hồng ngọc ẩn trong đá, thiên thạch lửa, Âm Dương có khí tức, Hỗn Độn nửa thật nửa ảo; bế quan tới 90 phút, tiềm tu 120; 18 trận pháp."),
         )
     }
 }
