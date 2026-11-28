@@ -404,6 +404,58 @@ class ScreensTest {
         Store.totalWords = words
     }
 
+    /** 3.0: Cửu Tiêu opened, bậc 2 with a faction; then the greeting, a kiếp under way, and the end. */
+    @Test fun gioi() {
+        val tl = com.exacta.reader.data.TienLo
+        val td = com.exacta.reader.data.TienDinh
+        val cap = Store.realmCap
+        val words = Store.totalWords
+        val lt = Store.linhThach
+        Store.realmCap = 9
+        Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 1_100_000
+        com.exacta.reader.data.TuLuyen.gioi = 0
+        td.onCross(seen = true)
+        td.crossDay = Store.today() - 19
+        td.wordsAtCross = com.exacta.reader.data.TuLuyen.floor(9)
+        tl.reset(); tl.started = true
+        tl.check()
+        tl.welcomeSeen = true
+        tl.resTenths = 3_870; tl.tienThach = 64; tl.halls[0] = 2; tl.halls[1] = 1
+        tl.check()
+        tl.join(1); tl.congHien = 75
+        com.exacta.reader.data.CuuTieu.kept = 2; com.exacta.reader.data.CuuTieu.broken = 1
+        com.exacta.reader.data.CuuTieu.lastRule = "Giữ thiên quy «Đọc 5 ngày trong tuần»: +30 tiên lực"
+        tabs(GioiActivity::class.java, "gioi")
+        // Home in Cửu Tiêu: the tiên vị, tiên lực, the dock's Thiên Đình.
+        com.exacta.reader.ui.Ink.recordCuts = true
+        com.exacta.reader.ui.Ink.cuts.clear()
+        val style = Store.homeStyle
+        for (s in listOf(0, 3)) {
+            Store.homeStyle = s
+            val h = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+            idle()
+            shoot(root(h), "gioi_home_$s")
+        }
+        Store.homeStyle = style
+        com.exacta.reader.ui.Ink.recordCuts = false
+        File(out, "gioi_home_cuts.txt").writeText(com.exacta.reader.ui.Ink.cuts.joinToString(System.lineSeparator()))
+        // The greeting, once, and a kiếp under way.
+        tl.welcomeSeen = false
+        tl.resTenths = 5_400; Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 1_450_000
+        tl.startKiep(); tl.kiepDays.addAll(listOf(Store.today() - 2, Store.today() - 1))
+        tabs(GioiActivity::class.java, "gioi_kiep")
+        // The end of part two.
+        tl.kiepActive = -1; tl.kiepPassed = 7; tl.bac = 9; tl.endDay = Store.today(); tl.endSeen = false
+        Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 10_500_000
+        tabs(GioiActivity::class.java, "gioi_end")
+        tl.reset(); tl.started = true
+        td.reset(); td.started = true
+        com.exacta.reader.data.TuLuyen.gioi = -1
+        Store.realmCap = cap
+        Store.totalWords = words
+        Store.linhThach = lt
+    }
+
     @Test fun daoLo() {
         val d = com.exacta.reader.data.DaoLo
         d.reset(); d.started = true

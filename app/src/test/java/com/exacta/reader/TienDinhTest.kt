@@ -41,7 +41,7 @@ class TienDinhTest {
         Store.luckRng = object : Random() { override fun nextBits(bitCount: Int) = 0; override fun nextInt(until: Int) = until - 1 }
         TuLuyen.reset(); TuLuyen.started = true; TuLuyen.lastTick = today - 1
         DaoPhap.reset(); DongPhu.reset(); TongMon.reset(); BiCanh.reset(); DaoLo.reset(); LinhGioi.reset(); DoKiep.reset()
-        TienDinh.reset(); TienDinh.started = true
+        TienDinh.reset(); TienDinh.started = true; com.exacta.reader.data.TienLo.reset(); com.exacta.reader.data.NhatKy.reset()
         com.exacta.reader.data.TeLuyen.reset(); com.exacta.reader.data.TranPhap.reset()
         com.exacta.reader.data.TrangBi.reset(); com.exacta.reader.data.PhuLuc.reset()
     }

@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-2.8.apk`](dist/Van-Quyen-Tien-Do-2.8.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.0.apk`](dist/Van-Quyen-Tien-Do-3.0.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -20,6 +20,28 @@ tu được một trong sáu đại thiên thế giới tiếp dẫn, theo cả 
 Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.8 và 3.0 – 3.6):
 [`docs/Thiet-ke-phan-hai-luc-gioi.md`](docs/Thiet-ke-phan-hai-luc-gioi.md), bản PDF
 [`docs/Thiet-ke-phan-hai-luc-gioi.pdf`](docs/Thiet-ke-phan-hai-luc-gioi.pdf).
+
+## Bản 3.0 · Cửu Tiêu Khai Thiên
+
+Phần hai bắt đầu với **Cửu Tiêu Vân Khuyết**. Năm giới kia vẫn đứng ở tiền đình, chữ đọc vẫn được ghi.
+
+- **Mở giới**: người tu Cửu Tiêu vào tiên lộ; những ngày ở tiền đình quy ra tiên lực từ sổ đọc của 2.8 (ngày chưa có sổ tính
+  1,5 điểm), linh thạch đổi ra tiên thạch 100 : 1, phẩm Thiên Tiên đã có thành bậc tương ứng. Một màn khai thiên, một lần.
+- **Tiên lộ chín bậc** (Thiên Tiên … Cửu Tiêu Tiên Đế): mỗi bậc cần đủ chữ từ ngày qua cửa (60 … 1.040 vạn) và tiên lực
+  (200 … 4.400). Mỗi bậc chia sơ, trung, hậu kỳ, đại viên mãn theo chữ.
+- **Tiên lực**: mỗi 2.500 chữ một điểm, nhân hệ số cân bằng năm thước đo (60 – 140%); cộng khi ngày đọc xong. Hành trang
+  cộng thêm: tiên khí (cấm chế bản mệnh, mỗi cấp +1%), tiên công (+1% mỗi phẩm, hợp giới +5%), tiên căn hợp giới +10%, kiếp ấn,
+  đạo vực có Kim hay Lôi pháp tắc +5%.
+- **Thiên quy tuần**: mỗi tuần một điều (đọc 5 ngày, không nhảy chương, đọc trọn một cuốn…); giữ được +30 tiên lực.
+- **Tiên chức** theo bậc (Thiên Binh … Tiên Đế), ưu đãi cộng dồn.
+- **Tiên phủ**: Tiên điền, Tiên lô, Tiên trận, mỗi gian 5 cấp, nâng bằng tiên thạch (mỗi 4 vạn chữ, lên bậc, qua kiếp, việc
+  thế lực).
+- **Ba thế lực** Thiên Đình, Dao Trì, Tử Phủ: ba việc mỗi tháng, cống hiến lên chức.
+- **Ba tiên kiếp**: Thiên Nhân kiếp ở bậc 3, 6 (21 ngày trong 30, năm thước đo không dưới ngưỡng), Đại kiếp Tiên Đế ở bậc 9
+  (81 ngày đọc trong 90, ngày cuối cân bằng từ 120%). Hỏng: thương thế 7 ngày, tiên lực giảm nửa, lần sau +10%.
+- Bậc 9: màn kết phần hai của Cửu Tiêu, đạo hiệu tối thượng «Cửu Tiêu Tiên Đế».
+- Home: nút **Thiên Đình**, thẻ cảnh giới hiện tiên vị và tiên lực. Linh thạch vẽ lại thành cụm tinh thể.
+- versionCode 300.
 
 ## Bản 2.8 · Tàng Kinh Lưu Ảnh
 
@@ -296,6 +318,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 2.7.1 | Tế Luyện Bố Trận | Tế luyện 36 tầng cấm chế, bảy trận pháp |
   | 2.7.2 | Hộ Thân Họa Phù | Ô trang bị, phù thất vẽ chín loại phù |
   | 2.8 | Tàng Kinh Lưu Ảnh | Sổ đọc theo ngày cho phần hai, Niên kỷ › Lối đọc, tài nguyên dự tính |
+  | 3.0 | Cửu Tiêu Khai Thiên | Phần hai: Cửu Tiêu, chín bậc tiên vị, tiên lực, Thiên Đình |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

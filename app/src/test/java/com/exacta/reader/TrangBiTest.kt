@@ -47,7 +47,7 @@ class TrangBiTest {
         Store.hourSeconds.fill(0)
         Store.luckRng = object : Random() { override fun nextBits(bitCount: Int) = 0; override fun nextInt(until: Int) = until - 1 }
         TuLuyen.reset(); TuLuyen.started = true; TuLuyen.lastTick = today - 1
-        DaoPhap.reset(); DongPhu.reset(); TongMon.reset(); BiCanh.reset(); DaoLo.reset(); LinhGioi.reset(); DoKiep.reset(); TienDinh.reset()
+        DaoPhap.reset(); DongPhu.reset(); TongMon.reset(); BiCanh.reset(); DaoLo.reset(); LinhGioi.reset(); DoKiep.reset(); TienDinh.reset(); com.exacta.reader.data.TienLo.reset(); com.exacta.reader.data.NhatKy.reset()
         TeLuyen.reset(); TranPhap.reset()
         TrangBi.reset(); TrangBi.started = true
         PhuLuc.reset(); PhuLuc.started = true

@@ -291,7 +291,7 @@ Những thứ này được ghi **từ bản 2.8** (Tàng Kinh Lưu Ảnh), trư
 | Bản | Nội dung | Màn mới |
 |---|---|---|
 | 2.8 | Ghi dữ liệu theo ngày (khung giờ, các buổi, chữ đọc lại, thể loại và ngôn ngữ sách); tiền đình hiện tài nguyên dự tính của giới (**đã làm**) | Niên kỷ › Lối đọc |
-| 3.0 | Khung chung: tiên lộ chín bậc, tiên thạch, cơ sở, thế lực, tiên kiếp; **Cửu Tiêu Vân Khuyết** | Thiên Đình |
+| 3.0 | Khung chung: tiên lộ chín bậc, tiên thạch, cơ sở, thế lực, tiên kiếp; **Cửu Tiêu Vân Khuyết** (**đã làm**) | Thiên Đình |
 | 3.1 | **Huyết Nguyệt Trầm Uyên**: ma khí, ma công cược, phản phệ | Ma Cung |
 | 3.2 | **Bát Nhã Liên Đài**: công đức, xá lợi, độ hóa | Thiền Viện |
 | 3.3 | **Hồng Hoang Cổ Địa**: khí huyết, huyết mạch, săn hoang thú | Tổ Địa |

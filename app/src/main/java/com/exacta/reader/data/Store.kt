@@ -270,6 +270,7 @@ object Store {
         if (!TrangBi.started) TrangBi.migrate()
         if (!PhuLuc.started) PhuLuc.migrate()
         if (!NhatKy.started) NhatKy.migrate()
+        if (!TienLo.started) TienLo.migrate()
     }
 
     private fun read(o: JSONObject) {
@@ -353,6 +354,7 @@ object Store {
         o.optJSONObject("trangBi")?.let { TrangBi.read(it) }
         o.optJSONObject("phuLuc")?.let { PhuLuc.read(it) }
         o.optJSONObject("nhatKy")?.let { NhatKy.read(it) }
+        o.optJSONObject("tienLo")?.let { TienLo.read(it) }
         o.optJSONObject("titles")?.let { t ->
             val v2 = t.optInt("v") >= 2
             val move = { i: Int -> if (v2 || i < 0) i else (i / 6) * 12 + i % 6 }
@@ -444,6 +446,7 @@ object Store {
             put("trangBi", TrangBi.toJson())
             put("phuLuc", PhuLuc.toJson())
             put("nhatKy", NhatKy.toJson())
+            put("tienLo", TienLo.toJson())
             put("titles", JSONObject().put("v", 2).put("chosen", titleChosen).put("last", titleLast).put("unseen", titleUnseen)
                 .put("days", JSONObject().apply { titleDays.forEach { (t, d) -> put(t.toString(), d) } }))
             put("prefs", JSONObject().put("fontSize", fontSize).put("lineHeight", lineHeight).put("margins", margins)
@@ -506,6 +509,7 @@ object Store {
         TrangBi.reset()
         PhuLuc.reset()
         NhatKy.reset()
+        TienLo.reset()
         read(o)
         if (realmCap < 0) {
             realmCap = Realm.realmOf(Realm.level(totalWords))
@@ -525,6 +529,7 @@ object Store {
         if (!TrangBi.started) TrangBi.migrate()
         if (!PhuLuc.started) PhuLuc.migrate()
         if (!NhatKy.started) NhatKy.migrate()
+        if (!TienLo.started) TienLo.migrate()
         dirty = true
         save()
         return true
@@ -689,6 +694,7 @@ object Store {
         TuLuyen.convert(tuViRaw() - before, state)
         DaoPhap.onWords(words)
         TeLuyen.onWords(words)
+        TienLo.onWords(words)
         // The forge burns with every word read, in any book (twice on feast days with Tứ Hải Long Cung).
         var burn = if (setActive(6) && feastDay()) words * 2 else words
         if (DaoPhap.effect(PhapMon.E_LO_LUYEN)) burn = burn * 6 / 5
@@ -1488,6 +1494,7 @@ object Store {
             else if (days >= trialNeed()) TuLuyen.trialPassed()
         }
         TuLuyen.advance()
+        TienLo.check()
         DaoPhap.check()
         DongPhu.tick()
         TongMon.check()

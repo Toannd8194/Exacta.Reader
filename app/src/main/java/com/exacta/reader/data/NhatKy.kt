@@ -154,15 +154,21 @@ object NhatKy {
      * Cửu Tiêu's balance (60..140): căn cơ, tâm cảnh, thần thức, thể phách, the days read in 30,
      * each on 0..1; a measure that lags behind the mean of the other four lowers it.
      */
-    fun balance(): Int {
+    fun balance(): Int = balanceOf(measures())
+
+    /** The five measures, each on 0..1: căn cơ, tâm cảnh, thần thức, thể phách, days read in 30. */
+    fun measures(): DoubleArray {
         val t = today()
-        val v = doubleArrayOf(
+        return doubleArrayOf(
             TuLuyen.canCo() / 100.0,
             TuLuyen.tamCanh() / 100.0,
             TuLuyen.trong() / (TuLuyen.THAN_THUC_AT.size - 1.0),
             TuLuyen.theTier() / (TuLuyen.THE_AT.size - 1.0),
             (t - 29..t).count { Store.minutes(it) >= 1 } / 30.0,
         )
+    }
+
+    fun balanceOf(v: DoubleArray): Int {
         var lag = 0.0
         for (i in v.indices) {
             val others = (v.sum() - v[i]) / (v.size - 1)
@@ -197,11 +203,13 @@ object NhatKy {
     const val FILL_TENTHS = 15
 
     /** What [estimate] found: points by the rules, the days measured, the days filled at the mean. */
-    class Estimate(val points: Int, val measured: Int, val filled: Int)
+    class Estimate(val tenths: Long, val measured: Int, val filled: Int) {
+        val points get() = ((tenths + 5) / 10).toInt()
+    }
 
     /** The resource of giới `g` from `from` to `to` (days), by the rules of part two. */
     fun estimate(g: Int, from: Long, to: Long): Estimate {
-        if (to < from) return Estimate(0, 0, 0)
+        if (to < from || from < 0) return Estimate(0, 0, 0)
         var tenths = 0L     // tenths of a point, rounded at the end
         var measured = 0
         var filled = 0
@@ -234,7 +242,7 @@ object NhatKy {
             }.coerceAtLeast(0)
         }
         tenths += 10L * events(g, from, to)
-        return Estimate(((tenths + 5) / 10).toInt(), measured, filled)
+        return Estimate(tenths, measured, filled)
     }
 
     /** The day the first book of `author` was read through, or -1. */

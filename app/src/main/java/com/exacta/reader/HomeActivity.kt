@@ -47,6 +47,7 @@ class HomeActivity : AppCompatActivity() {
                 HomeView.Action.DAO_LO -> startActivity(Intent(this, DaoLoActivity::class.java))
                 HomeView.Action.LINH_GIOI -> startActivity(Intent(this, LinhGioiActivity::class.java))
                 HomeView.Action.KET -> startActivity(Intent(this, KetActivity::class.java))
+                HomeView.Action.GIOI -> startActivity(Intent(this, GioiActivity::class.java))
                 HomeView.Action.BI_CANH -> startActivity(Intent(this, BiCanhActivity::class.java))
                 HomeView.Action.PERMISSION -> askAllFiles()
             }
@@ -64,6 +65,9 @@ class HomeActivity : AppCompatActivity() {
         com.exacta.reader.ui.KyNgoPopup.show(this)
         // Lục Giới Môn just crossed: the màn kết, once.
         if (com.exacta.reader.data.TienDinh.crossed() && !com.exacta.reader.data.TienDinh.endSeen) startActivity(Intent(this, KetActivity::class.java))
+        // The giới opens (part two): its greeting, once; then its màn kết, once.
+        else if (com.exacta.reader.data.TienLo.opened && (!com.exacta.reader.data.TienLo.welcomeSeen || (com.exacta.reader.data.TienLo.endDay >= 0 && !com.exacta.reader.data.TienLo.endSeen)))
+            startActivity(Intent(this, GioiActivity::class.java))
         view.shuffle()
         view.rescale()
         clock.postDelayed(minute, 60_000)

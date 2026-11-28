@@ -30,7 +30,7 @@ import kotlin.random.Random
  */
 @SuppressLint("ViewConstructor")
 class HomeView(context: Context, private val onAction: (Action, String?) -> Unit) : View(context) {
-    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU, TONG_MON, BI_CANH, DAO_LO, LINH_GIOI, KET }
+    enum class Action { READ, LIBRARY, PHAP_BAO, TU_VI, SETTINGS, PERMISSION, DAO_HIEU, NIEN_KY, CONG_PHAP, DONG_PHU, TONG_MON, BI_CANH, DAO_LO, LINH_GIOI, KET, GIOI }
 
     var book: Book? = null
     var needsPermission = false
@@ -153,7 +153,11 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         val icon = 56 * u
         val name = TuLuyen.name()
         val nameP = if (k.big.measureText(name) <= w - icon - 14 * u) k.big else k.ui12Bold
-        val sub = shortest(k, w - icon - 14 * u, small, listOf(
+        val tl = com.exacta.reader.data.TienLo
+        val sub = if (tl.opened) shortest(k, w - icon - 14 * u, small, listOf(
+            "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]} · ${Realm.van(tl.words())} vạn chữ tiên lộ",
+            "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]}",
+        )) else shortest(k, w - icon - 14 * u, small, listOf(
             "Tu vi ${Realm.van(Store.tuVi())} vạn từ · căn cơ ${TuLuyen.canCo()} · tâm ma ${TuLuyen.tamMa}",
             "Tu vi ${Realm.van(Store.tuVi())} vạn từ · căn cơ ${TuLuyen.canCo()}",
             "Tu vi ${Realm.van(Store.tuVi())} vạn từ",
@@ -366,7 +370,10 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
         y += icon + 10 * u
         k.centered(c, TuLuyen.name(), x, w, y, nameP)
         y += k.lineH(nameP)
-        k.centered(c, "Tu vi ${Realm.van(words)} vạn từ · căn cơ ${TuLuyen.canCo()} · tâm ma ${TuLuyen.tamMa}", x, w, y, k.ui10Bold)
+        val tl = com.exacta.reader.data.TienLo
+        val heroSub = if (tl.opened) "${tl.res()} ${com.exacta.reader.data.NhatKy.RESOURCE[tl.gioi]} · ${Realm.van(tl.words())} vạn chữ tiên lộ · tiên thạch ${tl.tienThach}"
+            else "Tu vi ${Realm.van(words)} vạn từ · căn cơ ${TuLuyen.canCo()} · tâm ma ${TuLuyen.tamMa}"
+        k.centered(c, heroSub, x, w, y, k.ui10Bold)
         y += k.lineH(k.ui10Bold) + 18 * u
         y = k.realmBar(c, x + w * 0.1f, y, w * 0.8f, TuLuyen.bar())
         y += 18 * u
@@ -722,7 +729,8 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
     private fun drawDock(c: Canvas, k: Ink, r: RectF, given: List<Action>) {
         val u = k.u
         // From Hóa Thần the way to Linh giới takes the place of Đạo hiệu (the top bar still opens it).
-        val actions = if (Store.realmCap >= 4) given.map { if (it == Action.DAO_HIEU) (if (Store.realmCap >= 9) Action.KET else Action.LINH_GIOI) else it } else given
+        val gioi = com.exacta.reader.data.TienLo.opened
+        val actions = if (Store.realmCap >= 4) given.map { if (it == Action.DAO_HIEU) (if (gioi) Action.GIOI else if (Store.realmCap >= 9) Action.KET else Action.LINH_GIOI) else it } else given
         val due = NienKy.due()
         val all = mapOf(
             Action.PHAP_BAO to ("phapbao" to "Pháp bảo"),
@@ -737,6 +745,7 @@ class HomeView(context: Context, private val onAction: (Action, String?) -> Unit
             Action.DAO_LO to ("daolo" to "Đạo lộ"),
             Action.LINH_GIOI to ("linhgioi" to "Linh giới"),
             Action.KET to ("tiendo" to "Tiên đồ"),
+            Action.GIOI to ("thiendinh" to com.exacta.reader.data.TienLo.seat()),
             Action.BI_CANH to ("bicanh" to "Bí cảnh"),
         )
         val g = Ink.GAP * u

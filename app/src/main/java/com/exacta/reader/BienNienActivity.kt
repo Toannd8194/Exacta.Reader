@@ -142,6 +142,8 @@ class BienNienActivity : TabActivity() {
                 "Ô trang bị từ Kim Đan, chỉ món đeo mới dùng được trong biến cố và kiếp; phù thất: vẽ chín loại phù bằng phù chỉ, chu sa và một buổi đọc liền."),
             Era("2.8", "Tàng Kinh Lưu Ảnh",
                 "Sổ đọc theo ngày cho phần hai: giờ đọc, từng buổi, chữ đọc lại, sách quay lại, thể loại và ngôn ngữ sách; Niên kỷ › Lối đọc; tiền đình hiện tài nguyên dự tính."),
+            Era("3.0", "Cửu Tiêu Khai Thiên",
+                "Phần hai mở: Cửu Tiêu Vân Khuyết, chín bậc tiên vị theo chữ và tiên lực; thiên quy tuần, tiên chức, Tiên phủ ba gian, ba thế lực, ba tiên kiếp; linh thạch vẽ lại."),
         )
     }
 }

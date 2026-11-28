@@ -269,6 +269,7 @@ object TuLuyen {
     /** "Luyện Khí trung kỳ", "Kim Đan hậu kỳ", "Nguyên Anh đại viên mãn", "Tiên nhân tam phẩm". */
     fun name(): String {
         val r = realm()
+        if (r >= 9 && TienLo.opened) return TienLo.name()
         if (r >= 9) return if (TienDinh.atForecourt()) "${tienKind()} · tiền đình" else Realm.name(Store.level()).replace("Tiên nhân", tienKind())
         val s = shownSub()
         return if (r == 0) "Luyện Khí " + (if (atCeiling()) TIEU[3] else LK_KY[s / 3]) else "${shortName(r)} ${TIEU[s]}"
@@ -281,6 +282,7 @@ object TuLuyen {
         val r = realm()
         val t = Store.tuVi()
         return when {
+            r >= 9 && TienLo.opened -> TienLo.bar()
             r >= 9 -> Bar(Realm.ninths(t, Store.level()), 3, Realm.stageLabels(Store.level()), Realm.stageIndex(Store.level()))
             r == 0 -> Bar((t * 9.0 / floor(1)).coerceIn(0.0, 9.0), 3, LK_KY.toList(), shownSub() / 3)
             else -> {
@@ -812,6 +814,7 @@ object TuLuyen {
         val g = gate()
         val gateName = Treasure.GATES[g.coerceIn(1, 9)]
         return when {
+            Store.realmCap >= 9 && TienLo.opened -> TienLo.homeLines()
             Store.realmCap >= 9 -> listOf("Đã phi thăng" to true, "Tiên lộ thênh thang" to false)
             Store.inTrial() -> {
                 val today = Store.today()

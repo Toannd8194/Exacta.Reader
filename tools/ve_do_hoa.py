@@ -636,6 +636,25 @@ def icon_tiendo():
     return p.image(128)
 
 
+def icon_thiendinh():
+    """Thiên Đình: a palace of two roofs with up-turned eaves, standing on a sea of clouds."""
+    p = Pen(128)
+    p.line([(64, 4), (64, 20)], BLACK, 4)
+    p.poly([(20, 30), (30, 34), (64, 18), (98, 34), (108, 30), (102, 42), (26, 42)], BLACK)
+    p.poly([(40, 42), (88, 42), (88, 58), (40, 58)], BLACK)
+    p.cut(pts=[(58, 46), (70, 46), (70, 58), (58, 58)])
+    p.poly([(4, 58), (16, 64), (64, 48), (112, 64), (124, 58), (116, 72), (12, 72)], BLACK)
+    p.poly([(22, 72), (106, 72), (106, 96), (22, 96)], BLACK)
+    for x in (34, 54, 74, 94):
+        p.cut(pts=[(x - 3, 76), (x + 3, 76), (x + 3, 96), (x - 3, 96)])
+    p.poly([(14, 96), (114, 96), (114, 102), (14, 102)], BLACK)
+    for x, y, r in ((18, 112, 10), (36, 108, 12), (56, 114, 10), (76, 110, 12), (96, 112, 11), (112, 108, 9)):
+        p.circle(x, y, r, BLACK)
+    p.poly([(8, 114), (120, 114), (120, 124), (8, 124)], BLACK)
+    p.cut(pts=[(18, 116), (110, 116), (110, 119), (18, 119)])
+    return p.image(128)
+
+
 # --- Linh thạch (pixel art, 48 × 48 logical, ×4) -----------------------------------------------------
 
 def linhthach():
@@ -766,7 +785,7 @@ def linhthach():
 
 ICONS = {'congphap': icon_congphap, 'dongphu': icon_dongphu, 'phapbao': icon_phapbao, 'daohieu': icon_daohieu,
          'nienky': icon_nienky, 'tongmon': icon_tongmon, 'daolo': icon_daolo, 'dao_phap': icon_dao_phap,
-         'dao_the': icon_dao_the, 'dao_than': icon_dao_than, 'dao_kiem': icon_dao_kiem, 'dao_bach': icon_dao_bach, 'linhgioi': icon_linhgioi, 'tiendo': icon_tiendo}
+         'dao_the': icon_dao_the, 'dao_than': icon_dao_than, 'dao_kiem': icon_dao_kiem, 'dao_bach': icon_dao_bach, 'linhgioi': icon_linhgioi, 'tiendo': icon_tiendo, 'thiendinh': icon_thiendinh}
 
 # --- Âm Dương phẩm frames (pixel art, 128 logical × 2) ---------------------------------------------
 

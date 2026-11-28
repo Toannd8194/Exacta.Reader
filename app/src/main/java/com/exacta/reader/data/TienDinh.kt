@@ -42,7 +42,7 @@ object TienDinh {
     }
 
     fun crossed() = crossDay >= 0 && gioi >= 0
-    fun tienHieu() = if (crossed()) TIEN_HIEU[gioi] else ""
+    fun tienHieu() = if (!crossed()) "" else if (TienLo.opened && TienLo.bac >= 9) TienLo.supreme() else TIEN_HIEU[gioi]
 
     /** Through the door: what is carried is written down, the tiên hiệu given, the màn kết waits. */
     fun onCross(seen: Boolean = false) {
@@ -65,7 +65,7 @@ object TienDinh {
     fun keptWords() = if (crossed()) (Store.totalWords - wordsAtCross).coerceAtLeast(0) else 0L
 
     /** Cửu Tiêu goes on with the nine phẩm; the others wait at their tiền đình. */
-    fun atForecourt() = crossed() && gioi != 0
+    fun atForecourt() = crossed() && gioi !in TienLo.OPEN
 
     fun migrate() {
         reset()
