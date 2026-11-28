@@ -94,12 +94,12 @@ class TienLoTest {
     }
 
     @Test
-    fun theOtherGiớiStillWaitAtTheForecourt() {
+    fun sinceFourNoGiớiWaitsAtTheForecourt() {
         cross()
-        TienDinh.gioi = 3                                  // Hồng Hoang waits; Huyết Nguyệt opened in 3.5, Bát Nhã in 3.7
+        TienDinh.gioi = 5                                  // 4.0: the last three opened
         TienLo.check()
-        assertFalse(TienLo.opened)
-        assertTrue(TienDinh.atForecourt())
+        assertTrue(TienLo.opened)
+        assertFalse(TienDinh.atForecourt())
     }
 
     @Test

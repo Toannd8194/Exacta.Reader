@@ -44,6 +44,10 @@ interface GioiRules {
     fun beforeDay(d: Long) {}
     /** 3.7: a kiếp failed; a ward may take the wound. Returns what took it, or null. */
     fun ward(i: Int): String? = null
+    /** 4.0: a kiếp counted by what was done (books, authors) rather than by days kept; null counts days. */
+    fun kiepCount(i: Int): Int? = null
+    /** What the kiếp counts. */
+    fun kiepUnit(i: Int) = "ngày"
     fun toJson(): JSONObject
     fun read(o: JSONObject)
 }

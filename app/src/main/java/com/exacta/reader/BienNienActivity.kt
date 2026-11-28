@@ -162,6 +162,8 @@ class BienNienActivity : TabActivity() {
                 "Câu chữ cổ phong; kỳ ngộ lục hai cột, giấu duyên khởi; Đạo lộ thành Tiên lộ; pháp bảo và icon app vẽ pixel; trình đọc tính lề, giãn dòng, giãn đoạn, thụt đầu dòng bằng em; Home hàng nút cân lại."),
             Era("3.7", "Liên Đài Hóa Độ",
                 "Bát Nhã Liên Đài mở cửa: công đức thay tu vi, xá lợi giữ chuỗi và đỡ kiếp, độ hóa đồng đạo lạc trong sách bỏ dở; Thiền Viện có Kinh lâu, Xá lợi tháp, Liên trì; Vô niệm kiếp và Đại kiếp Liên Hoa."),
+            Era("4.0", "Hỗn Nguyên Nhất Khí",
+                "Hồng Hoang, Vong Xuyên, Thư Hải mở cửa: khí huyết và huyết mạch, hồn lực và sổ sinh tử, văn khí và thần quốc; sứ giả năm giới, hỗn nguyên khí, Quy Nhất."),
         )
     }
 }

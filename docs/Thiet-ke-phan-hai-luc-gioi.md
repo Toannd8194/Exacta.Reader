@@ -294,10 +294,10 @@ Những thứ này được ghi **từ bản 2.8** (Tàng Kinh Lưu Ảnh), trư
 | 3.0 | Khung chung: tiên lộ chín bậc, tiên thạch, cơ sở, thế lực, tiên kiếp; **Cửu Tiêu Vân Khuyết** (**đã làm**) | Thiên Đình |
 | 3.1 | **Huyết Nguyệt Trầm Uyên**: ma khí, ma công cược, phản phệ (**đã làm ở bản 3.5**; các bản 3.1 – 3.4 dành cho công pháp, tâm pháp, thuật pháp, Tàng Kinh) | Ma Cung |
 | 3.2 | **Bát Nhã Liên Đài**: công đức, xá lợi, độ hóa (**đã làm ở bản 3.7**) | Thiền Viện |
-| 3.3 | **Hồng Hoang Cổ Địa**: khí huyết, huyết mạch, săn hoang thú | Tổ Địa |
-| 3.4 | **Vong Xuyên Bỉ Ngạn**: hồn lực, sổ sinh tử, Vong Xuyên độ | Minh Phủ |
-| 3.5 | **Thư Hải Vô Nhai**: văn khí, thần quốc, văn mạch | Thư Các |
-| 3.6 | Sứ giả, hỗn nguyên khí, Quy Nhất: màn kết phần hai | Quy Nhất |
+| 3.3 | **Hồng Hoang Cổ Địa**: khí huyết, huyết mạch, săn hoang thú (**đã làm ở bản 4.0**) | Tổ Địa |
+| 3.4 | **Vong Xuyên Bỉ Ngạn**: hồn lực, sổ sinh tử, Vong Xuyên độ (**đã làm ở bản 4.0**) | Minh Phủ |
+| 3.5 | **Thư Hải Vô Nhai**: văn khí, thần quốc, văn mạch (**đã làm ở bản 4.0**) | Thư Các |
+| 3.6 | Sứ giả, hỗn nguyên khí, Quy Nhất: màn kết phần hai (**đã làm ở bản 4.0**) | Quy Nhất |
 
 Cửu Tiêu đi trước vì đã có sẵn chín phẩm. Năm giới sau có thể đổi thứ tự: nên làm trước giới có nhiều người đang đứng ở tiền đình nhất.
 

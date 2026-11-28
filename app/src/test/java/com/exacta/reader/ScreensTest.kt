@@ -449,6 +449,76 @@ class ScreensTest {
         Store.totalWords = words
     }
 
+    /** 4.0: the last three giới, each opened with books, a faction and its own state; then Quy Nhất. */
+    @Test fun lucGioi() {
+        val tl = com.exacta.reader.data.TienLo
+        val td = com.exacta.reader.data.TienDinh
+        val cap = Store.realmCap
+        val words = Store.totalWords
+        val saved = Store.books.keys.toSet()
+        val authors = listOf("Nhĩ Căn", "Thiên Tàm Thổ Đậu", "Mộng Nhập Thần Cơ", "Vong Ngữ", "Ngã Cật Tây Hồng Thị", "Kim Dung", "Cổ Long")
+        val titles = listOf("Tiên Nghịch", "Đấu Phá Thương Khung", "Thần Mộ", "Phàm Nhân Tu Tiên", "Mãng Hoang Kỷ", "Thiên Long Bát Bộ", "Thất Chủng Vũ Khí",
+            "Cầu Ma", "Võ Động Càn Khôn", "Ngã Dục Phong Thiên", "Tiếu Ngạo Giang Hồ")
+        for ((i, t) in titles.withIndex()) {
+            val b = com.exacta.reader.data.Book("/screens/lg$i.epub").apply {
+                id = 800 + i; title = t; author = authors[i % authors.size]; this.words = 450_000; wordsRead = 450_000
+                genre = if (i % 3 == 2) "Kiếm hiệp" else "Tiên hiệp"
+                when {
+                    i < 7 -> finishDay = Store.today() - 400 + 20 * i
+                    i < 9 -> { finishDay = Store.today() - 8 - i; backDay = finishDay - 30 }
+                    else -> { wordsRead = 90_000; lastDay = Store.today() - 70 - 10 * i }
+                }
+            }
+            Store.books[b.path] = b
+        }
+        Store.realmCap = 9
+        for ((g, name) in listOf(3 to "todia", 4 to "minhphu", 5 to "thucac")) {
+            Store.totalWords = com.exacta.reader.data.TuLuyen.floor(9) + 1_500_000
+            com.exacta.reader.data.TuLuyen.gioi = g
+            td.onCross(seen = true)
+            td.crossDay = Store.today() - 50
+            td.wordsAtCross = com.exacta.reader.data.TuLuyen.floor(9)
+            tl.reset(); tl.started = true
+            tl.check()
+            tl.welcomeSeen = true
+            tl.resTenths = 2_150; tl.tienThach = 37; tl.halls[0] = 1; tl.halls[1] = 1
+            tl.check()
+            tl.join(g % 3); tl.congHien = 20
+            tl.check()
+            tabs(GioiActivity::class.java, name)
+            tl.reset(); tl.started = true
+            td.reset(); td.started = true
+        }
+        // Quy Nhất: bậc 6 with an envoy, then united.
+        com.exacta.reader.data.TuLuyen.gioi = 3
+        td.onCross(seen = true)
+        td.crossDay = Store.today() - 50
+        td.wordsAtCross = com.exacta.reader.data.TuLuyen.floor(9)
+        tl.check()
+        tl.welcomeSeen = true
+        tl.bac = 6; tl.kiepPassed = 3
+        tl.check()
+        com.exacta.reader.data.QuyNhat.hnk = 240; com.exacta.reader.data.QuyNhat.envoys = 4
+        val g = Robolectric.buildActivity(GioiActivity::class.java).setup().get()
+        g.page = 2
+        g.refresh()
+        idle()
+        shoot(root(g), "quynhat")
+        com.exacta.reader.data.QuyNhat.quyDay = Store.today(); tl.bac = 9
+        g.refresh()
+        idle()
+        shoot(root(g), "quynhat_done")
+        val h = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+        idle()
+        shoot(root(h), "quynhat_home")
+        for (key in Store.books.keys.toList()) if (key !in saved) Store.books.remove(key)
+        tl.reset(); tl.started = true
+        td.reset(); td.started = true
+        com.exacta.reader.data.TuLuyen.gioi = -1
+        Store.realmCap = cap
+        Store.totalWords = words
+    }
+
     /** 3.7: Bát Nhã opened: Thiền Viện with xá lợi and a fellow to free, the Kinh lâu, and Home. */
     @Test fun thienVien() {
         val tl = com.exacta.reader.data.TienLo

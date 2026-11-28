@@ -185,7 +185,7 @@ object NhatKy {
         return Lunar.fromSolar(d.dayOfMonth, d.monthValue, d.year).day == 15
     }
 
-    private fun key(s: String) = s.trim().lowercase()
+    fun key(s: String) = s.trim().lowercase()
 
     // --- Part two: what each giới would have given --------------------------------------------------
 
@@ -246,7 +246,7 @@ object NhatKy {
     }
 
     /** The day the first book of `author` was read through, or -1. */
-    private fun authorFirstFinish(author: String): Long {
+    fun authorFirstFinish(author: String): Long {
         val a = key(author)
         return Store.books.values.filter { it.finishDay >= 0 && key(it.author) == a }.minOfOrNull { it.finishDay } ?: -1
     }

@@ -690,7 +690,7 @@ object TuLuyen {
         }
         if (lastTick >= t - 1) return
         for (d in lastTick + 1..t - 1) {
-            if (!read(d) && read(d - 1) && !DaoPhap.calmBreak(d)) stir(10)
+            if (!read(d) && read(d - 1) && !DaoPhap.calmBreak(d) && !TienLo.timeless()) stir(10)
             if (Store.minutes(d) >= 30) tamMa = (tamMa - 1).coerceAtLeast(0)
         }
         lastTick = t - 1

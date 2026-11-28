@@ -4,7 +4,7 @@
 cảm ứng, không có phím lật trang), mang lối chơi tu tiên của Exacta.OS: đọc sách là tu luyện.
 Lõi đọc là Readium Kotlin Toolkit; giao diện vẽ riêng theo kiểu Exacta.OS, đen trắng, không hiệu ứng.
 
-Tải bản cài: [`dist/Van-Quyen-Tien-Do-3.7.apk`](dist/Van-Quyen-Tien-Do-3.7.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
+Tải bản cài: [`dist/Van-Quyen-Tien-Do-4.0.apk`](dist/Van-Quyen-Tien-Do-4.0.apk) (chép vào máy rồi cài; cài đè lên bản cũ được). Từ bản 0.3, mỗi bản APK được giữ lại trong `dist/` với tên phiên bản.
 
 Cẩm nang tu tiên (PDF, đúng khổ màn iReader Neo 3, theo luật bản 2.8): [`dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf`](dist/Van-Quyen-Tien-Do-2.8-Cam-nang.pdf).
 Gồm luật chơi, chiến lược cày (xếp lò, phá cảnh, tiêu linh thạch, gom 72 loại), thư viện công pháp, tâm pháp, thuật
@@ -23,6 +23,53 @@ Bản thiết kế phần hai (sáu giới sau Lục Giới Môn, lộ trình 2.
 
 Kế hoạch nâng cấp công pháp, tâm pháp, thuật pháp, Tàng Kinh Các (3.1 – 3.4):
 [`docs/Ke-hoach-nang-cap-cong-phap.md`](docs/Ke-hoach-nang-cap-cong-phap.md).
+
+## Bản 4.0 · Hỗn Nguyên Nhất Khí
+
+Phần hai viên mãn: ba giới cuối mở cửa, không giới nào còn chờ ở tiền đình, và Quy Nhất khép lại Lục Giới. Mỗi giới có trang
+Luật riêng, ba gian cơ sở, ba thế lực, chín bậc ưu đãi và ba tiên kiếp.
+
+**Hồng Hoang Cổ Địa · Chiến Tiên · Tổ Địa** (đọc buổi dài)
+- **Khí huyết**: mỗi 10 phút trong một buổi đọc liền từ 45 phút một điểm; buổi từ 90 phút gấp đôi, từ 120 phút gấp ba. Buổi
+  ngắn không ra khí huyết.
+- **Huyết mạch** thức tỉnh ở bậc 2 theo thói quen đọc từ ngày qua cửa: Long (buổi rất dài, +6%), Phượng (đọc sáng sớm),
+  Kỳ Lân (đọc trọn nhiều cuốn), Huyền Vũ (chuỗi dài, tiên kiếp +5%), Bạch Hổ (nhiều chữ một ngày), Côn Bằng (nhiều tác giả).
+  Bậc 6 **hóa hình**: ưu đãi nhân đôi.
+- **Săn hoang thú**: mỗi tuần một hoang thú (Thao Thiết, Cùng Kỳ, Cửu Anh…), hạ bằng 3 buổi liền từ 45 phút: +15 khí huyết,
+  +3 tiên thạch.
+- Tổ địa: Tế đàn, Thú lan (bản mệnh thành thú đồng hành), Đấu trường. Thế lực Long tộc, Phượng tộc, Kỳ Lân tộc. Chiến văn
+  chín bậc (Đồng Bì Văn … Chiến Tổ Văn).
+- Kiếp: Phản tổ kiếp (7 ngày trong 14 ngày, mỗi ngày một buổi liền 90 phút); Đại kiếp Chiến Tổ (20 ngày trong 30 ngày, buổi
+  liền 120 phút).
+
+**Vong Xuyên Bỉ Ngạn · Minh Tiên · Minh Phủ** (đọc lại, đọc nốt sách bỏ dở)
+- **Hồn lực**: mỗi 2.000 chữ đọc lại một điểm (sách đã trọn đọc lại, sách bỏ dở từ 90 ngày đọc tiếp); sách mới một phần tư.
+  Siêu độ một oan hồn +30, mỗi lần chuyển thế +10.
+- **Sổ sinh tử** (Cơ sở, trang 2): mỗi cuốn bỏ dở từ một tháng là một oan hồn; đọc tiếp tới hết thì tên được gạch.
+- **Vong Xuyên độ**: mỗi tháng một cuốn đã đọc trọn từ nửa năm trước làm thuyền; đọc lại tới hết trong tháng: +80 hồn lực.
+- Ở minh giới **đứt chuỗi không sinh tâm ma**.
+- Minh phủ: Luân hồi bàn, Vọng hương đài, Bỉ ngạn hoa viên. Thế lực Thập Điện Minh Phủ, Bỉ Ngạn Hoa Cốc, Luân Hồi Ty.
+- Kiếp: Luân hồi kiếp (trong 30 ngày đọc lại trọn một cuốn từ 30 vạn chữ); Đại kiếp Minh Đế (trong 120 ngày siêu độ 9 oan
+  hồn).
+
+**Thư Hải Vô Nhai · Văn Tiên · Thư Các** (đọc rộng nhiều tác giả)
+- **Văn khí**: tác giả mới đọc trọn +40 (cuốn thứ hai +15, thứ ba +8, sau đó +4); ngày đọc sách của tác giả chưa đọc trọn +1;
+  thể loại hoặc ngôn ngữ mới +25.
+- **Thần quốc**: mỗi tác giả đã đọc trọn là một hòn đảo (Hải đồ ở Cơ sở, trang 2). Từ bậc 2, mỗi tuần **tín niệm** cho văn
+  khí bằng nửa số đảo, đảo từ 3 cuốn tính đôi.
+- **Văn mạch**: 5 tác giả cùng thể loại thành một quần đảo, mở một văn mạch: +3% văn khí.
+- Thư các: Hải đồ, Hàn lâm viện, Mặc trì. Thế lực Hàn Lâm Thư Viện, Thiên Thư Các, Vạn Thư Đảo. Văn bảo chín bậc (Tùng Yên
+  Mặc … Hà Đồ, Lạc Thư).
+- Kiếp: Văn kiếp (trong 45 ngày đọc trọn sách của 3 tác giả mới); Đại kiếp Thánh Đế (9 tác giả mới trong 120 ngày).
+
+**Quy Nhất** (Tiên vị, trang 3)
+- Từ bậc 6, mỗi tháng một **sứ giả** của giới khác ghé qua, giao một việc theo lối đọc của giới họ (đọc 20 ngày, 5 đêm,
+  chuỗi 10 ngày, 3 buổi 90 phút, đọc lại 3 vạn chữ, sách của 3 tác giả). Xong: +60 **hỗn nguyên khí**.
+- Bậc 9 cùng 600 hỗn nguyên khí mở **Quy Nhất**: sáu giới vốn là một, đạo hiệu «Hỗn Nguyên Đạo Tổ», Home ghi Quy Nhất, cửa
+  Hỗn Độn để ngỏ cho phần ba.
+
+Khác: kiếp đếm theo việc (cuốn, oan hồn, tác giả) hiện đúng đơn vị; Kinh lâu của Bát Nhã, Sổ sinh tử và Hải đồ dùng chung
+một kiểu trang sổ. versionCode 400.
 
 ## Bản 3.7 · Liên Đài Hóa Độ
 
@@ -527,6 +574,7 @@ Bước đầu của bản thiết kế nâng cấp: người tu có thân, có 
   | 3.5 | Huyết Nguyệt Đương Không | Huyết Nguyệt Trầm Uyên: ma khí, ma công đặt cược, phản phệ, Ma Cung, Tâm ma đại kiếp; logo mới |
   | 3.6 | Cổ Vận Thanh Phong | Câu chữ cổ phong, kỳ ngộ lục hai cột, Tiên lộ, pháp bảo và icon pixel, trình đọc tính bằng em, Home cân lại |
   | 3.7 | Liên Đài Hóa Độ | Bát Nhã Liên Đài: công đức, xá lợi, độ hóa đồng đạo, Thiền Viện, Vô niệm kiếp, Đại kiếp Liên Hoa |
+  | 4.0 | Hỗn Nguyên Nhất Khí | Hồng Hoang, Vong Xuyên, Thư Hải mở cửa; sứ giả, hỗn nguyên khí, Quy Nhất: phần hai viên mãn |
 
 - **Tối ưu**: các nét chữ và nét viền của giao diện được tạo một lần thay vì mỗi lần vẽ; mã hình vẽ được tra một lần
   rồi nhớ; bỏ hình lò cũ không còn dùng. Luật tu tiên (Cài đặt › Tu tiên) viết lại theo luật hiện tại.

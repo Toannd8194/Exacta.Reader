@@ -24,18 +24,25 @@ import kotlin.random.Random
  * the days at the tiền đình are counted the same way when the giới opens.
  *
  * Each giới writes its own part as [GioiRules]: Cửu Tiêu Vân Khuyết in 3.0 ([CuuTieu]), Huyết Nguyệt
- * Trầm Uyên in 3.5 ([HuyetNguyet]), Bát Nhã Liên Đài in 3.7 ([BatNha]). The others wait at their tiền đình ([OPEN]).
+ * Trầm Uyên in 3.5 ([HuyetNguyet]), Bát Nhã Liên Đài in 3.7 ([BatNha]), Hồng Hoang Cổ Địa ([HongHoang]), Vong
+ * Xuyên Bỉ Ngạn ([VongXuyen]) and Thư Hải Vô Nhai ([ThuHai]) in 4.0, with [QuyNhat], the end of part two.
  */
 object TienLo {
     /** The giới whose part two is written. */
-    val OPEN = intArrayOf(0, 1, 2)
+    val OPEN = intArrayOf(0, 1, 2, 3, 4, 5)
 
     /** The rules of the giới entered. */
     fun rules(): GioiRules = when (gioi) {
         1 -> HuyetNguyet
         2 -> BatNha
+        3 -> HongHoang
+        4 -> VongXuyen
+        5 -> ThuHai
         else -> CuuTieu
     }
+
+    /** Vong Xuyên: time means nothing to the dead, a chain broken stirs no tâm ma. */
+    fun timeless() = opened && gioi == 4
 
     val BAC_VAN = longArrayOf(0, 60, 140, 240, 360, 500, 660, 840, 1040)
     val BAC_RES = intArrayOf(0, 200, 500, 900, 1400, 2000, 2700, 3500, 4400)
@@ -103,6 +110,10 @@ object TienLo {
         CuuTieu.reset()
         HuyetNguyet.reset()
         BatNha.reset()
+        HongHoang.reset()
+        VongXuyen.reset()
+        ThuHai.reset()
+        QuyNhat.reset()
     }
 
     private fun today() = Store.today()
@@ -136,8 +147,9 @@ object TienLo {
     fun homeLines(): List<Pair<String, Boolean>> {
         val r = NhatKy.RESOURCE[gioi.coerceIn(0, 5)]
         return when {
+            QuyNhat.united() -> listOf("Quy Nhất · ${QuyNhat.TITLE}" to true, "Cửa Hỗn Độn để ngỏ" to false)
             bac >= 9 -> listOf(supreme() to true, "${res()} $r · ${tienThach} tiên thạch" to false)
-            kiepActive >= 0 -> listOf("${kiepName(kiepActive)} · ${kiepKept()}/${kiepNeed(kiepActive)} ngày" to true, "Còn ${kiepLeft()} ngày" to false)
+            kiepActive >= 0 -> listOf("${kiepName(kiepActive)} · ${kiepKept()}/${kiepNeed(kiepActive)} ${rules().kiepUnit(kiepActive)}" to true, "Còn ${kiepLeft()} ngày" to false)
             injured() -> listOf("Thương thế sau tiên kiếp" to true, "Còn ${injuryUntil - today() + 1} ngày, tài nguyên giảm nửa" to false)
             canStartKiep() -> listOf("Sẵn sàng ${kiepName(kiepDue())}" to true, "Vào ${seat()} › Kiếp" to false)
             else -> {
@@ -267,6 +279,7 @@ object TienLo {
             changed = true
         }
         if (rules().check()) changed = true
+        if (QuyNhat.check()) changed = true
         if (checkKiep()) changed = true
         if (checkTasks()) changed = true
         val before = bac
@@ -313,7 +326,7 @@ object TienLo {
     }
 
     /** Days kept so far in the kiếp running. */
-    fun kiepKept() = kiepDays.size
+    fun kiepKept() = (if (kiepActive >= 0) rules().kiepCount(kiepActive) else null) ?: kiepDays.size
     fun kiepLeft() = if (kiepActive < 0) 0 else (kiepStart + kiepWindow(kiepActive) - today()).toInt().coerceAtLeast(0)
 
     private fun checkKiep(): Boolean {
@@ -321,12 +334,12 @@ object TienLo {
         if (i < 0) return false
         val t = today()
         if (rules().kiepDayKept(i, t) && kiepDays.add(t)) Store.touch()
-        if (kiepDays.size >= kiepNeed(i) && rules().kiepEnd(i)) {
+        if (kiepKept() >= kiepNeed(i) && rules().kiepEnd(i)) {
             roll(i)
             return true
         }
         if (t - kiepStart >= kiepWindow(i)) {
-            fail(i, "hết ${kiepWindow(i)} ngày mới giữ ${kiepDays.size}/${kiepNeed(i)}")
+            fail(i, "hết ${kiepWindow(i)} ngày mới được ${kiepKept()}/${kiepNeed(i)}")
             return true
         }
         return false
@@ -443,7 +456,8 @@ object TienLo {
         .put("kiepFails", JSONArray().apply { kiepFails.forEach { put(it) } }).put("injury", injuryUntil)
         .put("halls", JSONArray().apply { halls.forEach { put(it) } }).put("faction", faction).put("cong", congHien)
         .put("taskMonth", taskMonth).put("tasks", tasksDone).put("last", lastResult).put("cuuTieu", CuuTieu.toJson()).put("huyetNguyet", HuyetNguyet.toJson())
-        .put("batNha", BatNha.toJson())
+        .put("batNha", BatNha.toJson()).put("hongHoang", HongHoang.toJson()).put("vongXuyen", VongXuyen.toJson())
+        .put("thuHai", ThuHai.toJson()).put("quyNhat", QuyNhat.toJson())
 
     fun read(o: JSONObject) {
         reset()
@@ -462,6 +476,10 @@ object TienLo {
         o.optJSONObject("cuuTieu")?.let { CuuTieu.read(it) }
         o.optJSONObject("huyetNguyet")?.let { HuyetNguyet.read(it) }
         o.optJSONObject("batNha")?.let { BatNha.read(it) }
+        o.optJSONObject("hongHoang")?.let { HongHoang.read(it) }
+        o.optJSONObject("vongXuyen")?.let { VongXuyen.read(it) }
+        o.optJSONObject("thuHai")?.let { ThuHai.read(it) }
+        o.optJSONObject("quyNhat")?.let { QuyNhat.read(it) }
     }
 }
 

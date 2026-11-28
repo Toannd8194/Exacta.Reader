@@ -6,6 +6,10 @@ import android.graphics.RectF
 import android.os.Bundle
 import com.exacta.reader.data.BatNha
 import com.exacta.reader.data.CuuTieu
+import com.exacta.reader.data.HongHoang
+import com.exacta.reader.data.QuyNhat
+import com.exacta.reader.data.ThuHai
+import com.exacta.reader.data.VongXuyen
 import com.exacta.reader.data.HuyetNguyet
 import com.exacta.reader.data.NhatKy
 import com.exacta.reader.data.Store
@@ -48,11 +52,18 @@ class GioiActivity : TabActivity() {
     }
 
     override fun content(c: Canvas, k: Ink, area: RectF, tab: Int, page: Int, hits: Hits): Int = when (tab) {
-        0 -> if (page == 0) road(c, k, area) else carried(c, k, area)
-        1 -> if (page == 0) seat(c, k, area, hits) else kinhLau(c, k, area, page - 1)
+        0 -> when (page) {
+            0 -> road(c, k, area)
+            1 -> carried(c, k, area)
+            else -> quyNhat(c, k, area, hits)
+        }
+        1 -> if (page == 0) seat(c, k, area, hits) else ledgerPage(c, k, area, page - 1)
         2 -> if (page == 0) when (TienLo.gioi) {
             1 -> maRules(c, k, area, hits)
             2 -> thienRules(c, k, area, hits)
+            3 -> hoangRules(c, k, area)
+            4 -> minhRules(c, k, area)
+            5 -> thuRules(c, k, area)
             else -> rules(c, k, area)
         } else posts(c, k, area)
         3 -> factions(c, k, area, hits)
@@ -162,7 +173,7 @@ class GioiActivity : TabActivity() {
             k.pair(c, "$b. ${TienLo.viName(b)}$tail", "${TienLo.BAC_VAN[b - 1]} vạn · ${TienLo.BAC_RES[b - 1]}", a.left + sl + 4 * u, y, a.width() - sl - 4 * u, p, p)
             y += rowH
         }
-        return 2
+        return 3
     }
 
     /** Page 2: what was carried, and what the opening counted. */
@@ -195,7 +206,7 @@ class GioiActivity : TabActivity() {
         y = k.section(c, a.left, y, a.width(), "TIÊN THẠCH · ${TienLo.tienThach}")
         para(c, k, "Mỗi 4 vạn chữ +1, lên bậc +${TienLo.TT_BAC}, vượt tiên kiếp +${TienLo.TT_KIEP}, mỗi việc thế lực +5. Dùng nâng ba gian của ${rl.SEAT_NAME}.",
             a.left, y, a.width(), small, 3)
-        return 2
+        return 3
     }
 
     // --- Cơ sở --------------------------------------------------------------------------------------
@@ -233,44 +244,77 @@ class GioiActivity : TabActivity() {
             }
             y = r.bottom + gap
         }
-        return if (TienLo.gioi == 2) 1 + kinhPages(k, a) else 1
+        return 1 + ledgerPages(k, a)
     }
 
-    // --- Bát Nhã: Kinh lâu ---------------------------------------------------------------------------
+    // --- Ledgers: Kinh lâu (Bát Nhã), Sổ sinh tử (Vong Xuyên), Hải đồ (Thư Hải) -----------------------
 
-    private fun kinh() = Store.books.values.filter { it.finishDay >= TienDinh.crossDay && TienDinh.crossDay >= 0 }.sortedByDescending { it.finishDay }
+    private class Row(val title: String, val left: String, val right: String, val struck: Boolean = false)
+    private class Ledger(val title: String, val intro: String, val empty: String, val rows: List<Row>)
 
-    private fun kinhRows(k: Ink, a: RectF): Int {
-        val top = k.section(null, a.left, a.top, a.width(), "KINH LÂU") + 2 * k.lineH(k.small) + 10 * k.u
+    private fun ledger(): Ledger? = when (TienLo.gioi) {
+        2 -> {
+            val list = Store.books.values.filter { it.finishDay >= TienDinh.crossDay && TienDinh.crossDay >= 0 }.sortedByDescending { it.finishDay }
+            Ledger("KINH LÂU · ${list.size} BỘ KINH",
+                "Mỗi cuốn đọc trọn từ ngày qua cửa thành một bộ kinh trên giá" +
+                    (if (TienLo.halls[0] > 0) ", thêm ${4 * TienLo.halls[0]} công đức mỗi bộ." else ". Kinh lâu lên cấp thì mỗi bộ thêm công đức."),
+                "Giá kinh còn trống. Đọc trọn một cuốn, bộ kinh đầu tiên sẽ đặt ở đây.",
+                list.map { b -> Row("«${b.title}»", b.author.ifBlank { "Khuyết danh" }, "trọn ngày ${date(b.finishDay)}" + if (b.backDay in 0..b.finishDay) " · độ hóa" else "") })
+        }
+        4 -> {
+            val souls = VongXuyen.souls()
+            val freed = VongXuyen.freed()
+            Ledger("SỔ SINH TỬ · ${souls.size} OAN HỒN · ${freed.size} ĐÃ GẠCH",
+                "Mỗi cuốn bỏ dở từ một tháng là một oan hồn trong sổ; đọc tiếp tới hết là siêu độ, tên được gạch.",
+                "Sổ trống: thư viện không có cuốn nào bỏ dở, cũng chưa oan hồn nào được siêu độ.",
+                souls.map { b -> Row("«${b.title}»", "dừng ở ${b.percent}%", "bỏ từ ${date(b.lastDay)}") } +
+                    freed.map { b -> Row("«${b.title}»", "siêu độ", "ngày ${date(b.finishDay)}", struck = true) })
+        }
+        5 -> {
+            val isl = ThuHai.islands()
+            Ledger("HẢI ĐỒ · ${isl.size} ĐẢO",
+                "Mỗi tác giả đã đọc trọn là một hòn đảo có hải đăng; đảo lớn lên theo số cuốn. Đảo từ 3 cuốn tính đôi khi góp tín niệm.",
+                "Biển còn trống. Đọc trọn một cuốn có tên tác giả, hòn đảo đầu tiên sẽ nổi lên.",
+                isl.map { i -> Row(i.author, i.genre.ifBlank { "chưa rõ thể loại" }, "${i.books.size} cuốn" + if (i.books.size >= 3) " · đảo lớn" else "") })
+        }
+        else -> null
+    }
+
+    private fun ledgerRows(k: Ink, a: RectF): Int {
+        val top = k.section(null, a.left, a.top, a.width(), "X") + 2 * k.lineH(k.small) + 10 * k.u
         return ((a.bottom - top) / (k.lineH(k.small) * 2 + 10 * k.u)).toInt().coerceAtLeast(1)
     }
 
-    private fun kinhPages(k: Ink, a: RectF) = maxOf(1, (kinh().size + kinhRows(k, a) - 1) / kinhRows(k, a))
+    private fun ledgerPages(k: Ink, a: RectF): Int {
+        val l = ledger() ?: return 0
+        return maxOf(1, (l.rows.size + ledgerRows(k, a) - 1) / ledgerRows(k, a))
+    }
 
-    /** The shelf of the Kinh lâu: each book read through since the crossing, a bộ kinh. */
-    private fun kinhLau(c: Canvas, k: Ink, a: RectF, page: Int): Int {
+    private fun ledgerPage(c: Canvas, k: Ink, a: RectF, page: Int): Int {
         val u = k.u
         val small = k.small
         val sb = k.smallBold
         val sl = k.lineH(small)
-        val list = kinh()
-        var y = k.section(c, a.left, a.top, a.width(), "KINH LÂU · ${list.size} BỘ KINH")
-        y = para(c, k, "Mỗi cuốn đọc trọn từ ngày qua cửa thành một bộ kinh trên giá" +
-            (if (TienLo.halls[0] > 0) ", thêm ${4 * TienLo.halls[0]} công đức mỗi bộ." else ". Kinh lâu lên cấp thì mỗi bộ thêm công đức."),
-            a.left, y, a.width(), small, 2) + 10 * u
-        if (list.isEmpty()) {
-            para(c, k, "Giá kinh còn trống. Đọc trọn một cuốn, bộ kinh đầu tiên sẽ đặt ở đây.", a.left, y, a.width(), sb, 2)
-            return 1 + kinhPages(k, a)
+        val l = ledger() ?: return 1
+        var y = k.section(c, a.left, a.top, a.width(), l.title)
+        y = para(c, k, l.intro, a.left, y, a.width(), small, 2) + 10 * u
+        if (l.rows.isEmpty()) {
+            para(c, k, l.empty, a.left, y, a.width(), sb, 2)
+            return 1 + ledgerPages(k, a)
         }
-        val rows = kinhRows(k, a)
-        for (b in list.drop(page * rows).take(rows)) {
-            k.text(c, k.fit("«${b.title}»", a.width(), sb), a.left, y, sb)
+        val rows = ledgerRows(k, a)
+        for (r in l.rows.drop(page * rows).take(rows)) {
+            val t = k.fit(r.title, a.width(), if (r.struck) small else sb)
+            k.text(c, t, a.left, y, if (r.struck) small else sb)
+            if (r.struck) {
+                val mid = y + sl * 0.55f
+                c.drawRect(a.left, mid, a.left + small.measureText(t), mid + 2 * u, k.fill)
+            }
             y += sl
-            k.pair(c, if (b.author.isNotBlank()) k.fit(b.author, a.width() * 0.6f, small) else "Khuyết danh",
-                "trọn ngày ${date(b.finishDay)}" + if (b.backDay in 0..b.finishDay) " · độ hóa" else "", a.left, y, a.width())
+            k.pair(c, k.fit(r.left, a.width() * 0.55f, small), r.right, a.left, y, a.width())
             y += sl + 10 * u
         }
-        return 1 + kinhPages(k, a)
+        return 1 + ledgerPages(k, a)
     }
 
     // --- Luật ---------------------------------------------------------------------------------------
@@ -393,6 +437,175 @@ class GioiActivity : TabActivity() {
         return 2
     }
 
+    /** A small tail at the bottom of a page, if there is room. */
+    private fun tail(c: Canvas, k: Ink, a: RectF, y: Float, s: String) {
+        val sb = k.smallBold
+        val sl = k.lineH(sb)
+        val ls = k.wrap(s, a.width(), sb, 2)
+        var iy = a.bottom - ls.size * sl
+        if (iy > y) for (l in ls) { k.text(c, l, a.left, iy, sb); iy += sl }
+    }
+
+    /** Hồng Hoang: khí huyết, huyết mạch, săn hoang thú. */
+    private fun hoangRules(c: Canvas, k: Ink, a: RectF): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val hh = HongHoang
+        var y = k.section(c, a.left, a.top, a.width(), "KHÍ HUYẾT")
+        y = para(c, k, "Mỗi 10 phút trong một buổi đọc liền từ 45 phút một điểm; buổi từ 90 phút gấp đôi, từ 120 phút gấp ba. Buổi ngắn không ra khí huyết. Ngày đọc xong mới cộng.",
+            a.left, y, a.width(), small, 4) + 10 * u
+        val longest = (NhatKy.days[Store.today()]?.sittings?.maxOrNull() ?: 0) / 60
+        y = meterRow(c, k, "Buổi liền dài nhất hôm nay", "$longest phút", longest / 120f, a.left, y, a.width()) + 4 * u
+        if (hh.mach >= 0) {
+            y = k.section(c, a.left, y, a.width(), "HUYẾT MẠCH ${HongHoang.MACH[hh.mach].uppercase()}" + if (hh.machTimes() > 1) " · HÓA HÌNH" else "")
+            y = para(c, k, HongHoang.MACH_PERK[hh.mach] + if (hh.machTimes() > 1) ", nhân đôi nhờ hóa hình." else ". Bậc 6 hóa hình: ưu đãi nhân đôi.",
+                a.left, y, a.width(), sb, 2) + 16 * u
+        } else {
+            y = k.section(c, a.left, y, a.width(), "HUYẾT MẠCH · THỨC TỈNH Ở BẬC 2")
+            val sc = hh.scores()
+            val lean = hh.leaning()
+            for (i in HongHoang.MACH.indices) {
+                val p = if (i == lean) sb else small
+                k.pair(c, "${HongHoang.MACH[i]} · ${HongHoang.MACH_WAY[i]}", "${sc[i]}", a.left, y, a.width(), p, p)
+                y += sl + 2 * u
+            }
+            y += 12 * u
+        }
+        val week = Store.weekStart(Store.today())
+        y = k.section(c, a.left, y, a.width(), "HOANG THÚ TUẦN NÀY · ${HongHoang.beastOf(week).uppercase()}")
+        val p = hh.huntProgress()
+        y = meterRow(c, k, "Buổi liền từ 45 phút trong tuần", if (hh.killedThisWeek()) "đã hạ" else "${minOf(p, HongHoang.HUNT_SITTINGS)} / ${HongHoang.HUNT_SITTINGS}",
+            if (hh.killedThisWeek()) 1f else p.toFloat() / HongHoang.HUNT_SITTINGS, a.left, y, a.width())
+        y = para(c, k, "Hạ hoang thú: +${hh.huntReward()} khí huyết, +${HongHoang.HUNT_TT} tiên thạch để nâng Tổ địa.", a.left, y, a.width(), small, 2)
+        tail(c, k, a, y, "Đã hạ ${hh.kills} hoang thú." + if (hh.lastHunt.isNotEmpty()) " ${hh.lastHunt}." else "")
+        return 2
+    }
+
+    /** Vong Xuyên: hồn lực, Vong Xuyên độ, sổ sinh tử. */
+    private fun minhRules(c: Canvas, k: Ink, a: RectF): Int {
+        val u = k.u
+        val small = k.small
+        val sl = k.lineH(small)
+        val vx = VongXuyen
+        var y = k.section(c, a.left, a.top, a.width(), "HỒN LỰC")
+        y = para(c, k, "Mỗi 2.000 chữ đọc lại một điểm: sách đã trọn mở ra đọc lại, sách bỏ dở từ 90 ngày đọc tiếp. Sách mới chỉ được một phần tư. " +
+            "Siêu độ một oan hồn +30, mỗi lần chuyển thế +10. Ở minh giới đứt chuỗi không sinh tâm ma.", a.left, y, a.width(), small, 4) + 10 * u
+        val again = NhatKy.days[Store.today()]?.let { it.reread + it.back } ?: 0L
+        y = meterRow(c, k, "Chữ đọc lại hôm nay", Realm.van(again) + " vạn", again / 20_000f, a.left, y, a.width()) + 4 * u
+        y = k.section(c, a.left, y, a.width(), "VONG XUYÊN ĐỘ · THÁNG ${LocalDate.now().monthValue}")
+        val b = vx.boat()
+        if (b != null) {
+            y = para(c, k, "Thuyền tháng này: «${b.title}». Đọc lại cuốn ấy tới hết trong tháng để qua sông: +${vx.boatReward()} hồn lực.", a.left, y, a.width(), small, 3) + 6 * u
+            y = meterRow(c, k, "Đọc lại", if (vx.boatDone) "đã qua sông" else "${(b.rereadMax * 100).toInt()}%", if (vx.boatDone) 1f else b.rereadMax.toFloat(), a.left, y, a.width()) + 4 * u
+        } else {
+            y = para(c, k, "Tháng này chưa có thuyền: cần một cuốn đã đọc trọn từ nửa năm trước.", a.left, y, a.width(), small, 2) + 16 * u
+        }
+        y = k.section(c, a.left, y, a.width(), "SỔ SINH TỬ")
+        k.pair(c, "Oan hồn còn trong sổ (sách bỏ dở)", "${vx.souls().size}", a.left, y, a.width())
+        y += sl + 4 * u
+        k.pair(c, "Đã siêu độ (đọc tiếp tới hết)", "${vx.freed().size}", a.left, y, a.width())
+        y += sl + 4 * u
+        y = para(c, k, "Từng tên trong sổ ở tab Cơ sở, trang 2. Mỗi oan hồn siêu độ +${30 + vx.freeReward()} hồn lực.", a.left, y, a.width(), small, 2)
+        tail(c, k, a, y, "Đã qua sông ${vx.crossed} lần." + if (vx.lastBoat.isNotEmpty()) " ${vx.lastBoat}." else "")
+        return 2
+    }
+
+    /** Thư Hải: văn khí, thần quốc, văn mạch. */
+    private fun thuRules(c: Canvas, k: Ink, a: RectF): Int {
+        val u = k.u
+        val small = k.small
+        val sl = k.lineH(small)
+        val th = ThuHai
+        var y = k.section(c, a.left, a.top, a.width(), "VĂN KHÍ")
+        y = para(c, k, "Tác giả mới đọc trọn một cuốn +40; cuốn thứ hai của cùng tác giả +15, thứ ba +8, từ thứ tư +4. Ngày đọc sách của tác giả chưa đọc trọn +1. " +
+            "Thể loại hoặc ngôn ngữ mới +25.", a.left, y, a.width(), small, 4) + 14 * u
+        val isl = th.islands()
+        y = k.section(c, a.left, y, a.width(), "THẦN QUỐC")
+        for ((l, v) in listOf(
+            "Đảo (tác giả đã đọc trọn)" to "${isl.size}",
+            "Đảo lớn (từ 3 cuốn)" to "${isl.count { it.books.size >= 3 }}",
+            "Tín niệm mỗi tuần" to if (th.hasChuc(1)) "+${th.tinNiem()} văn khí" else "từ bậc 2",
+        )) {
+            k.pair(c, l, v, a.left, y, a.width())
+            y += sl + 4 * u
+        }
+        y = para(c, k, "Hải đồ từng đảo ở tab Cơ sở, trang 2.", a.left, y, a.width(), small, 1) + 14 * u
+        y = k.section(c, a.left, y, a.width(), "VĂN MẠCH · ${th.vanMach().size}")
+        y = para(c, k, "${ThuHai.ARCHIPELAGO} tác giả cùng thể loại thành một quần đảo, mở một văn mạch: +${th.machPct()}% văn khí.", a.left, y, a.width(), small, 2) + 8 * u
+        val ga = th.genreAuthors()
+        if (ga.isEmpty()) y = para(c, k, "Chưa thể loại nào: thể loại lấy từ thông tin sách EPUB.", a.left, y, a.width(), small, 2)
+        for ((g, n) in ga.take(4)) {
+            y = meterRow(c, k, g.replaceFirstChar { it.uppercase() }, if (n >= ThuHai.ARCHIPELAGO) "văn mạch" else "$n / ${ThuHai.ARCHIPELAGO}", n.toFloat() / ThuHai.ARCHIPELAGO, a.left, y, a.width())
+        }
+        tail(c, k, a, y, "Tín niệm đã nhận ${th.tnTotal} văn khí." + if (th.lastTn.isNotEmpty()) " ${th.lastTn}." else "")
+        return 2
+    }
+
+    // --- Quy Nhất -----------------------------------------------------------------------------------
+
+    private fun quyNhat(c: Canvas, k: Ink, a: RectF, hits: Hits): Int {
+        val u = k.u
+        val small = k.small
+        val sb = k.smallBold
+        val sl = k.lineH(small)
+        val q = QuyNhat
+        var y = a.top
+        val pad = 20 * u
+        if (q.united()) {
+            val text = "Sáu giới vốn là một. Từ ${TuLuyen.GIOI[TienLo.gioi]}, qua ${q.envoys} sứ giả của năm giới kia, đạo hữu nhận đạo hiệu «${QuyNhat.TITLE}». " +
+                "Vạn Quyển Tiên Đồ phần hai viên mãn; cửa Hỗn Độn để ngỏ cho phần ba."
+            val lines = k.wrap(text, a.width() - 2 * pad, small, 6)
+            val r = RectF(a.left, y, a.right, y + 2 * pad + k.lineH(k.big) + 8 * u + lines.size * sl)
+            k.card(c, r, selected = true)
+            k.centered(c, "Quy Nhất", r.left, r.width(), r.top + pad, k.big)
+            var ty = r.top + pad + k.lineH(k.big) + 8 * u
+            for (l in lines) { k.centered(c, l, r.left, r.width(), ty, small); ty += sl }
+            y = r.bottom + 18 * u
+            for ((l, v) in listOf("Ngày Quy Nhất" to date(q.quyDay), "Hỗn nguyên khí" to "${q.hnk}", "Chữ từ ngày qua cửa" to "${Realm.van(TienLo.words())} vạn")) {
+                k.pair(c, l, v, a.left, y, a.width())
+                y += sl + 4 * u
+            }
+            return 3
+        }
+        y = k.section(c, a.left, y, a.width(), "HỖN NGUYÊN KHÍ")
+        y = meterRow(c, k, "Mở Quy Nhất ở bậc 9", "${q.hnk} / ${QuyNhat.QUY_AT}", q.hnk.toFloat() / QuyNhat.QUY_AT, a.left, y, a.width())
+        y = para(c, k, "Loại tài nguyên chung duy nhất của phần hai, chỉ sứ giả giới khác mang tới. Bậc 9 cùng ${QuyNhat.QUY_AT} hỗn nguyên khí mở Quy Nhất: sáu giới vốn là một.",
+            a.left, y, a.width(), small, 3) + 16 * u
+        y = k.section(c, a.left, y, a.width(), "SỨ GIẢ THÁNG ${LocalDate.now().monthValue}")
+        if (q.near() && q.envoy >= 0) {
+            val g = q.envoy
+            val got = q.progress()
+            val need = QuyNhat.ENVOY_GOAL[g]
+            k.text(c, q.envoyName(), a.left, y, sb)
+            y += sl + 4 * u
+            val shown = if (q.done) "xong" else if (g == QuyNhat.ENVOY_WORDS) "${Realm.van(minOf(got, need))} / ${Realm.van(need)} vạn" else "${minOf(got, need)} / $need"
+            y = meterRow(c, k, QuyNhat.ENVOY_TASK[g], shown, if (q.done) 1f else got.toFloat() / need, a.left, y, a.width())
+            y = para(c, k, "Xong việc: +${QuyNhat.REWARD} hỗn nguyên khí. Đã tiếp ${q.envoys} sứ giả.", a.left, y, a.width(), small, 2) + 14 * u
+        } else {
+            y = para(c, k, "Từ bậc ${QuyNhat.FROM_BAC}, mỗi tháng một sứ giả của giới khác ghé ${TienLo.seat()}, giao một việc theo lối đọc của giới họ: xong +${QuyNhat.REWARD} hỗn nguyên khí.",
+                a.left, y, a.width(), small, 3) + 14 * u
+        }
+        y = k.section(c, a.left, y, a.width(), "SỨ GIẢ NĂM GIỚI")
+        for (g in 0..5) {
+            if (g == TienLo.gioi) continue
+            val p = if (g == q.envoy && q.near()) sb else small
+            k.pair(c, k.fit(q.envoyName(g), a.width() * 0.42f, sb), k.fit(QuyNhat.ENVOY_TASK[g], a.width() * 0.56f, p), a.left, y, a.width(), sb, p)
+            y += sl + 6 * u
+        }
+        val bh = 60 * u
+        val bottom = RectF(a.left, a.bottom - bh, a.right, a.bottom)
+        if (q.canUnite()) {
+            k.button(c, bottom, if (armed == 30) "Chạm lần nữa: Quy Nhất" else "Quy Nhất", k.ui10Bold, selected = armed == 30)
+            hits.add(bottom) {
+                if (armed != 30) armed = 30 else { armed = -1; q.unite() }
+                refresh()
+            }
+        } else k.button(c, bottom, "Quy Nhất cần bậc 9 và ${QuyNhat.QUY_AT} hỗn nguyên khí", sb, enabled = false)
+        return 3
+    }
+
     private fun oathDialog(o: Int) {
         val hn = HuyetNguyet
         val cap = hn.stakeCap()
@@ -511,7 +724,7 @@ class GioiActivity : TabActivity() {
             val rule = k.wrap(rl.KIEP_RULE[i] + ".", a.width() - 2 * pad, small, 3)
             val state = when {
                 done -> "Đã vượt"
-                active -> "Đang độ: ${TienLo.kiepKept()}/${TienLo.kiepNeed(i)} ngày · còn ${TienLo.kiepLeft()} ngày"
+                active -> "Đang độ: ${TienLo.kiepKept()}/${TienLo.kiepNeed(i)} ${rl.kiepUnit(i)} · còn ${TienLo.kiepLeft()} ngày"
                 TienLo.kiepDue() == i -> "Đủ điều kiện · tỉ lệ ${TienLo.kiepChance(i)}%"
                 else -> "Giáng khi tới bậc $b" + if (TienLo.kiepFails[i] > 0) " · hỏng ${TienLo.kiepFails[i]}" else ""
             }
